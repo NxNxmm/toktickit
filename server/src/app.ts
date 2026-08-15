@@ -17,7 +17,7 @@ app.use(express.json());
 // Make the test in tests/lab-01/health.test.ts pass.
 // It must return HTTP 200 with JSON: { status: "ok", service: "TokTickIT API" }
 // ---------------------------------------------------------------------------
-app.get("/api/health", (_req: Request, res: Response) => {
+app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "ok",
     service: "TokTickIT API",

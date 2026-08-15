@@ -14,6 +14,16 @@ export default function App() {
     //   - success: store categories and show Online + the list, or
     //   - error: show Offline + a useful message.
     setState("loading");
+    try {
+      const res = await checkSystem();
+      if (res.online) {
+        setState("success");
+      } else {
+        setState("error");
+      }
+    } catch (error) {
+      setState("error");
+    }
   }
 
   return (
@@ -27,6 +37,24 @@ export default function App() {
       </button>
 
       {/* TODO(Issue 4): render loading / success (Online + categories) / error (Offline) states. */}
+      {state === "loading" && <p>Loading categories…</p>}
+      {state === "error" && (
+        <div className="mt-2">
+          <p className="fw-bold mb-0">
+            System Status: <span className="text-danger">Offline</span>
+          </p>
+          <p className="text-danger">Unable to connect to TokTickIT API</p>
+        </div>
+      )}
+      {state === "success" && (
+        <div className="mt-2">
+          <p className="fw-bold mb-0">
+            System Status: <span className="text-success">Online</span>
+          </p>
+          <p className="text-success">TokTickIT API is running normally</p>
+        </div>
+      )}
+
     </div>
   );
 }
