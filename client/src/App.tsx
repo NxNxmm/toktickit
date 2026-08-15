@@ -1,22 +1,18 @@
 import { useState } from "react";
 import { checkSystem, Category } from "./api.js";
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
 type UiState = "idle" | "loading" | "success" | "error";
 
 export default function App() {
   const [state, setState] = useState<UiState>("idle");
   const [categories, setCategories] = useState<Category[]>([]);
-  void categories;
 
   async function handleCheck() {
-    // TODO(Issue 4): set loading, call checkSystem(), then either
-    //   - success: store categories and show Online + the list, or
-    //   - error: show Offline + a useful message.
     setState("loading");
     try {
       const res = await checkSystem();
       if (res.online) {
+        setCategories(res.categories || []);
         setState("success");
       } else {
         setState("error");
@@ -36,25 +32,34 @@ export default function App() {
         {state === "loading" ? "Loading…" : "Check System"}
       </button>
 
-      {/* TODO(Issue 4): render loading / success (Online + categories) / error (Offline) states. */}
-      {state === "loading" && <p>Loading categories…</p>}
+      {state === "loading" && <p className="mt-3">Loading categories…</p>}
+
       {state === "error" && (
-        <div className="mt-2">
+        <div className="mt-3">
           <p className="fw-bold mb-0">
             System Status: <span className="text-danger">Offline</span>
           </p>
           <p className="text-danger">Unable to connect to TokTickIT API</p>
         </div>
       )}
+
       {state === "success" && (
-        <div className="mt-2">
+        <div className="mt-3">
           <p className="fw-bold mb-0">
             System Status: <span className="text-success">Online</span>
           </p>
-          <p className="text-success">TokTickIT API is running normally</p>
+          <p className="text-success mb-3">TokTickIT API is running normally</p>
+
+          <h2 className="h5">Categories</h2>
+          <ul className="list-group mt-2">
+            {categories.map((cat) => (
+              <li key={cat.id} className="list-group-item">
+                {cat.name}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
-
     </div>
   );
 }
