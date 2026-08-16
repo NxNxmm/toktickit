@@ -18,10 +18,10 @@ Issue 3: From my testing, server runs test failed. Please make sure you push cor
 Issue 4: Nothing runs failed, both client and server are test passed and API can fetch all the categories to display in web page. Everything meets the criteria. Nice work !😍
 
 How I responded:
-Issue 1: Thank you for the review and the great suggestion! I will add a `README.md` with step-by-step setup instructions to make local installation easier for everyone.
-Issue 2: Thanks for testing the health check and status toggling! I'll include testing and local setup guidelines in the repository documentation as suggested.
-Issue 3: I've fixed the false API, could you check the server again pls. I guess I pushed the wrong one before 'cause on issue 2 it work very fine. Thx!
-Issue 4:Thank you so much for the review and kind words! Glad to hear both server and client test suites passed and the categories are fetching correctly on the UI.
+Issue 1: -
+Issue 2: -
+Issue 3: I've fixed the false API, could you check the server again pls. I guess I pushed the wrong one before 'cause on issue 2 it work very fine.
+Issue 4: -
 
 ## Pull Requests I reviewed for my partner
 My comment:
@@ -35,5 +35,5 @@ Issue 4: I pulled your branch to test on my local and ran all the setups. Everyt
 Partner's response: 
 Issue 1: Thanks, Ok kup
 Issue 2: oh thank nam
-Issue 3: 
+Issue 3: I've fixed it as you mentioned
 Issue 4: Thanks for reviews <3
