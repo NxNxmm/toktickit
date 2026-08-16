@@ -93,12 +93,13 @@ The application will be accessible at http://localhost:5173.
 - `npm run build:client` - Builds the frontend for production
 - `npm run start:client` - Runs the compiled frontend server (served via Node/Express)
 
-## Testing
-Run all automated tests using Vitest:
+**Automated Testing**
+Run tests on both server and client packages to ensure everything passes before submitting/merging:
 
-npm test
+**Backend Tests (Supertest)**
+`cd server`
+`npm run test`
 
-For more specific test commands:
-- `npm run test:unit` - Run unit tests
-- `npm run test:integration` - Run integration tests
-- `npm run test:e2e` - Run end-to-end tests
+**Frontend Tests (Vitest)**
+`cd client`
+`npm run test`
