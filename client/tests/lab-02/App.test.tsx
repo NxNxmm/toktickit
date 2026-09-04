@@ -83,4 +83,30 @@ describe("App & Navigation Flow (Issue 3 - AC 4, AC 5)", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("toggles mobile hamburger navigation menu", async () => {
+    localStorage.setItem(
+      "toktickit_selected_requester",
+      JSON.stringify(mockRequesters[0])
+    );
+
+    render(<App />);
+
+    const togglerBtn = screen.getByRole("button", { name: /toggle navigation/i });
+    expect(togglerBtn).toBeInTheDocument();
+    expect(togglerBtn).toHaveAttribute("aria-expanded", "false");
+
+    const collapseNav = document.getElementById("toktickitNavbar");
+    expect(collapseNav).not.toHaveClass("show");
+
+    // Click hamburger button to open
+    fireEvent.click(togglerBtn);
+    expect(togglerBtn).toHaveAttribute("aria-expanded", "true");
+    expect(collapseNav).toHaveClass("show");
+
+    // Click hamburger button to close
+    fireEvent.click(togglerBtn);
+    expect(togglerBtn).toHaveAttribute("aria-expanded", "false");
+    expect(collapseNav).not.toHaveClass("show");
+  });
 });
