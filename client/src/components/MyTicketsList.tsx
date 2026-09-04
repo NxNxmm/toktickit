@@ -4,9 +4,10 @@ import * as api from '../api';
 
 interface MyTicketsListProps {
   onCreateTicket: () => void;
+  onViewTicket?: (ticketId: number) => void;
 }
 
-export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket }) => {
+export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, onViewTicket }) => {
   const { selectedRequester } = useRequester();
 
   // Reference data
@@ -422,16 +423,20 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket }) 
                     return (
                       <tr key={t.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
                         <td className="py-3 px-3">
-                          <span
-                            className="fw-bold"
+                          <button
+                            type="button"
+                            className="btn btn-link p-0 text-decoration-none fw-bold"
+                            onClick={() => onViewTicket?.(t.id)}
                             style={{
                               fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
                               fontSize: '13px',
                               color: '#006B3C',
+                              cursor: onViewTicket ? 'pointer' : 'default',
                             }}
+                            title={`View ticket ${t.ticketNo}`}
                           >
                             {t.ticketNo}
-                          </span>
+                          </button>
                         </td>
                         <td className="py-3 px-3 text-secondary" style={{ fontSize: '13px' }}>
                           {formatDate(t.createdAt)}
@@ -528,15 +533,19 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket }) 
               >
                 {/* Card Header: Ticket No & Status */}
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span
-                    className="fw-bold fs-6"
+                  <button
+                    type="button"
+                    className="btn btn-link p-0 text-decoration-none fw-bold fs-6"
+                    onClick={() => onViewTicket?.(t.id)}
                     style={{
                       fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
                       color: '#006B3C',
+                      cursor: onViewTicket ? 'pointer' : 'default',
                     }}
+                    title={`View ticket ${t.ticketNo}`}
                   >
                     {t.ticketNo}
-                  </span>
+                  </button>
                   <span
                     style={{
                       backgroundColor: statusBadge.bg,

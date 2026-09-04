@@ -3,10 +3,14 @@ import { RequesterProvider, useRequester } from './context/RequesterContext';
 import { RequesterSelector } from './components/RequesterSelector';
 import { CreateTicketForm } from './components/CreateTicketForm';
 import { MyTicketsList } from './components/MyTicketsList';
+import { TicketDetail } from './components/TicketDetail';
+
+type AppView = 'my-tickets' | 'create-ticket' | 'ticket-detail';
 
 const MainApp: React.FC = () => {
   const { selectedRequester, clearRequester } = useRequester();
-  const [currentView, setCurrentView] = useState<'my-tickets' | 'create-ticket'>('my-tickets');
+  const [currentView, setCurrentView] = useState<AppView>('my-tickets');
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 
@@ -23,6 +27,17 @@ const MainApp: React.FC = () => {
       .slice(0, 2)
       .join('')
       .toUpperCase();
+  };
+
+  const handleViewTicket = (id: number) => {
+    setSelectedTicketId(id);
+    setCurrentView('ticket-detail');
+    setIsNavCollapsed(true);
+  };
+
+  const handleBackToTickets = () => {
+    setSelectedTicketId(null);
+    setCurrentView('my-tickets');
   };
 
   return (
@@ -51,9 +66,9 @@ const MainApp: React.FC = () => {
               {/* Navigation Tabs */}
               <div className="d-flex align-items-center gap-2">
                 <button
-                  className={`btn btn-sm ${currentView === 'my-tickets' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
+                  className={`btn btn-sm ${currentView === 'my-tickets' || currentView === 'ticket-detail' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
                   onClick={() => {
-                    setCurrentView('my-tickets');
+                    handleBackToTickets();
                     setIsNavCollapsed(true);
                   }}
                 >
@@ -128,11 +143,21 @@ const MainApp: React.FC = () => {
       {/* 3. Dynamic Page View Content */}
       <main className="container py-4" style={{ maxWidth: '1200px' }}>
         {currentView === 'my-tickets' && (
-          <MyTicketsList onCreateTicket={() => setCurrentView('create-ticket')} />
+          <MyTicketsList
+            onCreateTicket={() => setCurrentView('create-ticket')}
+            onViewTicket={handleViewTicket}
+          />
         )}
 
         {currentView === 'create-ticket' && (
           <CreateTicketForm onSuccess={() => setCurrentView('my-tickets')} />
+        )}
+
+        {currentView === 'ticket-detail' && selectedTicketId !== null && (
+          <TicketDetail
+            ticketId={selectedTicketId}
+            onBack={handleBackToTickets}
+          />
         )}
       </main>
     </div>

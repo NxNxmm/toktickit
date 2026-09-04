@@ -56,7 +56,10 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || `API error: ${res.statusText}`);
+    const err: any = new Error(errorData.message || `API error: ${res.statusText}`);
+    err.statusCode = res.status;
+    err.errorData = errorData;
+    throw err;
   }
 
   return res.json();
@@ -122,3 +125,112 @@ export async function getTickets(
   return apiFetch<GetTicketsResponse>(endpoint, {}, requesterId);
 }
 
+// ─── Issue 6 Types ────────────────────────────────────────────────────────────
+
+export interface Attachment {
+  id: number;
+  originalName: string;
+  fileSize: number;
+  mimeType: string;
+  isRemoved: boolean;
+  removedAt: string | null;
+  removalReason: string | null;
+  createdAt: string;
+}
+
+export interface TicketDetail {
+  id: number;
+  ticketNo: string;
+  requesterId: number;
+  requester: { id: number; name: string; email: string };
+  categoryId: number;
+  category: { id: number; name: string };
+  relatedSystemId: number;
+  relatedSystem: { id: number; name: string };
+  summary: string;
+  description: string;
+  requestedPriority: Priority;
+  itPriority: Priority | null;
+  currentStatus: TicketStatus;
+  createdAt: string;
+  updatedAt: string;
+  attachments: Attachment[];
+}
+
+export async function getTicketById(
+  id: number,
+  requesterId?: number | null
+): Promise<TicketDetail> {
+  return apiFetch<TicketDetail>(`/api/tickets/${id}`, {}, requesterId);
+}
+
+export async function uploadAttachment(
+  ticketId: number,
+  file: File,
+  requesterId?: number | null
+): Promise<Attachment & { ticketId: number }> {
+  const saved = localStorage.getItem('toktickit_selected_requester');
+  const currentId = requesterId ?? (saved ? JSON.parse(saved).id : null);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const headers: Record<string, string> = {};
+  if (currentId) headers['X-Requester-Id'] = String(currentId);
+
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const err: any = new Error(errorData.message || `Upload failed: ${res.statusText}`);
+    err.statusCode = res.status;
+    throw err;
+  }
+
+  return res.json();
+}
+
+export async function downloadAttachmentBlob(
+  attachmentId: number,
+  requesterId?: number | null
+): Promise<{ blob: Blob; filename: string; mimeType: string }> {
+  const saved = localStorage.getItem('toktickit_selected_requester');
+  const currentId = requesterId ?? (saved ? JSON.parse(saved).id : null);
+
+  const headers: Record<string, string> = {};
+  if (currentId) headers['X-Requester-Id'] = String(currentId);
+
+  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, { headers });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const err: any = new Error(errorData.message || `Download failed: ${res.statusText}`);
+    err.statusCode = res.status;
+    err.errorData = errorData;
+    throw err;
+  }
+
+  const blob = await res.blob();
+  const contentDisposition = res.headers.get('content-disposition') ?? '';
+  const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : 'download';
+  const mimeType = res.headers.get('content-type') ?? blob.type;
+
+  return { blob, filename, mimeType };
+}
+
+export async function softRemoveAttachment(
+  attachmentId: number,
+  reason: string,
+  requesterId?: number | null
+): Promise<{ id: number; ticketId: number; originalName: string; isRemoved: boolean; removedAt: string; removalReason: string }> {
+  return apiFetch(
+    `/api/attachments/${attachmentId}/remove`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) },
+    requesterId
+  );
+}
