@@ -61,3 +61,64 @@ export async function apiFetch<T>(
 
   return res.json();
 }
+
+export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TicketStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'CANCELLED';
+
+export interface TicketListItem {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  category: { id: number; name: string };
+  relatedSystem: { id: number; name: string };
+  requestedPriority: Priority;
+  itPriority: Priority | null;
+  currentStatus: TicketStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketPagination {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
+}
+
+export interface GetTicketsResponse {
+  items: TicketListItem[];
+  pagination: TicketPagination;
+}
+
+export interface GetTicketsParams {
+  search?: string;
+  categoryId?: number | string;
+  requestedPriority?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getTickets(
+  params: GetTicketsParams = {},
+  requesterId?: number | null
+): Promise<GetTicketsResponse> {
+  const query = new URLSearchParams();
+  if (params.search && params.search.trim()) query.set('search', params.search.trim());
+  if (params.categoryId) query.set('categoryId', String(params.categoryId));
+  if (params.requestedPriority) query.set('requestedPriority', params.requestedPriority);
+  if (params.status) query.set('status', params.status);
+  if (params.sortBy) query.set('sortBy', params.sortBy);
+  if (params.sortOrder) query.set('sortOrder', params.sortOrder);
+  if (params.page) query.set('page', String(params.page));
+  if (params.pageSize) query.set('pageSize', String(params.pageSize));
+
+  const queryString = query.toString();
+  const endpoint = `/api/tickets${queryString ? `?${queryString}` : ''}`;
+  return apiFetch<GetTicketsResponse>(endpoint, {}, requesterId);
+}
+

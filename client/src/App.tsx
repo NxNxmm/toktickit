@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RequesterProvider, useRequester } from './context/RequesterContext';
 import { RequesterSelector } from './components/RequesterSelector';
 import { CreateTicketForm } from './components/CreateTicketForm';
+import { MyTicketsList } from './components/MyTicketsList';
 
 const MainApp: React.FC = () => {
   const { selectedRequester, clearRequester } = useRequester();
@@ -85,13 +86,7 @@ const MainApp: React.FC = () => {
       {/* 3. Dynamic Page View Content */}
       <main className="container py-4" style={{ maxWidth: '1200px' }}>
         {currentView === 'my-tickets' && (
-          <div>
-            {/* TODO: ใส่ Component <MyTicketsList /> ใน Issue 5 */}
-            <div className="card p-4 shadow-sm">
-              <h2 className="h4 text-success fw-bold">My Tickets</h2>
-              <p className="text-muted">Welcome, {selectedRequester.name}. Your submitted tickets will appear here.</p>
-            </div>
-          </div>
+          <MyTicketsList onCreateTicket={() => setCurrentView('create-ticket')} />
         )}
 
         {currentView === 'create-ticket' && (
