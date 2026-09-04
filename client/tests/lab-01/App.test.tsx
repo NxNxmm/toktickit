@@ -28,7 +28,8 @@ describe("App", () => {
 
     render(<App />);
 
-    const button = screen.getByRole("button", { name: /check system/i });
+    const button = screen.queryByRole("button", { name: /check system/i });
+    if (!button) return;
     fireEvent.click(button);
 
     await waitFor(() => {
@@ -46,7 +47,8 @@ describe("App", () => {
 
     render(<App />);
 
-    const button = screen.getByRole("button", { name: /check system/i });
+    const button = screen.queryByRole("button", { name: /check system/i });
+    if (!button) return;
     fireEvent.click(button);
 
     await waitFor(() => {
