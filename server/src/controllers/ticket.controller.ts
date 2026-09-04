@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Priority } from '@prisma/client';
+import { Priority, TicketStatus } from '@prisma/client';
 import { getPrisma } from '../prisma.js';
 import { generateTicketNumber } from '../utils/ticketNumber.js';
 
@@ -154,6 +154,193 @@ export const createTicket = async (req: Request, res: Response) => {
             statusCode: 500,
             error: 'Internal Server Error',
             message: 'Internal server error during ticket creation',
+        });
+    }
+};
+
+export const getTickets = async (req: Request, res: Response) => {
+    try {
+        const rawRequesterId = req.headers['x-requester-id'];
+        const requesterId = Number(rawRequesterId);
+
+        if (!rawRequesterId || isNaN(requesterId)) {
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Requester ID header is missing or invalid',
+            });
+        }
+
+        const requester = await getPrisma().requesterUser.findUnique({
+            where: { id: requesterId },
+        });
+
+        if (!requester || !requester.isActive) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'Requester is inactive or does not exist',
+            });
+        }
+
+        const {
+            search,
+            categoryId,
+            requestedPriority,
+            status,
+            sortBy = 'createdAt',
+            sortOrder = 'desc',
+            page = '1',
+            pageSize = '10',
+        } = req.query;
+
+        // Validation for sortBy
+        const allowedSortBy = ['createdAt', 'ticketNo', 'requestedPriority', 'updatedAt'];
+        if (typeof sortBy !== 'string' || !allowedSortBy.includes(sortBy)) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: `Invalid sortBy field. Allowed: ${allowedSortBy.join(', ')}`,
+            });
+        }
+
+        // Validation for sortOrder
+        const allowedSortOrder = ['asc', 'desc'];
+        if (typeof sortOrder !== 'string' || !allowedSortOrder.includes(sortOrder.toLowerCase())) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: 'Invalid sortOrder. Allowed: asc, desc',
+            });
+        }
+
+        // Validation for page
+        const numPage = Number(page);
+        if (isNaN(numPage) || !Number.isInteger(numPage) || numPage < 1) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: 'Page must be a positive integer',
+            });
+        }
+
+        // Validation for pageSize
+        const numPageSize = Number(pageSize);
+        const allowedPageSizes = [5, 10, 20, 50];
+        if (isNaN(numPageSize) || !allowedPageSizes.includes(numPageSize)) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: `Invalid pageSize. Allowed: ${allowedPageSizes.join(', ')}`,
+            });
+        }
+
+        // Build Prisma where clause
+        const where: any = {
+            requesterId,
+        };
+
+        // Filter: search substring on ticketNo and summary
+        if (typeof search === 'string' && search.trim() !== '') {
+            const trimmedSearch = search.trim();
+            where.OR = [
+                { ticketNo: { contains: trimmedSearch, mode: 'insensitive' } },
+                { summary: { contains: trimmedSearch, mode: 'insensitive' } },
+            ];
+        }
+
+        // Filter: categoryId
+        if (categoryId !== undefined && categoryId !== '') {
+            const numCatId = Number(categoryId);
+            if (isNaN(numCatId) || !Number.isInteger(numCatId) || numCatId < 1) {
+                return res.status(400).json({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'Category ID must be a valid positive integer',
+                });
+            }
+            where.categoryId = numCatId;
+        }
+
+        // Filter: requestedPriority
+        if (requestedPriority !== undefined && requestedPriority !== '') {
+            const validPriorities: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+            if (typeof requestedPriority !== 'string' || !validPriorities.includes(requestedPriority as Priority)) {
+                return res.status(400).json({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: `Invalid requestedPriority. Allowed: ${validPriorities.join(', ')}`,
+                });
+            }
+            where.requestedPriority = requestedPriority as Priority;
+        }
+
+        // Filter: status
+        if (status !== undefined && status !== '') {
+            const validStatuses: TicketStatus[] = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELLED'];
+            if (typeof status !== 'string' || !validStatuses.includes(status as TicketStatus)) {
+                return res.status(400).json({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: `Invalid status. Allowed: ${validStatuses.join(', ')}`,
+                });
+            }
+            where.currentStatus = status as TicketStatus;
+        }
+
+        const [totalCount, tickets] = await Promise.all([
+            getPrisma().ticket.count({ where }),
+            getPrisma().ticket.findMany({
+                where,
+                orderBy: {
+                    [sortBy]: sortOrder.toLowerCase() as 'asc' | 'desc',
+                },
+                skip: (numPage - 1) * numPageSize,
+                take: numPageSize,
+                select: {
+                    id: true,
+                    ticketNo: true,
+                    summary: true,
+                    category: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    relatedSystem: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    requestedPriority: true,
+                    itPriority: true,
+                    currentStatus: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            }),
+        ]);
+
+        const totalPages = Math.ceil(totalCount / numPageSize);
+
+        return res.status(200).json({
+            items: tickets,
+            pagination: {
+                page: numPage,
+                pageSize: numPageSize,
+                totalCount,
+                totalPages,
+                hasPrevious: numPage > 1,
+                hasNext: numPage < totalPages,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching tickets:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while fetching tickets',
         });
     }
 };

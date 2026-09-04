@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { RequesterProvider, useRequester } from './context/RequesterContext';
 import { RequesterSelector } from './components/RequesterSelector';
 import { CreateTicketForm } from './components/CreateTicketForm';
+import { MyTicketsList } from './components/MyTicketsList';
 
 const MainApp: React.FC = () => {
   const { selectedRequester, clearRequester } = useRequester();
   const [currentView, setCurrentView] = useState<'my-tickets' | 'create-ticket'>('my-tickets');
+
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 
   // ถ้ายังไม่ได้เลือก Requester ให้แสดงหน้า RequesterSelector ทันที
   if (!selectedRequester) {
@@ -25,53 +28,93 @@ const MainApp: React.FC = () => {
   return (
     <div key={selectedRequester.id} className="min-vh-100" style={{ backgroundColor: '#F5F7F6' }}>
       {/* 1. App Header / Navbar per Zen Green Theme */}
-      <nav className="navbar navbar-expand-lg sticky-top" style={{ backgroundColor: '#006B3C' }}>
+      <nav className="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm" style={{ backgroundColor: '#006B3C' }}>
         <div className="container">
-          <span className="navbar-brand text-white fw-bold fs-4">TokTickIT</span>
+          <span className="navbar-brand text-white fw-bold fs-4 me-3">TokTickIT</span>
 
-          <div className="d-flex align-items-center gap-3">
-            {/* Navigation Tabs */}
-            <button
-              className={`btn btn-sm ${currentView === 'my-tickets' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
-              onClick={() => setCurrentView('my-tickets')}
-            >
-              My Tickets
-            </button>
-            <button
-              className={`btn btn-sm ${currentView === 'create-ticket' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
-              onClick={() => setCurrentView('create-ticket')}
-            >
-              + Create Ticket
-            </button>
+          {/* Hamburger toggle button for smaller screens */}
+          <button
+            className="navbar-toggler border-white-50"
+            type="button"
+            aria-controls="toktickitNavbar"
+            aria-expanded={!isNavCollapsed}
+            aria-label="Toggle navigation"
+            onClick={() => setIsNavCollapsed(!isNavCollapsed)}
+            style={{ padding: '0.35rem 0.6rem' }}
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
 
-            {/* Profile Info & Change Requester Action per ui-spec.md Section 5.1 */}
-            <div className="d-flex align-items-center gap-2 border-start ps-3 ms-2 border-light-subtle">
-              {/* User avatar badge with initials */}
-              <div
-                className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  backgroundColor: '#0B7A46',
-                  fontSize: '0.85rem',
-                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                }}
-                title={selectedRequester.name}
-              >
-                {getInitials(selectedRequester.name)}
+          {/* Collapsible content for responsive navigation */}
+          <div className={`collapse navbar-collapse ${!isNavCollapsed ? 'show' : ''}`} id="toktickitNavbar">
+            <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-between w-100 py-2 py-lg-0 gap-3">
+              {/* Navigation Tabs */}
+              <div className="d-flex align-items-center gap-2">
+                <button
+                  className={`btn btn-sm ${currentView === 'my-tickets' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
+                  onClick={() => {
+                    setCurrentView('my-tickets');
+                    setIsNavCollapsed(true);
+                  }}
+                >
+                  My Tickets
+                </button>
+                <button
+                  className={`btn btn-sm ${currentView === 'create-ticket' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
+                  onClick={() => {
+                    setCurrentView('create-ticket');
+                    setIsNavCollapsed(true);
+                  }}
+                >
+                  + Create Ticket
+                </button>
               </div>
 
-              <div className="text-white text-end d-none d-sm-block">
-                <div className="fw-medium small">{selectedRequester.name}</div>
-                <div className="text-white-50" style={{ fontSize: '0.75rem' }}>{selectedRequester.department}</div>
+              {/* Desktop vertical divider */}
+              <div className="vr d-none d-lg-block text-white opacity-25 my-1" style={{ height: '28px' }}></div>
+
+              {/* Mobile horizontal divider */}
+              <div className="d-lg-none border-top border-white-50 opacity-25 my-1"></div>
+
+              {/* Profile Info & Change Requester Action per ui-spec.md */}
+              <div className="d-flex flex-wrap align-items-center justify-content-between justify-content-lg-end gap-2">
+                <div className="d-flex align-items-center gap-2">
+                  {/* User avatar badge with initials */}
+                  <div
+                    className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      backgroundColor: '#0B7A46',
+                      fontSize: '0.85rem',
+                      border: '1px solid rgba(255, 255, 255, 0.4)',
+                    }}
+                    title={selectedRequester.name}
+                  >
+                    {getInitials(selectedRequester.name)}
+                  </div>
+
+                  <div className="text-white text-start">
+                    <div className="fw-medium small text-truncate" style={{ maxWidth: '160px' }}>
+                      {selectedRequester.name}
+                    </div>
+                    <div className="text-white-50" style={{ fontSize: '0.75rem' }}>
+                      {selectedRequester.department}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  className="btn btn-outline-light btn-sm flex-shrink-0 ms-auto ms-lg-2"
+                  onClick={() => {
+                    clearRequester();
+                    setIsNavCollapsed(true);
+                  }}
+                  title="Switch Development Requester"
+                >
+                  Change Requester
+                </button>
               </div>
-              <button
-                className="btn btn-outline-light btn-sm"
-                onClick={clearRequester}
-                title="Switch Development Requester"
-              >
-                Change Requester
-              </button>
             </div>
           </div>
         </div>
@@ -85,13 +128,7 @@ const MainApp: React.FC = () => {
       {/* 3. Dynamic Page View Content */}
       <main className="container py-4" style={{ maxWidth: '1200px' }}>
         {currentView === 'my-tickets' && (
-          <div>
-            {/* TODO: ใส่ Component <MyTicketsList /> ใน Issue 5 */}
-            <div className="card p-4 shadow-sm">
-              <h2 className="h4 text-success fw-bold">My Tickets</h2>
-              <p className="text-muted">Welcome, {selectedRequester.name}. Your submitted tickets will appear here.</p>
-            </div>
-          </div>
+          <MyTicketsList onCreateTicket={() => setCurrentView('create-ticket')} />
         )}
 
         {currentView === 'create-ticket' && (
