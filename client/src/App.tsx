@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RequesterProvider, useRequester } from './context/RequesterContext';
 import { RequesterSelector } from './components/RequesterSelector';
+import { CreateTicketForm } from './components/CreateTicketForm';
 
 const MainApp: React.FC = () => {
   const { selectedRequester, clearRequester } = useRequester();
@@ -94,13 +95,7 @@ const MainApp: React.FC = () => {
         )}
 
         {currentView === 'create-ticket' && (
-          <div>
-            {/* TODO: ใส่ Component <CreateTicketForm /> ใน Issue 4 */}
-            <div className="card p-4 shadow-sm" style={{ maxWidth: '800px', margin: '0 auto' }}>
-              <h2 className="h4 text-success fw-bold">Create Support Ticket</h2>
-              <p className="text-muted">Fill out the form below to submit a new IT request.</p>
-            </div>
-          </div>
+          <CreateTicketForm onSuccess={() => setCurrentView('my-tickets')} />
         )}
       </main>
     </div>
