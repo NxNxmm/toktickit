@@ -10,11 +10,6 @@ export interface SystemStatus {
   categories: Category[];
 }
 
-// Issue 2 + Issue 4 — call the backend.
-// Steps: fetch `${API_URL}/api/health`; if not ok, throw.
-//        then fetch `${API_URL}/api/categories`; if not ok, throw.
-//        return { online: true, categories }.
-// Throwing on failure lets the UI show a single Offline/error state.
 export async function checkSystem(): Promise<SystemStatus> {
   // 1. Check health status
   const healthRes = await fetch(`${API_URL}/api/health`);
@@ -34,4 +29,35 @@ export async function checkSystem(): Promise<SystemStatus> {
     online: true,
     categories,
   };
+}
+
+// Add a reusable apiFetch helper
+export async function apiFetch<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  requesterId?: number | null
+): Promise<T> {
+  const headers = new Headers(options.headers || {});
+
+  // If no requesterId is passed, try retrieving from localStorage
+  const currentId = requesterId ?? (() => {
+    const saved = localStorage.getItem('toktickit_selected_requester');
+    return saved ? JSON.parse(saved).id : null;
+  })();
+
+  if (currentId) {
+    headers.set('X-Requester-Id', String(currentId));
+  }
+
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || `API error: ${res.statusText}`);
+  }
+
+  return res.json();
 }

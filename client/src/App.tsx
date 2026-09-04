@@ -1,65 +1,117 @@
-import { useState } from "react";
-import { checkSystem, Category } from "./api.js";
+import React, { useState } from 'react';
+import { RequesterProvider, useRequester } from './context/RequesterContext';
+import { RequesterSelector } from './components/RequesterSelector';
 
-type UiState = "idle" | "loading" | "success" | "error";
+const MainApp: React.FC = () => {
+  const { selectedRequester, clearRequester } = useRequester();
+  const [currentView, setCurrentView] = useState<'my-tickets' | 'create-ticket'>('my-tickets');
 
-export default function App() {
-  const [state, setState] = useState<UiState>("idle");
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  async function handleCheck() {
-    setState("loading");
-    try {
-      const res = await checkSystem();
-      if (res.online) {
-        setCategories(res.categories || []);
-        setState("success");
-      } else {
-        setState("error");
-      }
-    } catch (error) {
-      setState("error");
-    }
+  // ถ้ายังไม่ได้เลือก Requester ให้แสดงหน้า RequesterSelector ทันที
+  if (!selectedRequester) {
+    return <RequesterSelector />;
   }
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
+
   return (
-    <div className="container py-5" style={{ maxWidth: 640 }}>
-      <h1 className="h3 mb-4">
-        TokTickIT <span className="text-success">IT Service Desk</span>
-      </h1>
+    <div key={selectedRequester.id} className="min-vh-100" style={{ backgroundColor: '#F5F7F6' }}>
+      {/* 1. App Header / Navbar per Zen Green Theme */}
+      <nav className="navbar navbar-expand-lg sticky-top" style={{ backgroundColor: '#006B3C' }}>
+        <div className="container">
+          <span className="navbar-brand text-white fw-bold fs-4">TokTickIT</span>
 
-      <button className="btn btn-success" onClick={handleCheck} disabled={state === "loading"}>
-        {state === "loading" ? "Loading…" : "Check System"}
-      </button>
+          <div className="d-flex align-items-center gap-3">
+            {/* Navigation Tabs */}
+            <button
+              className={`btn btn-sm ${currentView === 'my-tickets' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
+              onClick={() => setCurrentView('my-tickets')}
+            >
+              My Tickets
+            </button>
+            <button
+              className={`btn btn-sm ${currentView === 'create-ticket' ? 'btn-light text-success fw-bold' : 'btn-outline-light'}`}
+              onClick={() => setCurrentView('create-ticket')}
+            >
+              + Create Ticket
+            </button>
 
-      {state === "loading" && <p className="mt-3">Loading categories…</p>}
+            {/* Profile Info & Change Requester Action per ui-spec.md Section 5.1 */}
+            <div className="d-flex align-items-center gap-2 border-start ps-3 ms-2 border-light-subtle">
+              {/* User avatar badge with initials */}
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  backgroundColor: '#0B7A46',
+                  fontSize: '0.85rem',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                }}
+                title={selectedRequester.name}
+              >
+                {getInitials(selectedRequester.name)}
+              </div>
 
-      {state === "error" && (
-        <div className="mt-3">
-          <p className="fw-bold mb-0">
-            System Status: <span className="text-danger">Offline</span>
-          </p>
-          <p className="text-danger">Unable to connect to TokTickIT API</p>
+              <div className="text-white text-end d-none d-sm-block">
+                <div className="fw-medium small">{selectedRequester.name}</div>
+                <div className="text-white-50" style={{ fontSize: '0.75rem' }}>{selectedRequester.department}</div>
+              </div>
+              <button
+                className="btn btn-outline-light btn-sm"
+                onClick={clearRequester}
+                title="Switch Development Requester"
+              >
+                Change Requester
+              </button>
+            </div>
+          </div>
         </div>
-      )}
+      </nav>
 
-      {state === "success" && (
-        <div className="mt-3">
-          <p className="fw-bold mb-0">
-            System Status: <span className="text-success">Online</span>
-          </p>
-          <p className="text-success mb-3">TokTickIT API is running normally</p>
+      {/* 2. Development Mode Banner Warning */}
+      <div className="bg-warning-subtle text-warning-emphasis border-bottom border-warning py-1 text-center small fw-medium">
+        DEVELOPMENT MODE — Logged in as testing requester: <strong>{selectedRequester.name}</strong> ({selectedRequester.email})
+      </div>
 
-          <h2 className="h5">Categories</h2>
-          <ul className="list-group mt-2">
-            {categories.map((cat) => (
-              <li key={cat.id} className="list-group-item">
-                {cat.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* 3. Dynamic Page View Content */}
+      <main className="container py-4" style={{ maxWidth: '1200px' }}>
+        {currentView === 'my-tickets' && (
+          <div>
+            {/* TODO: ใส่ Component <MyTicketsList /> ใน Issue 5 */}
+            <div className="card p-4 shadow-sm">
+              <h2 className="h4 text-success fw-bold">My Tickets</h2>
+              <p className="text-muted">Welcome, {selectedRequester.name}. Your submitted tickets will appear here.</p>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'create-ticket' && (
+          <div>
+            {/* TODO: ใส่ Component <CreateTicketForm /> ใน Issue 4 */}
+            <div className="card p-4 shadow-sm" style={{ maxWidth: '800px', margin: '0 auto' }}>
+              <h2 className="h4 text-success fw-bold">Create Support Ticket</h2>
+              <p className="text-muted">Fill out the form below to submit a new IT request.</p>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
+  );
+};
+
+// Component ระดับบนสุด ทำหน้าที่ห่อด้วย Provider
+export default function App() {
+  return (
+    <RequesterProvider>
+      <MainApp />
+    </RequesterProvider>
   );
 }
