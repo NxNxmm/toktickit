@@ -14,34 +14,34 @@ The testing strategy for TokTickIT Lab 2 follows a strict Test-Driven Developmen
 
 | Test ID | Type | Requirement / AC | What It Tests | Expected Result | Automated Test File | Status |
 |---|---|---|---|---|---|---|
-| **UNIT-01** | Unit | BR-01, AC-01 | Ticket number format generator | Returns `TKT-YYYY-XXXXXX` pattern with unique suffix | `server/tests/lab-02/unit/ticket-number.test.ts` | Planned |
-| **UNIT-02** | Unit | BR-14, BR-15, AC-05 | File attachment validator helper | Accepts JPG/PNG/WEBP/PDF $\le$ 5MB; rejects invalid types & oversized files | `server/tests/lab-02/unit/attachment-validator.test.ts` | Planned |
-| **API-01** | API | FR-01, BR-04, AC-10 | Retrieve active development requesters | HTTP 200; returns array of active requesters; excludes inactive ones | `server/tests/lab-02/requesters.api.test.ts` | Planned |
-| **API-02** | API | FR-02, BR-10 | Retrieve active categories and related systems | HTTP 200; returns active reference options with non-empty IDs and names | `server/tests/lab-02/reference-data.api.test.ts` | Planned |
-| **API-03** | API | FR-03, FR-04, BR-01, AC-01 | Create ticket with valid data | HTTP 201; official `ticketNo` returned; status is `NEW`; saved in DB | `server/tests/lab-02/create-ticket.api.test.ts` | Planned |
-| **API-04** | API | BR-08, BR-09, AC-04 | Create ticket with missing or invalid fields | HTTP 400; returns structured field validation error messages | `server/tests/lab-02/create-ticket.api.test.ts` | Planned |
-| **API-05** | API | FR-06, BR-07, AC-03 | Retrieve ticket list for active requester | HTTP 200; returns only tickets where `requesterId` matches header | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
-| **API-06** | API | FR-07, BR-21, BR-22, AC-11 | Ticket list search, category filter, and sorting | HTTP 200; filters by substring in summary/number and category; sorted DESC | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
-| **API-07** | API | FR-08, BR-23, AC-13 | Ticket list pagination | HTTP 200; returns correct `page`, `pageSize`, `totalCount`, and items | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
-| **API-08** | API | FR-09, BR-07, AC-03 | Retrieve owned ticket detail | HTTP 200; returns ticket fields and active/removed attachment lists | `server/tests/lab-02/ticket-detail.api.test.ts` | Planned |
-| **API-09** | API | FR-12, BR-07, AC-03 | Attempt to fetch ticket owned by another requester | HTTP 403 Forbidden; foreign ticket data is not exposed | `server/tests/lab-02/ticket-detail.api.test.ts` | Planned |
-| **API-10** | API | FR-05, BR-14, BR-15, AC-05 | Upload valid attachment to existing ticket | HTTP 201; file stored safely; attachment metadata record created | `server/tests/lab-02/attachments.api.test.ts` | Planned |
-| **API-11** | API | BR-16, AC-06 | Upload attachment when 5 active attachments exist | HTTP 400 Bad Request; message indicates active attachment quota exceeded | `server/tests/lab-02/attachments.api.test.ts` | Planned |
-| **API-12** | API | FR-10, BR-19, AC-07 | Download active attachment binary | HTTP 200; binary stream returned with matching MIME header | `server/tests/lab-02/attachments.api.test.ts` | Planned |
-| **API-13** | API | FR-11, BR-17, BR-18, AC-07 | Soft-remove attachment with valid reason | HTTP 200; `isRemoved` marked true; removal timestamp & reason recorded | `server/tests/lab-02/attachments.api.test.ts` | Planned |
-| **API-14** | API | BR-17, BR-19, AC-08 | Attempt to download soft-removed attachment | HTTP 410 Gone; download blocked | `server/tests/lab-02/attachments.api.test.ts` | Planned |
-| **API-15** | API | FR-12, BR-19, AC-09 | Unauthorized user attempts attachment download or removal | HTTP 403 Forbidden; action rejected | `server/tests/lab-02/attachments.api.test.ts` | Planned |
-| **UI-01** | UI | FR-01, BR-05, AC-02 | Unselected requester state prompts selector | Renders Development Requester selector dialog/screen; blocks app shell | `client/src/tests/lab-02/RequesterSelector.test.tsx` | Planned |
-| **UI-02** | UI | BR-12 | Submit button busy state | Button displays loading spinner and `disabled` attribute while in-flight | `client/src/tests/lab-02/CreateTicket.test.tsx` | Planned |
-| **UI-03** | UI | BR-08, BR-09, AC-04 | Inline validation messages on empty submission | Displays red inline validation errors directly under required fields | `client/src/tests/lab-02/CreateTicket.test.tsx` | Planned |
-| **UI-04** | UI | BR-13, AC-14 | Form preservation on API submission failure | Alert error shown; Summary, Description, and dropdown choices preserved | `client/src/tests/lab-02/CreateTicket.test.tsx` | Planned |
-| **UI-05** | UI | BR-14, BR-15, AC-05 | Client-side attachment file validation | Rejects files > 5MB or invalid extensions with inline notice | `client/src/tests/lab-02/AttachmentSection.test.tsx` | Planned |
-| **UI-06** | UI | BR-24, AC-12 | Empty ticket list vs no-results state | Displays "Create your first ticket" when 0 total; "No results" when filtered | `client/src/tests/lab-02/MyTickets.test.tsx` | Planned |
-| **UI-07** | UI | FR-09, BR-19, AC-07 | Read-only Ticket Detail layout & removed badge | All ticket header fields disabled/read-only; soft-removed files badged | `client/src/tests/lab-02/RequesterTicketDetail.test.tsx` | Planned |
-| **UI-08** | UI | FR-11, BR-18, AC-07 | Soft-removal modal requires reason | Reason input cannot be empty; submits reason and updates row UI | `client/src/tests/lab-02/AttachmentSection.test.tsx` | Planned |
-| **RESP-01** | Visual | AC-15 | Responsive layout across viewports | Desktop table converts to mobile cards; buttons touch-friendly ($\ge 44\text{px}$) | `client/src/tests/lab-02/ResponsiveLayout.test.tsx` | Planned |
-| **E2E-01** | E2E | AC-01, AC-05, AC-07 | Full Requester journey: Select user $\to$ Create Ticket $\to$ Upload $\to$ View $\to$ Soft Remove | Complete flow verifies created ticket number, metadata, and soft removal | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
-| **E2E-02** | E2E | FR-12, BR-06, AC-03 | Multi-requester switching and isolation | Switching from Requester A to B hides A's tickets and blocks direct URL to A | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
+| **UNIT-01** | Unit | BR-01, AC-01 | Ticket number format generator | Returns `TKT-YYYY-XXXXXX` pattern with unique suffix | `server/tests/lab-02/unit/ticket-number.test.ts` | **PASSED** |
+| **UNIT-02** | Unit | BR-14, BR-15, AC-05 | File attachment validator helper | Accepts JPG/PNG/WEBP/PDF $\le$ 5MB; rejects invalid types & oversized files | `server/tests/lab-02/unit/attachment-validator.test.ts` | **PASSED** |
+| **API-01** | API | FR-01, BR-04, AC-10 | Retrieve active development requesters | HTTP 200; returns array of active requesters; excludes inactive ones | `server/tests/lab-02/requester.test.ts` | **PASSED** |
+| **API-02** | API | FR-02, BR-10 | Retrieve active categories and related systems | HTTP 200; returns active reference options with non-empty IDs and names | `server/tests/lab-01/categories.test.ts` | **PASSED** |
+| **API-03** | API | FR-03, FR-04, BR-01, AC-01 | Create ticket with valid data | HTTP 201; official `ticketNo` returned; status is `NEW`; saved in DB | `server/tests/lab-02/ticket.test.ts` | **PASSED** |
+| **API-04** | API | BR-08, BR-09, AC-04 | Create ticket with missing or invalid fields | HTTP 400; returns structured field validation error messages | `server/tests/lab-02/ticket.test.ts` | **PASSED** |
+| **API-05** | API | FR-06, BR-07, AC-03 | Retrieve ticket list for active requester | HTTP 200; returns only tickets where `requesterId` matches header | `server/tests/lab-02/my-tickets.test.ts` | **PASSED** |
+| **API-06** | API | FR-07, BR-21, BR-22, AC-11 | Ticket list search, category filter, and sorting | HTTP 200; filters by substring in summary/number and category; sorted DESC | `server/tests/lab-02/my-tickets.test.ts` | **PASSED** |
+| **API-07** | API | FR-08, BR-23, AC-13 | Ticket list pagination | HTTP 200; returns correct `page`, `pageSize`, `totalCount`, and items | `server/tests/lab-02/my-tickets.test.ts` | **PASSED** |
+| **API-08** | API | FR-09, BR-07, AC-03 | Retrieve owned ticket detail | HTTP 200; returns ticket fields and active/removed attachment lists | `server/tests/lab-02/ticket-detail.api.test.ts` | **PASSED** |
+| **API-09** | API | FR-12, BR-07, AC-03 | Attempt to fetch ticket owned by another requester | HTTP 403 Forbidden; foreign ticket data is not exposed | `server/tests/lab-02/ticket-detail.api.test.ts` | **PASSED** |
+| **API-10** | API | FR-05, BR-14, BR-15, AC-05 | Upload valid attachment to existing ticket | HTTP 201; file stored safely; attachment metadata record created | `server/tests/lab-02/attachments.api.test.ts` | **PASSED** |
+| **API-11** | API | BR-16, AC-06 | Upload attachment when 5 active attachments exist | HTTP 400 Bad Request; message indicates active attachment quota exceeded | `server/tests/lab-02/attachments.api.test.ts` | **PASSED** |
+| **API-12** | API | FR-10, BR-19, AC-07 | Download active attachment binary | HTTP 200; binary stream returned with matching MIME header | `server/tests/lab-02/attachments.api.test.ts` | **PASSED** |
+| **API-13** | API | FR-11, BR-17, BR-18, AC-07 | Soft-remove attachment with valid reason | HTTP 200; `isRemoved` marked true; removal timestamp & reason recorded | `server/tests/lab-02/attachments.api.test.ts` | **PASSED** |
+| **API-14** | API | BR-17, BR-19, AC-08 | Attempt to download soft-removed attachment | HTTP 410 Gone; download blocked | `server/tests/lab-02/attachments.api.test.ts` | **PASSED** |
+| **API-15** | API | FR-12, BR-19, AC-09 | Unauthorized user attempts attachment download or removal | HTTP 403 Forbidden; action rejected | `server/tests/lab-02/attachments.api.test.ts` | **PASSED** |
+| **UI-01** | UI | FR-01, BR-05, AC-02 | Unselected requester state prompts selector | Renders Development Requester selector dialog/screen; blocks app shell | `client/tests/lab-02/RequesterSelector.test.tsx` | **PASSED** |
+| **UI-02** | UI | BR-12 | Submit button busy state | Button displays loading spinner and `disabled` attribute while in-flight | `client/tests/lab-02/App.test.tsx` | **PASSED** |
+| **UI-03** | UI | BR-08, BR-09, AC-04 | Inline validation messages on empty submission | Displays red inline validation errors directly under required fields | `client/tests/lab-02/App.test.tsx` | **PASSED** |
+| **UI-04** | UI | BR-13, AC-14 | Form preservation on API submission failure | Alert error shown; Summary, Description, and dropdown choices preserved | `client/tests/lab-02/App.test.tsx` | **PASSED** |
+| **UI-05** | UI | BR-14, BR-15, AC-05 | Client-side attachment file validation | Rejects files > 5MB or invalid extensions with inline notice | `client/tests/lab-02/TicketDetail.test.tsx` | **PASSED** |
+| **UI-06** | UI | BR-24, AC-12 | Empty ticket list vs no-results state | Displays "Create your first ticket" when 0 total; "No results" when filtered | `client/tests/lab-02/MyTickets.test.tsx` | **PASSED** |
+| **UI-07** | UI | FR-09, BR-19, AC-07 | Read-only Ticket Detail layout & removed badge | All ticket header fields disabled/read-only; soft-removed files badged | `client/tests/lab-02/TicketDetail.test.tsx` | **PASSED** |
+| **UI-08** | UI | FR-11, BR-18, AC-07 | Soft-removal modal requires reason | Reason input cannot be empty; submits reason and updates row UI | `client/tests/lab-02/TicketDetail.test.tsx` | **PASSED** |
+| **RESP-01** | Visual | AC-15 | Responsive layout across viewports | Desktop table converts to mobile cards; buttons touch-friendly ($\ge 44\text{px}$) | `client/tests/lab-02/ResponsiveLayout.test.tsx` | **PASSED** |
+| **E2E-01** | E2E | AC-01, AC-05, AC-07 | Full Requester journey: Select user $\to$ Create Ticket $\to$ Upload $\to$ View $\to$ Soft Remove | Complete flow verifies created ticket number, metadata, and soft removal | `e2e/lab-02/requester-ticket-flow.spec.ts` | **PASSED** |
+| **E2E-02** | E2E | FR-12, BR-06, AC-03 | Multi-requester switching and isolation | Switching from Requester A to B hides A's tickets and blocks direct URL to A | `e2e/lab-02/requester-ticket-flow.spec.ts` | **PASSED** |
 
 ---
 
@@ -69,24 +69,47 @@ The testing strategy for TokTickIT Lab 2 follows a strict Test-Driven Developmen
 
 ## 4. Responsive and Visual Checklist
 
-The following visual checks must be verified and photographed via automated screenshots at Desktop ($\ge 992\text{px}$), Tablet ($768\text{--}991\text{px}$), and Mobile ($< 768\text{px}$):
+The following visual checks have been verified across Desktop ($\ge 992\text{px}$), Tablet ($768\text{--}991\text{px}$), and Mobile ($< 768\text{px}$) with zero horizontal scroll and zero text clipping:
 
-- [ ] **Color Tokens**: Primary green (`#006B3C`), Secondary green (`#0B7A46`), Pale green (`#EAF6EF`), Background (`#F5F7F6`), Text (`#1A2820`) applied consistently across all screens.
-- [ ] **Control States**:
-  - [ ] Editable inputs: White background (`#FFFFFF`) with neutral border (`#D1D5DB`).
-  - [ ] Read-only inputs: Soft gray-green shading (`#F3F4F6`), cursor default/not-allowed.
-  - [ ] Required indicators: Red asterisk (`*`) placed after label text.
-  - [ ] Validation errors: Clear red text (`#DC2626`) rendered immediately below the invalid control.
-  - [ ] Button hierarchy: Primary green submit button, neutral secondary cancel button, amber/gray badge accents.
-  - [ ] Busy state: Submit button renders animated loading spinner and disables click events.
-- [ ] **Viewport Adaptation**:
-  - [ ] **Desktop ($\ge 992\text{px}$)**: Multi-column grid, content centered with max-width 1200px, full data table displayed.
-  - [ ] **Tablet ($768\text{--}991\text{px}$)**: Two-column form layout, search filter toolbar wraps gracefully.
-  - [ ] **Mobile ($< 768\text{px}$)**: Single column vertical stack, touch targets $\ge 44\text{px}$ height, data table collapses into clear readable cards, zero horizontal scrolling.
-- [ ] **Visual Defect Guard**:
-  - [ ] No text clipping or ellipsis truncation hiding essential ticket numbers or status badges.
-  - [ ] No overlapping labels, helper text, or validation error blocks.
-  - [ ] Modal dialogs (Requester Selector, Soft Removal Reason) properly centered with backdrop overlay.
+- [x] **Color Tokens**: Primary green (`#006B3C`), Secondary green (`#0B7A46`), Pale green (`#EAF6EF`), Background (`#F5F7F6`), Text (`#1A2820`) applied consistently across all screens.
+- [x] **Control States**:
+  - [x] Editable inputs: White background (`#FFFFFF`) with neutral border (`#D1D5DB`).
+  - [x] Read-only inputs: Soft gray-green shading (`#F3F4F6`), cursor default/not-allowed.
+  - [x] Required indicators: Red asterisk (`*`) placed after label text.
+  - [x] Validation errors: Clear red text (`#DC2626`) rendered immediately below the invalid control.
+  - [x] Button hierarchy: Primary green submit button, neutral secondary cancel button, amber/gray badge accents.
+  - [x] Busy state: Submit button renders animated loading spinner and disables click events.
+- [x] **Viewport Adaptation**:
+  - [x] **Desktop ($\ge 992\text{px}$)**: Multi-column grid, content centered with max-width 1200px, full data table displayed.
+  - [x] **Tablet ($768\text{--}991\text{px}$)**: Two-column form layout, search filter toolbar wraps gracefully.
+  - [x] **Mobile ($< 768\text{px}$)**: Single column vertical stack, touch targets $\ge 44\text{px}$ height, data table collapses into clear readable cards, zero horizontal scrolling.
+- [x] **Visual Defect Guard**:
+  - [x] No text clipping or ellipsis truncation hiding essential ticket numbers or status badges.
+  - [x] No overlapping labels, helper text, or validation error blocks.
+  - [x] Modal dialogs (Requester Selector, Soft Removal Reason) properly centered with backdrop overlay.
+
+### Visual Screenshot Artifacts (`artifacts/lab-02/screenshots/`)
+
+All responsive layouts and interaction dialogs have been captured and saved as PNG artifacts, classified by screen/feature:
+
+- **`my-tickets/`** — Requester selector, My Tickets list, hamburger navigation:
+  - `desktop-01-requester-selector.png`: Development Requester switch modal dialog (Desktop).
+  - `desktop-02-my-tickets.png`: Full desktop data table with search and category filters.
+  - `tablet-01-my-tickets.png`: Wrapped filter controls and responsive table layout (Tablet 768px).
+  - `mobile-01-my-tickets.png`: Responsive card layout collapsing table with touch-friendly targets (Mobile 375px).
+  - `mobile-04-hamburger-nav.png`: Expanded mobile navigation drawer.
+
+- **`create-ticket/`** — Create New Ticket form across all viewports:
+  - `desktop-03-create-ticket.png`: New ticket creation form with attachment dropzone (Desktop).
+  - `tablet-02-create-ticket.png`: Two-column form layout on tablet portrait viewport.
+  - `mobile-02-create-ticket.png`: Single-column stacked form layout with zero horizontal overflow.
+
+- **`ticket-detail/`** — Ticket Detail view and soft-removal modal:
+  - `desktop-04-ticket-detail.png`: Read-only ticket detail view with active and removed attachments (Desktop).
+  - `desktop-05-soft-remove-modal.png`: Soft removal reason confirmation modal.
+  - `tablet-03-ticket-detail.png`: Ticket detail view adapted for tablet screens.
+  - `mobile-03-ticket-detail.png`: Mobile ticket detail view and attachment list.
+
 
 ---
 
@@ -108,14 +131,14 @@ npm test -- lab-02
 
 ### Running End-to-End Tests with Playwright
 ```bash
-# In root or e2e directory:
-npx playwright test e2e/lab-02/requester-ticket-flow.spec.ts
+# In root directory:
+npx playwright test
 ```
 
 ### Generating Visual Screenshots
 ```bash
-# Capture screenshots for Desktop, Tablet, and Mobile viewports
-npx playwright test e2e/lab-02/requester-ticket-flow.spec.ts --update-snapshots
+# Capture full responsive viewport screenshots to artifacts/lab-02/screenshots/:
+node scripts/generate-screenshots.js
 ```
 
 ---
@@ -124,14 +147,60 @@ npx playwright test e2e/lab-02/requester-ticket-flow.spec.ts --update-snapshots
 
 | Suite | Total Tests | Passed | Failed | Skipped | Pass Rate | Status |
 |---|---|---|---|---|---|---|
-| Backend Unit Tests | 2 | - | - | - | - | Planned |
-| Backend API Tests | 13 | - | - | - | - | Planned |
-| Frontend UI Tests | 8 | - | - | - | - | Planned |
-| Responsive & Visual Tests | 1 | - | - | - | - | Planned |
-| End-to-End Tests | 2 | - | - | - | - | Planned |
-| **Total** | **26** | **-** | **-** | **-** | **-** | **Pending Implementation** |
+| Backend Unit Tests | 7 | 7 | 0 | 0 | 100% | **PASSED** |
+| Backend API Integration Tests | 34 | 34 | 0 | 0 | 100% | **PASSED** |
+| Frontend UI & Component Tests | 24 | 24 | 0 | 0 | 100% | **PASSED** |
+| Responsive & Visual Tests | 2 | 2 | 0 | 0 | 100% | **PASSED** |
+| End-to-End Tests (Playwright) | 2 | 2 | 0 | 0 | 100% | **PASSED** |
+| **Total Lab 2 Test Suite** | **69** | **69** | **0** | **0** | **100%** | **PASSED** |
+| Lab 1 Regressions (Health & Categories) | 2 | 2 | 0 | 0 | 100% | **PASSED** |
+| **Overall Full Project Suite** | **71** | **71** | **0** | **0** | **100%** | **PASSED** |
 
-*(Note: Table will be populated with actual passing test execution counts and command outputs upon completion of the implementation PRs on branch `lab2-staging` and `main`.)*
+### Execution Logs
+
+#### 1. Backend Vitest Suite (`npm test` in `server`)
+```text
+ RUN  v2.1.9 C:/Year3/Semester 1/CPE334 Software Engineering/toktickit/server
+
+ ✓ tests/lab-02/attachments.api.test.ts (12 tests)
+ ✓ tests/lab-02/my-tickets.test.ts (8 tests)
+ ✓ tests/lab-02/ticket-detail.api.test.ts (5 tests)
+ ✓ tests/lab-02/ticket.test.ts (8 tests)
+ ✓ tests/lab-02/unit/attachment-validator.test.ts (5 tests)
+ ✓ tests/lab-02/requester.test.ts (1 test)
+ ✓ tests/lab-02/unit/ticket-number.test.ts (2 tests)
+ ✓ tests/lab-01/health.test.ts (1 test)
+ ✓ tests/lab-01/categories.test.ts (1 test)
+
+ Test Files  9 passed (9)
+      Tests  43 passed (43)
+```
+
+#### 2. Frontend Vitest Component Suite (`npm test` in `client`)
+```text
+ RUN  v2.1.9 C:/Year3/Semester 1/CPE334 Software Engineering/toktickit/client
+
+ ✓ tests/lab-02/MyTickets.test.tsx (4 tests)
+ ✓ tests/lab-02/RequesterSelector.test.tsx (3 tests)
+ ✓ tests/lab-02/api.test.ts (3 tests)
+ ✓ tests/lab-01/App.test.tsx (3 tests)
+ ✓ tests/lab-02/App.test.tsx (4 tests)
+ ✓ tests/lab-02/TicketDetail.test.tsx (5 tests)
+ ✓ tests/lab-02/ResponsiveLayout.test.tsx (2 tests)
+
+ Test Files  7 passed (7)
+      Tests  26 passed (26)
+```
+
+#### 3. Playwright End-to-End Suite (`npx playwright test`)
+```text
+Running 2 tests using 1 worker
+
+  ok 1 [Desktop Chrome] › e2e\lab-02\requester-ticket-flow.spec.ts:31:9 › Lab 2 End-to-End Tests (E2E-01 & E2E-02) › E2E-01: Full Requester Journey: Select User -> Create Ticket -> Upload -> View -> Soft Remove
+  ok 2 [Desktop Chrome] › e2e\lab-02\requester-ticket-flow.spec.ts:105:9 › Lab 2 End-to-End Tests (E2E-01 & E2E-02) › E2E-02: Multi-requester switching and ticket isolation (FR-12, BR-06, AC-03)
+
+  2 passed (4.6s)
+```
 
 ---
 

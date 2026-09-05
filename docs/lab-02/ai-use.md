@@ -1,0 +1,21 @@
+# Lab 2 — AI Use and Reflection 
+
+**LLM/agent used:** Claude Sonnet 4.6 / Claude Opus 3.6 & Gemini 3.8 Flash (Medium)
+
+## Selected key prompts (6–10)
+| # | Prompt (summarised) | What I did with the result |
+|---|---------------------|----------------------------|
+| 1 | Generating Sprint 2 Spec-Driven Development (Spec DD) contract files (`specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`) matching the Zen Green design language, acceptance criteria, and BDD test scenarios. | Reviewed against the labsheet requirements, committed contracts to `docs/lab-02/` before implementing any feature code, and used them as the ground truth for all subsequent sprint issues. |
+| 2 | Extending the Prisma schema with `RequesterUser`, `Category`, `RelatedSystem`, `Ticket`, and `Attachment` models, compound indexes, and creating an idempotent database seed script. | Generated and applied Prisma migrations, executed `npm run seed` to populate active/inactive requesters and reference categories, and verified zero duplicate entries on repeated runs. |
+| 3 | Implementing Development Requester context API (`GET /api/requesters/active`), React Context Provider with LocalStorage persistence, warning banner, and `X-Requester-Id` header injection. | Built the requester switcher component in the application header, verified user context persistence across browser refreshes, and enforced route guarding when no requester is selected. |
+| 4 | Implementing `POST /api/tickets` API with auto-generated Ticket Number (`TKT-YYYY-XXXXXX`), file attachment handling (≤5MB, max 5), form validation, and Zen Green form UI. | Built the Create Ticket screen adhering strictly to Zen Green design tokens, implemented real-time character counters, drag-and-drop file upload, and preserved user input upon submission errors. |
+| 5 | Implementing `GET /api/tickets` API with search, filters, sorting, pagination, and building responsive My Tickets screen (Desktop table vs Mobile cards). | Developed the My Tickets view with strict requester data isolation, dynamic debounced search, status/category filters, empty/no-results states with reset filters, and responsive layout. |
+| 6 | Implementing Ticket Detail view (`GET /api/tickets/:id`), file stream download, soft-removal modal with mandatory reason, and 410 Gone download blocking. | Built the read-only Ticket Detail screen, added the soft-removal modal audit workflow, and enforced cross-requester 403 Forbidden checks to prevent unauthorized ticket or attachment access. |
+| 7 | Addressing peer review feedback: fixing ticket number generation format bug and implementing a responsive hamburger navigation menu for mobile viewports (<768px). | Refactored the ticket numbering sequence logic, replaced overflowing navbar items with an accessible slide-out hamburger menu on small viewports, and verified zero horizontal overflow. |
+
+## Reflection
+For Lab 2, my workflow improved a lot by switching to Spec-Driven Development (Spec DD). In Lab 1, writing code without a clear contract beforehand sometimes caused scope creep, mismatched API data between client and server, and wasted a lot of time. For Lab 2, writing out all the core contract files (specification.md, api-spec.md, ui-spec.md, and tests.md) before touching any feature code gave me a solid single source of truth. By tying my AI prompts directly to specific Acceptance Criterias and API endpoints, the AI generated much cleaner, tightly-scoped code with very little rework needed.  
+
+The peer review process also showed how helpful context-rich prompting can be. When my reviewer spotted a few edge cases—like a ticket number formatting glitch and some mobile navbar clipping—feeding that exact feedback and reproduction steps right back into the AI made it super easy to fix the bugs quickly without breaking any existing tests.
+
+Overall, Lab 2 really proved that AI coding agent work best when we set clear rules, design systems, and automated test suites. Instead of letting the AI guess the architecture, using it as a fast accelerator inside a solid Spec DD framework helped us build clean, working software that actually meets all the requirements.  

@@ -421,12 +421,22 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
                     const itBadge = getPriorityBadge(t.itPriority);
 
                     return (
-                      <tr key={t.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                      <tr
+                        key={t.id}
+                        onClick={() => onViewTicket?.(t.id)}
+                        style={{
+                          borderBottom: '1px solid #E5E7EB',
+                          cursor: onViewTicket ? 'pointer' : 'default',
+                        }}
+                      >
                         <td className="py-3 px-3">
                           <button
                             type="button"
                             className="btn btn-link p-0 text-decoration-none fw-bold"
-                            onClick={() => onViewTicket?.(t.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onViewTicket?.(t.id);
+                            }}
                             style={{
                               fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
                               fontSize: '13px',
@@ -529,14 +539,22 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
               <div
                 key={t.id}
                 className="card border-0 shadow-sm p-3"
-                style={{ backgroundColor: '#FFFFFF', borderRadius: '8px' }}
+                onClick={() => onViewTicket?.(t.id)}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '8px',
+                  cursor: onViewTicket ? 'pointer' : 'default',
+                }}
               >
                 {/* Card Header: Ticket No & Status */}
                 <div className="d-flex justify-content-between align-items-center mb-2">
                   <button
                     type="button"
                     className="btn btn-link p-0 text-decoration-none fw-bold fs-6"
-                    onClick={() => onViewTicket?.(t.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewTicket?.(t.id);
+                    }}
                     style={{
                       fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
                       color: '#006B3C',
