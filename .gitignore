@@ -13,3 +13,8 @@ server/prisma/*.db
 *.log
 .DS_Store
 .vite
+# uploads
+server/uploads/
+# test artifacts
+test-results/
+playwright-report/
