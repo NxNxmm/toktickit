@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { Priority, TicketStatus } from '@prisma/client';
 import { getPrisma } from '../prisma.js';
 import { generateTicketNumber } from '../utils/ticketNumber.js';
+import fs from 'fs';
+import path from 'path';
 
 export const createTicket = async (req: Request, res: Response) => {
     try {
@@ -344,3 +346,325 @@ export const getTickets = async (req: Request, res: Response) => {
         });
     }
 };
+
+// ─── Issue 6: Get Single Ticket Details (ownership enforced) ────────────────
+export const getTicketById = async (req: Request, res: Response) => {
+    try {
+        const rawRequesterId = req.headers['x-requester-id'];
+        const requesterId = Number(rawRequesterId);
+
+        if (!rawRequesterId || isNaN(requesterId)) {
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Requester ID header is missing or invalid',
+            });
+        }
+
+        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
+        if (!requester || !requester.isActive) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'Requester is inactive or does not exist',
+            });
+        }
+
+        const ticketId = Number(req.params.id);
+        if (isNaN(ticketId)) {
+            return res.status(400).json({ statusCode: 400, error: 'Bad Request', message: 'Invalid ticket ID' });
+        }
+
+        const ticket = await getPrisma().ticket.findUnique({
+            where: { id: ticketId },
+            include: {
+                requester: { select: { id: true, name: true, email: true } },
+                category: { select: { id: true, name: true } },
+                relatedSystem: { select: { id: true, name: true } },
+                attachments: {
+                    select: {
+                        id: true,
+                        originalName: true,
+                        fileSize: true,
+                        mimeType: true,
+                        isRemoved: true,
+                        removedAt: true,
+                        removalReason: true,
+                        createdAt: true,
+                    },
+                    orderBy: { createdAt: 'asc' },
+                },
+            },
+        });
+
+        if (!ticket) {
+            return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Ticket not found' });
+        }
+
+        if (ticket.requesterId !== requesterId) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'You do not have permission to access this ticket',
+            });
+        }
+
+        return res.status(200).json(ticket);
+    } catch (error) {
+        console.error('Error fetching ticket by ID:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while fetching ticket',
+        });
+    }
+};
+
+// ─── Issue 6: Upload Attachment to Existing Ticket ─────────────────────────
+export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
+    try {
+        const rawRequesterId = req.headers['x-requester-id'];
+        const requesterId = Number(rawRequesterId);
+
+        if (!rawRequesterId || isNaN(requesterId)) {
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Requester ID header is missing or invalid',
+            });
+        }
+
+        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
+        if (!requester || !requester.isActive) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'Requester is inactive or does not exist',
+            });
+        }
+
+        const ticketId = Number(req.params.id);
+        if (isNaN(ticketId)) {
+            return res.status(400).json({ statusCode: 400, error: 'Bad Request', message: 'Invalid ticket ID' });
+        }
+
+        const ticket = await getPrisma().ticket.findUnique({ where: { id: ticketId } });
+        if (!ticket) {
+            return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Ticket not found' });
+        }
+
+        if (ticket.requesterId !== requesterId) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'You do not have permission to upload to this ticket',
+            });
+        }
+
+        const file = req.file as Express.Multer.File | undefined;
+        if (!file) {
+            return res.status(400).json({ statusCode: 400, error: 'Bad Request', message: 'No file was uploaded' });
+        }
+
+        // Check active attachment quota
+        const activeCount = await getPrisma().attachment.count({
+            where: { ticketId, isRemoved: false },
+        });
+
+        if (activeCount >= 5) {
+            // Remove the just-uploaded file from disk to avoid orphans
+            fs.unlink(file.path, () => {});
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: 'Ticket already has 5 active attachments. Remove one before uploading more.',
+            });
+        }
+
+        const attachment = await getPrisma().attachment.create({
+            data: {
+                ticketId,
+                originalName: file.originalname,
+                storedFileName: file.filename,
+                fileSize: file.size,
+                mimeType: file.mimetype,
+            },
+        });
+
+        return res.status(201).json(attachment);
+    } catch (error) {
+        console.error('Error uploading attachment:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while uploading attachment',
+        });
+    }
+};
+
+// ─── Issue 6: Download Active Attachment Binary ─────────────────────────────
+export const downloadAttachment = async (req: Request, res: Response) => {
+    try {
+        const rawRequesterId = req.headers['x-requester-id'];
+        const requesterId = Number(rawRequesterId);
+
+        if (!rawRequesterId || isNaN(requesterId)) {
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Requester ID header is missing or invalid',
+            });
+        }
+
+        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
+        if (!requester || !requester.isActive) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'Requester is inactive or does not exist',
+            });
+        }
+
+        const attachmentId = Number(req.params.id);
+        if (isNaN(attachmentId)) {
+            return res.status(400).json({ statusCode: 400, error: 'Bad Request', message: 'Invalid attachment ID' });
+        }
+
+        const attachment = await getPrisma().attachment.findUnique({
+            where: { id: attachmentId },
+            include: { ticket: { select: { requesterId: true } } },
+        });
+
+        if (!attachment) {
+            return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Attachment not found' });
+        }
+
+        if (attachment.ticket.requesterId !== requesterId) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'You do not have permission to access this attachment',
+            });
+        }
+
+        if (attachment.isRemoved) {
+            return res.status(410).json({
+                statusCode: 410,
+                error: 'Gone',
+                message: 'This attachment has been soft-removed and is no longer available for download.',
+                removalReason: attachment.removalReason,
+                removedAt: attachment.removedAt,
+            });
+        }
+
+        const uploadDir = path.join(process.cwd(), 'uploads', 'attachments');
+        const filePath = path.join(uploadDir, attachment.storedFileName);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'File not found on server' });
+        }
+
+        res.setHeader('Content-Type', attachment.mimeType);
+        res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
+        return res.sendFile(filePath);
+    } catch (error) {
+        console.error('Error downloading attachment:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while downloading attachment',
+        });
+    }
+};
+
+// ─── Issue 6: Soft-Remove an Attachment ─────────────────────────────────────
+export const removeAttachment = async (req: Request, res: Response) => {
+    try {
+        const rawRequesterId = req.headers['x-requester-id'];
+        const requesterId = Number(rawRequesterId);
+
+        if (!rawRequesterId || isNaN(requesterId)) {
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Requester ID header is missing or invalid',
+            });
+        }
+
+        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
+        if (!requester || !requester.isActive) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'Requester is inactive or does not exist',
+            });
+        }
+
+        const attachmentId = Number(req.params.id);
+        if (isNaN(attachmentId)) {
+            return res.status(400).json({ statusCode: 400, error: 'Bad Request', message: 'Invalid attachment ID' });
+        }
+
+        const attachment = await getPrisma().attachment.findUnique({
+            where: { id: attachmentId },
+            include: { ticket: { select: { requesterId: true, id: true } } },
+        });
+
+        if (!attachment) {
+            return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Attachment not found' });
+        }
+
+        if (attachment.ticket.requesterId !== requesterId) {
+            return res.status(403).json({
+                statusCode: 403,
+                error: 'Forbidden',
+                message: 'You do not have permission to remove this attachment',
+            });
+        }
+
+        if (attachment.isRemoved) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: 'Attachment is already removed',
+            });
+        }
+
+        const { reason } = req.body;
+        const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+
+        if (!trimmedReason || trimmedReason.length < 3 || trimmedReason.length > 250) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: 'Removal reason must be between 3 and 250 characters',
+            });
+        }
+
+        const updated = await getPrisma().attachment.update({
+            where: { id: attachmentId },
+            data: {
+                isRemoved: true,
+                removedAt: new Date(),
+                removalReason: trimmedReason,
+            },
+            select: {
+                id: true,
+                ticketId: true,
+                originalName: true,
+                isRemoved: true,
+                removedAt: true,
+                removalReason: true,
+            },
+        });
+
+        return res.status(200).json(updated);
+    } catch (error) {
+        console.error('Error removing attachment:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while removing attachment',
+        });
+    }
+};
