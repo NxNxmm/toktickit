@@ -12,6 +12,7 @@
 4. **Issue 4 (Create Ticket)**: [https://github.com/NxNxmm/toktickit/pull/25] — *Approved*
 5. **Issue 5 (My Tickets)**: [https://github.com/NxNxmm/toktickit/pull/26] — *Approved*
 6. **Issue 6 (Ticket Detail)**: [https://github.com/NxNxmm/toktickit/pull/27] — *Approved*
+7. **Issue 7 (Automated Tests, Responsive Validation, and Final Release)**: [https://github.com/NxNxmm/toktickit/pull/28] — *Approved*
 
 ## Feedback & Responses
 - **Partner's Review Comment**: 
@@ -35,6 +36,9 @@ Thanks for addressing the feedback! Verified the fixes for ticket number generat
 6. **Issue 6 (Ticket Detail)**: lgtm, everything meets the acceptance criteria and works smoothly.
 Minor UX Suggestion (Optional): Currently in 'My Tickets', users have to click on the green ticket number link to view details. My suggestion is making the entire row clickable would make navigation much smoother. Good job! :D
 
+7. **Issue 7 (Automated Tests, Responsive Validation, and Final Release)**: 
+Well done! Your E2E tests are thorough and demonstrated well. The responsiveness across desktop, mobile, and tablet looks great, and the artifact screenshots are super clear. It was a pleasure reviewing your code for Lab 02 <3
+
 - **My Response / Fix**:
 1. **Issue 1 (Spec DD)**: -
 2. **Issue 2 (DB & Seed)**: Tq kubbb.
@@ -42,6 +46,8 @@ Minor UX Suggestion (Optional): Currently in 'My Tickets', users have to click o
 4. **Issue 4 (Create Ticket)**: Glad I've passed everything kub! We'll see other components in next issue!
 5. **Issue 5 (My Tickets)**: Thanks for the detailed review! I have no idea why it worked before I pushed but I've fixed it anyway. Also, I've adjust a Hamburger Menu for mobile responsive as suggested kub. Please check them again and let me hear what you think!
 6. **Issue 6 (Ticket Detail)**: Tysm! I'd love to make that change in next issue kub <3
+ึ7. **Issue 7 (Automated Tests, Responsive Validation, and Final Release)**: 
+Yayyyy thanks for all your lovely reviews kubbb <3
 
 =====================================================================================================================================
 
@@ -62,7 +68,7 @@ Minor UX Suggestion (Optional): Currently in 'My Tickets', users have to click o
 6. **Issue 6 (UI for creating ticket & Attachments)** : [https://github.com/PingSupichaya/toktickit/pull/30] - *Approved*
 7. **Issue 7 (My tickets screen)** : [https://github.com/PingSupichaya/toktickit/pull/31] - *Approved*
 8. **Issue 8 (Ticket detail)** : [https://github.com/PingSupichaya/toktickit/pull/32] - *Approved*
-9. **Issue 9 (Integration, E2E Testing & Submission Preparation)** : [] - *Approved*
+9. **Issue 9 (Integration, E2E Testing & Submission Preparation)** : [https://github.com/PingSupichaya/toktickit/pull/33] - *Approved*
 
 ## Feedback & Responses
 - **My Review Comment on Partner**:
@@ -144,7 +150,7 @@ I really appreciate your detailed review, thanksssss😍.
 I see, thanks for the review. I will add some spaces from the edge in the next PR🙏
 
 8. **Issue 8 (Ticket detail)** : 
--
+Thanks kubb. I think for removing date doesn't need to include time just know the date is enough for me kub😆.
 
 9. **Issue 9 (Integration, E2E Testing & Submission Preparation)** : 
--
+Thanks for your reviews until my last issue. <3
