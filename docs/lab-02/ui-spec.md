@@ -298,11 +298,11 @@ Before finalizing Lab 2, the following automated Playwright screenshot suite mus
   - `artifacts/lab-02/screenshots/ticket-detail/mobile-detail-view.png`
 
 ### 8.2 Visual Inspection Checklist
-- [ ] Primary Green `#006B3C` and Secondary Green `#0B7A46` applied accurately to headers, buttons, and tabs.
-- [ ] Clear visual differentiation between editable white inputs and soft gray-green `#EEF2EE` read-only inputs.
-- [ ] Required asterisks displayed in red (`#DC2626`) directly following field labels.
-- [ ] Field-level error messages appear directly below the erroneous input, never as a detached generic list.
-- [ ] Submit button displays animated spinner and disabled styling while processing.
-- [ ] No text clipping, overlapping boxes, or awkward wrapping on any viewport.
-- [ ] Zero horizontal scrollbars at 375px (iPhone), 768px (iPad), and 1200px (Desktop).
-- [ ] Removed attachments display soft-deletion reason, removal date, and non-clickable download links.
+- [x] Primary Green `#006B3C` and Secondary Green `#0B7A46` applied accurately to headers, buttons, and tabs.
+- [x] Clear visual differentiation between editable white inputs and soft gray-green `#EEF2EE` read-only inputs.
+- [x] Required asterisks displayed in red (`#DC2626`) directly following field labels.
+- [x] Field-level error messages appear directly below the erroneous input, never as a detached generic list.
+- [x] Submit button displays animated spinner and disabled styling while processing.
+- [x] No text clipping, overlapping boxes, or awkward wrapping on any viewport.
+- [x] Zero horizontal scrollbars at 375px (iPhone), 768px (iPad), and 1200px (Desktop).
+- [x] Removed attachments display soft-deletion reason, removal date, and non-clickable download links.
