@@ -6,13 +6,13 @@
 - **GitHub Username**: Finyakginshabu
 
 ## Reviewed Pull Requests (Partner -> Me)
-1. **Issue 1 (Spec DD)**: [https://github.com/NxNxmm/toktickit/pull/22] — *Approved*
-2. **Issue 2 (DB & Seed)**: [https://github.com/NxNxmm/toktickit/pull/23] — *Approved*
-3. **Issue 3 (Requester Context)**: [https://github.com/NxNxmm/toktickit/pull/24] — *Approved*
-4. **Issue 4 (Create Ticket)**: [https://github.com/NxNxmm/toktickit/pull/25] — *Approved*
-5. **Issue 5 (My Tickets)**: [https://github.com/NxNxmm/toktickit/pull/26] — *Approved*
-6. **Issue 6 (Ticket Detail)**: [https://github.com/NxNxmm/toktickit/pull/27] — *Approved*
-7. **Issue 7 (Automated Tests, Responsive Validation, and Final Release)**: [https://github.com/NxNxmm/toktickit/pull/28] — *Approved*
+1. **Issue 1 (Spec DD)**: [PR #22](https://github.com/NxNxmm/toktickit/pull/22) — *Approved*
+2. **Issue 2 (DB & Seed)**: [PR #23](https://github.com/NxNxmm/toktickit/pull/23) — *Approved*
+3. **Issue 3 (Requester Context)**: [PR #24](https://github.com/NxNxmm/toktickit/pull/24) — *Approved*
+4. **Issue 4 (Create Ticket)**: [PR #25](https://github.com/NxNxmm/toktickit/pull/25) — *Approved*
+5. **Issue 5 (My Tickets)**: [PR #26](https://github.com/NxNxmm/toktickit/pull/26) — *Approved*
+6. **Issue 6 (Ticket Detail)**: [PR #27](https://github.com/NxNxmm/toktickit/pull/27) — *Approved*
+7. **Issue 7 (Automated Tests, Responsive Validation, and Final Release)**: [PR #28](https://github.com/NxNxmm/toktickit/pull/28) — *Approved*
 
 ## Feedback & Responses
 - **Partner's Review Comment**: 
@@ -46,10 +46,10 @@ Well done! Your E2E tests are thorough and demonstrated well. The responsiveness
 4. **Issue 4 (Create Ticket)**: Glad I've passed everything kub! We'll see other components in next issue!
 5. **Issue 5 (My Tickets)**: Thanks for the detailed review! I have no idea why it worked before I pushed but I've fixed it anyway. Also, I've adjust a Hamburger Menu for mobile responsive as suggested kub. Please check them again and let me hear what you think!
 6. **Issue 6 (Ticket Detail)**: Tysm! I'd love to make that change in next issue kub <3
-ึ7. **Issue 7 (Automated Tests, Responsive Validation, and Final Release)**: 
+7. **Issue 7 (Automated Tests, Responsive Validation, and Final Release)**: 
 Yayyyy thanks for all your lovely reviews kubbb <3
 
-=====================================================================================================================================
+---
 
 ## Reviewee Information
 - **Name**: Supichaya Limwatanasamut
@@ -57,18 +57,18 @@ Yayyyy thanks for all your lovely reviews kubbb <3
 - **GitHub Username**: PingSupichaya
 
 ## Reviewed Pull Requests (Me -> Partner)
-1. **Issue 1 (Sprint specification and test plan)** : [https://github.com/PingSupichaya/toktickit/pull/16] - *Approved*
-2. **Issue 2 (Database increment)** : [https://github.com/PingSupichaya/toktickit/pull/21] - *Approved*
-3. **Issue 3 (UI foundation & Development requester context)** : [https://github.com/PingSupichaya/toktickit/pull/22] - *Approved*
-4. **Issue 4 (Reference APIs)** : [https://github.com/PingSupichaya/toktickit/pull/23] - *Approved*
+1. **Issue 1 (Sprint specification and test plan)** : [PR #16](https://github.com/PingSupichaya/toktickit/pull/16) - *Approved*
+2. **Issue 2 (Database increment)** : [PR #21](https://github.com/PingSupichaya/toktickit/pull/21) - *Approved*
+3. **Issue 3 (UI foundation & Development requester context)** : [PR #22](https://github.com/PingSupichaya/toktickit/pull/22) - *Approved*
+4. **Issue 4 (Reference APIs)** : [PR #23](https://github.com/PingSupichaya/toktickit/pull/23) - *Approved*
 5. **Issue 5 (Attachment APIs)** : 
-[https://github.com/PingSupichaya/toktickit/pull/27] - *Approved: found out merging into wrong branch (main)*
-[https://github.com/PingSupichaya/toktickit/pull/28] - *Approved: Reverted form merging into wrong base branch (main)* 
-[https://github.com/PingSupichaya/toktickit/pull/29] - *Approved: merge into lab2-staging*
-6. **Issue 6 (UI for creating ticket & Attachments)** : [https://github.com/PingSupichaya/toktickit/pull/30] - *Approved*
-7. **Issue 7 (My tickets screen)** : [https://github.com/PingSupichaya/toktickit/pull/31] - *Approved*
-8. **Issue 8 (Ticket detail)** : [https://github.com/PingSupichaya/toktickit/pull/32] - *Approved*
-9. **Issue 9 (Integration, E2E Testing & Submission Preparation)** : [https://github.com/PingSupichaya/toktickit/pull/33] - *Approved*
+[PR #27](https://github.com/PingSupichaya/toktickit/pull/27) - *Approved: found out merging into wrong branch (main)*
+[PR #28](https://github.com/PingSupichaya/toktickit/pull/28) - *Approved: Reverted form merging into wrong base branch (main)* 
+[PR #29](https://github.com/PingSupichaya/toktickit/pull/29) - *Approved: merge into lab2-staging*
+6. **Issue 6 (UI for creating ticket & Attachments)** : [PR #30](https://github.com/PingSupichaya/toktickit/pull/30) - *Approved*
+7. **Issue 7 (My tickets screen)** : [PR #31](https://github.com/PingSupichaya/toktickit/pull/31) - *Approved*
+8. **Issue 8 (Ticket detail)** : [PR #32](https://github.com/PingSupichaya/toktickit/pull/32) - *Approved*
+9. **Issue 9 (Integration, E2E Testing & Submission Preparation)** : [PR #33](https://github.com/PingSupichaya/toktickit/pull/33) - *Approved*
 
 ## Feedback & Responses
 - **My Review Comment on Partner**:
@@ -78,7 +78,7 @@ The level of detail across all 4 specification documents (api-spec.md, specifica
 
 But just a little more changes, please check the detailed inline comments on each file for specific suggestions! Once these structural sections and alignments are added, please re-request a review. Great job so far!
 
-// After fixing
+**After fixing:**
 
 Approved kub! Awesome job on addressing all the feedback! The specifications are now ready to be handed over to the coding agent for implementation. Let's go next kubbb!
 
@@ -94,11 +94,11 @@ However, during local testing across different viewports, I noticed a few UI/UX 
 
 Mobile Responsive Dropdown Overflow:
 
-On mobile viewports (e.g., iPhone SE @ 375px), the expanded <select> dropdown menu overflows outside the card boundary on the right.
+On mobile viewports (e.g., iPhone SE @ 375px), the expanded `<select>` dropdown menu overflows outside the card boundary on the right.
 Please ensure that the select container and options use width: 100%, max-width: 100%, and proper box-sizing: border-box to prevent horizontal clipping/overflow[cite: 7].
 Please fix the responsive CSS rules and layout wrapping, then re-request a review! Great work so far!
 
-// After Fixing
+**After Fixing:**
 
 Well after you have fixed the responsive bugs that I mentioned, Everything looks great now! But I noticed that in the very first page, there is a missing messege "DEVELOPER MODE" so make sure you bring it back in next issue kubbb. Figthing!
 
