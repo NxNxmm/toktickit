@@ -3,18 +3,22 @@ import { getPrisma } from '../prisma.js';
 
 export const getActiveRequesters = async (req: Request, res: Response) => {
     try {
-        const requesters = await getPrisma().requesterUser.findMany({
-            where: { isActive: true },
+        const requesters = await getPrisma().user.findMany({
+            where: { isActive: true, role: 'REQUESTER' },
             select: {
                 id: true,
                 name: true,
                 email: true,
-                department: true,
             },
             orderBy: { name: 'asc' },
         });
 
-        return res.status(200).json(requesters);
+        const formatted = requesters.map((r) => ({
+            ...r,
+            department: 'General',
+        }));
+
+        return res.status(200).json(formatted);
     } catch (error) {
         console.error('Error fetching active requesters:', error);
         return res.status(500).json({

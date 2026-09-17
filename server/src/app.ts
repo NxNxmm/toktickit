@@ -3,6 +3,7 @@ import cors from "cors";
 import { getPrisma } from "./prisma.js";
 import requesterRoutes from "./routes/requester.routes.js";
 import ticketRoutes from "./routes/ticket.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 
 void getPrisma;
 
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api", requesterRoutes);
 app.use("/api", ticketRoutes);
+app.use("/api", authRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({

@@ -12,12 +12,12 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
     let relatedSystemId: number;
 
     beforeAll(async () => {
-        // Find existing seed data - use Sarah and David so we do not conflict with other test suites running in parallel
-        const r1 = await getPrisma().requesterUser.findFirst({ where: { isActive: true, email: 'sarah.johnson@kmutt.ac.th' } });
-        const r2 = await getPrisma().requesterUser.findFirst({ where: { isActive: true, email: 'david.lee@kmutt.ac.th' } });
+        // Find existing seed data - use Sarah and David so we do not conflict with other test suites
+        const r1 = await getPrisma().user.findFirst({ where: { isActive: true, role: 'REQUESTER', email: 'sarah.johnson@kmutt.ac.th' } });
+        const r2 = await getPrisma().user.findFirst({ where: { isActive: true, role: 'REQUESTER', email: 'david.lee@kmutt.ac.th' } });
         const cat1 = await getPrisma().category.findFirst({ where: { name: 'Hardware' } });
         const cat2 = await getPrisma().category.findFirst({ where: { name: 'Software' } });
-        const sys = await getPrisma().relatedSystem.findFirst();
+        const sys = await getPrisma().related_system.findFirst();
 
         requester1Id = r1!.id;
         requester2Id = r2!.id;
@@ -25,50 +25,60 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         category2Id = cat2!.id;
         relatedSystemId = sys!.id;
 
-        // Clean up tickets for requester 1 and 2 before testing
+        // Clean up tickets for requester 1 and 2 before testing (order: notes > comments > attachments > tickets)
+        await getPrisma().internal_note.deleteMany({
+            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+        });
+        await getPrisma().public_comment.deleteMany({
+            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+        });
         await getPrisma().attachment.deleteMany({
             where: {
                 ticket: {
-                    requesterId: { in: [requester1Id, requester2Id] },
+                    submittedById: { in: [requester1Id, requester2Id] },
                 },
             },
         });
         await getPrisma().ticket.deleteMany({
             where: {
-                requesterId: { in: [requester1Id, requester2Id] },
+                submittedById: { in: [requester1Id, requester2Id] },
             },
         });
 
         // Seed 12 tickets for Requester 1
         for (let i = 1; i <= 12; i++) {
-            const ticketNo = await generateTicketNumber();
+            const ticketNumber = await generateTicketNumber();
             await getPrisma().ticket.create({
                 data: {
-                    ticketNo,
-                    requesterId: requester1Id,
+                    ticketNumber,
+                    submittedById: requester1Id,
                     categoryId: i % 2 === 0 ? category1Id : category2Id,
                     relatedSystemId,
-                    requestedPriority: i === 1 ? 'URGENT' : i <= 4 ? 'HIGH' : i <= 8 ? 'MEDIUM' : 'LOW',
+                    requestedPriority: i <= 4 ? 'HIGH' : i <= 8 ? 'MEDIUM' : 'LOW',
+                    itPriority: 'MEDIUM',
                     summary: i === 5 ? 'Unique Keyword Issue Printer' : `Ticket summary test ${i}`,
                     description: `Detailed description for test ticket ${i} with sufficient length.`,
                     currentStatus: i === 1 ? 'RESOLVED' : i === 2 ? 'IN_PROGRESS' : 'NEW',
+                    updatedAt: new Date(),
                 },
             });
         }
 
         // Seed 2 tickets for Requester 2 (to test ownership isolation)
         for (let i = 1; i <= 2; i++) {
-            const ticketNo = await generateTicketNumber();
+            const ticketNumber = await generateTicketNumber();
             await getPrisma().ticket.create({
                 data: {
-                    ticketNo,
-                    requesterId: requester2Id,
+                    ticketNumber,
+                    submittedById: requester2Id,
                     categoryId: category1Id,
                     relatedSystemId,
                     requestedPriority: 'LOW',
+                    itPriority: 'LOW',
                     summary: `Requester 2 ticket ${i}`,
                     description: `Description for requester 2 ticket ${i} with sufficient length.`,
                     currentStatus: 'NEW',
+                    updatedAt: new Date(),
                 },
             });
         }
@@ -83,7 +93,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
     });
 
     it('should return 403 if requester is inactive or not found', async () => {
-        const inactiveUser = await getPrisma().requesterUser.findFirst({ where: { isActive: false } });
+        const inactiveUser = await getPrisma().user.findFirst({ where: { isActive: false, role: 'REQUESTER' } });
         const resInactive = await request(app)
             .get('/api/tickets')
             .set('X-Requester-Id', String(inactiveUser!.id));
@@ -138,28 +148,30 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         expect(resCase.body.items.length).toBe(1);
 
         // Search by Ticket Number substring
-        const sampleTicketNo = resKeyword.body.items[0].ticketNo;
-        const subTicketNo = sampleTicketNo.slice(4, 11); // e.g. "2026-00"
-        const resTicketNo = await request(app)
+        const sampleTicketNumber = resKeyword.body.items[0].ticketNumber;
+        const subTicketNumber = sampleTicketNumber.slice(4, 11); // e.g. "2026-00"
+        const resTicketNumber = await request(app)
             .get('/api/tickets')
             .set('X-Requester-Id', String(requester1Id))
-            .query({ search: subTicketNo });
+            .query({ search: subTicketNumber });
 
-        expect(resTicketNo.status).toBe(200);
-        expect(resTicketNo.body.items.length).toBeGreaterThanOrEqual(1);
-        expect(resTicketNo.body.items.some((t: any) => t.ticketNo === sampleTicketNo)).toBe(true);
+        expect(resTicketNumber.status).toBe(200);
+        expect(resTicketNumber.body.items.length).toBeGreaterThanOrEqual(1);
+        expect(resTicketNumber.body.items.some((t: any) => t.ticketNumber === sampleTicketNumber)).toBe(true);
     });
 
     it('filters by Category, Priority, and Status (AC 3)', async () => {
-        // Filter by Priority
+        // Filter by Priority (HIGH — seeded for i <= 4)
         const resPriority = await request(app)
             .get('/api/tickets')
             .set('X-Requester-Id', String(requester1Id))
-            .query({ requestedPriority: 'URGENT' });
+            .query({ requestedPriority: 'HIGH' });
 
         expect(resPriority.status).toBe(200);
-        expect(resPriority.body.pagination.totalCount).toBe(1);
-        expect(resPriority.body.items[0].requestedPriority).toBe('URGENT');
+        expect(resPriority.body.pagination.totalCount).toBe(4);
+        for (const item of resPriority.body.items) {
+            expect(item.requestedPriority).toBe('HIGH');
+        }
 
         // Filter by Status
         const resStatus = await request(app)
@@ -252,7 +264,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         }
     });
 
-    it('supports sorting by ticketNo and createdAt', async () => {
+    it('supports sorting by ticketNumber and createdAt', async () => {
         const resAsc = await request(app)
             .get('/api/tickets')
             .set('X-Requester-Id', String(requester1Id))

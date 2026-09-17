@@ -8,7 +8,6 @@ import { generateTicketNumber } from '../../src/utils/ticketNumber.js';
 
 // Helper: create a small valid PNG buffer (1x1 pixel)
 function createMinimalPngBuffer(): Buffer {
-    // Minimal valid 1x1 PNG bytes
     return Buffer.from(
         '89504e470d0a1a0a0000000d49484452000000010000000108020000009001' +
         '2e00000000c49444154789c6260f8cfc000000002000172657273696f6e303' +
@@ -37,39 +36,47 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         if (!fs.existsSync(fixtureDir)) fs.mkdirSync(fixtureDir, { recursive: true });
         fs.writeFileSync(testFilePath, createMinimalPngBuffer());
 
-        const r1 = await getPrisma().requesterUser.findFirst({
-            where: { isActive: true, email: 'jennifer.anderson@kmutt.ac.th' },
+        const r1 = await getPrisma().user.findFirst({
+            where: { isActive: true, role: 'REQUESTER', email: 'jennifer.anderson@kmutt.ac.th' },
         });
-        const r2 = await getPrisma().requesterUser.findFirst({
-            where: { isActive: true, email: 'michael.brown@kmutt.ac.th' },
+        const r2 = await getPrisma().user.findFirst({
+            where: { isActive: true, role: 'REQUESTER', email: 'michael.brown@kmutt.ac.th' },
         });
         const cat = await getPrisma().category.findFirst({ where: { name: 'Software' } });
-        const sys = await getPrisma().relatedSystem.findFirst();
+        const sys = await getPrisma().related_system.findFirst();
 
         requester1Id = r1!.id;
         requester2Id = r2!.id;
 
-        // Clean previous test data
+        // Clean previous test data (order matters: notes > comments > attachments > tickets)
+        await getPrisma().internal_note.deleteMany({
+            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+        });
+        await getPrisma().public_comment.deleteMany({
+            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+        });
         await getPrisma().attachment.deleteMany({
             where: {
-                ticket: { requesterId: { in: [requester1Id, requester2Id] } },
+                ticket: { submittedById: { in: [requester1Id, requester2Id] } },
             },
         });
         await getPrisma().ticket.deleteMany({
-            where: { requesterId: { in: [requester1Id, requester2Id] } },
+            where: { submittedById: { in: [requester1Id, requester2Id] } },
         });
 
         // Ticket for requester1
         const t1 = await getPrisma().ticket.create({
             data: {
-                ticketNo: await generateTicketNumber(),
-                requesterId: requester1Id,
+                ticketNumber: await generateTicketNumber(),
+                submittedById: requester1Id,
                 categoryId: cat!.id,
                 relatedSystemId: sys!.id,
                 requestedPriority: 'MEDIUM',
+                itPriority: 'MEDIUM',
                 summary: 'Attachment lifecycle test ticket',
                 description: 'This ticket is used for attachment lifecycle API testing.',
                 currentStatus: 'NEW',
+                updatedAt: new Date(),
             },
         });
         ticket1Id = t1.id;
@@ -77,14 +84,16 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         // Ticket for requester2 (isolation tests)
         const t2 = await getPrisma().ticket.create({
             data: {
-                ticketNo: await generateTicketNumber(),
-                requesterId: requester2Id,
+                ticketNumber: await generateTicketNumber(),
+                submittedById: requester2Id,
                 categoryId: cat!.id,
                 relatedSystemId: sys!.id,
                 requestedPriority: 'LOW',
+                itPriority: 'LOW',
                 summary: 'Requester 2 attachment ticket',
                 description: 'Ticket for requester 2 used for cross-requester attachment isolation tests.',
                 currentStatus: 'NEW',
+                updatedAt: new Date(),
             },
         });
         ticket2Id = t2.id;
@@ -100,11 +109,12 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         const activeAtt = await getPrisma().attachment.create({
             data: {
                 ticketId: ticket1Id,
-                originalName: 'battery-graph.png',
-                storedFileName: activeStoredName,
-                fileSize: 512,
-                mimeType: 'image/png',
+                originalFilename: 'battery-graph.png',
+                storedFilename: activeStoredName,
+                fileSizeBytes: 512,
+                contentType: 'image/png',
                 isRemoved: false,
+                updatedAt: new Date(),
             },
         });
         activeAttachmentId = activeAtt.id;
@@ -113,13 +123,14 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         const removedAtt = await getPrisma().attachment.create({
             data: {
                 ticketId: ticket1Id,
-                originalName: 'old-report.pdf',
-                storedFileName: 'test-removed-attachment.pdf',
-                fileSize: 1024,
-                mimeType: 'application/pdf',
+                originalFilename: 'old-report.pdf',
+                storedFilename: 'test-removed-attachment.pdf',
+                fileSizeBytes: 1024,
+                contentType: 'application/pdf',
                 isRemoved: true,
                 removedAt: new Date(),
                 removalReason: 'Outdated report, replaced with newer version',
+                updatedAt: new Date(),
             },
         });
         removedAttachmentId = removedAtt.id;
@@ -131,11 +142,12 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         const r2Att = await getPrisma().attachment.create({
             data: {
                 ticketId: ticket2Id,
-                originalName: 'r2-evidence.png',
-                storedFileName: r2StoredName,
-                fileSize: 512,
-                mimeType: 'image/png',
+                originalFilename: 'r2-evidence.png',
+                storedFilename: r2StoredName,
+                fileSizeBytes: 512,
+                contentType: 'image/png',
                 isRemoved: false,
+                updatedAt: new Date(),
             },
         });
         r2AttachmentId = r2Att.id;
@@ -151,8 +163,8 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
 
         expect(res.status).toBe(201);
         expect(res.body.ticketId).toBe(ticket1Id);
-        expect(res.body.originalName).toBe('test-image.png');
-        expect(res.body.mimeType).toBe('image/png');
+        expect(res.body.originalFilename).toBe('test-image.png');
+        expect(res.body.contentType).toBe('image/png');
         expect(res.body.isRemoved).toBe(false);
         expect(res.body.id).toBeDefined();
     });
@@ -167,11 +179,12 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
             await getPrisma().attachment.create({
                 data: {
                     ticketId: ticket1Id,
-                    originalName: `extra-${i}.png`,
-                    storedFileName: stored,
-                    fileSize: 100,
-                    mimeType: 'image/png',
+                    originalFilename: `extra-${i}.png`,
+                    storedFilename: stored,
+                    fileSizeBytes: 100,
+                    contentType: 'image/png',
                     isRemoved: false,
+                    updatedAt: new Date(),
                 },
             });
         }
@@ -238,11 +251,12 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         const freshAtt = await getPrisma().attachment.create({
             data: {
                 ticketId: ticket1Id,
-                originalName: 'validation-test.png',
-                storedFileName: newStored,
-                fileSize: 512,
-                mimeType: 'image/png',
+                originalFilename: 'validation-test.png',
+                storedFilename: newStored,
+                fileSizeBytes: 512,
+                contentType: 'image/png',
                 isRemoved: false,
+                updatedAt: new Date(),
             },
         });
 

@@ -3,7 +3,7 @@ import { getPrisma } from '../prisma.js';
 
 export const getRelatedSystems = async (req: Request, res: Response) => {
     try {
-        const systems = await getPrisma().relatedSystem.findMany({
+        const systems = await getPrisma().related_system.findMany({
             select: {
                 id: true,
                 name: true,
