@@ -2,11 +2,13 @@
 
 ## 1. Test Strategy
 
-TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to verify authentication, authorization boundaries, IT Staff ticketing workflows, and administrative controls:
+TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to verify authentication, authorization boundaries, IT Staff ticketing workflows, and administrative controls across all required categories:
 - **Unit Tests**: Verify isolated pure logic, password strength validation, and status transition matrix rules.
 - **Server API Integration Tests (`server/tests/lab-03/`)**: Verify REST endpoints using `supertest` against the PostgreSQL database, asserting HTTP status codes (200, 201, 400, 401, 403, 409, 422), session verification, and non-leaking data boundaries.
+- **Security & Authorization Tests**: Explicitly probe role boundaries, ensuring Requesters cannot access staff queues, foreign tickets, internal notes, or admin user management.
+- **Migration & Regression Tests**: Verify that existing Lab 2 data (categories, systems, tickets, attachments) is cleanly migrated to the `User` model, and that Requester ticket creation, viewing, and soft-removal continue to work without breaking under authenticated identity.
 - **Client Component Tests (`client/tests/lab-03/`)**: Verify React components in isolation using `@testing-library/react`, asserting form states, inline errors, modal dialogs, role-based application shell rendering, and busy states.
-- **Responsive & Visual Style Tests**: Verify viewport adaptation across Desktop ($\ge 992\text{px}$), Tablet ($768\text{--}991\text{px}$), and Mobile ($< 768\text{px}$), adhering to Zen Green tokens.
+- **Responsive & Accessibility Tests**: Verify viewport adaptation across Desktop ($\ge 992\text{px}$), Tablet ($768\text{--}991\text{px}$), and Mobile ($< 768\text{px}$), plus WCAG AA accessibility rules (focus rings, contrast, touch targets, and form labels per `ui-spec.md` §5.2).
 - **End-to-End (E2E) Tests (`e2e/lab-03/`)**: Verify complete multi-role user journeys using Playwright, testing login, mandatory password changes, ticket claiming/triage, internal note privacy, and admin user provisioning.
 
 ---
@@ -17,6 +19,9 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 |---|---|---|---|---|---|---|
 | **UNIT-01** | Unit | BR-03, AC-3.4 | Password policy validator | Enforces $\ge 8$ chars, uppercase, lowercase, digit, and symbol | `server/tests/lab-03/unit/password-policy.test.ts` | **PLANNED** |
 | **UNIT-02** | Unit | BR-12, AC-6.2 | Status transition matrix logic | Allows valid transitions; rejects invalid transitions | `server/tests/lab-03/unit/status-transitions.test.ts` | **PLANNED** |
+| **MIGR-01** | Migration | AC-2.4 | Database migration integrity | Migrates Lab 2 `RequesterUser` to `User` without losing tickets/attachments | `server/tests/lab-03/migration.test.ts` | **PLANNED** |
+| **REGR-01** | Regression | AC-4.1 | Lab 2 ticket creation & upload regression | Ticket creation and attachment upload work under authenticated session | `server/tests/lab-03/requester-regression.api.test.ts` | **PLANNED** |
+| **REGR-02** | Regression | AC-4.1 | Lab 2 attachment soft-removal regression | Soft-remove records reason, retains metadata, blocks download with 410 | `server/tests/lab-03/requester-regression.api.test.ts` | **PLANNED** |
 | **API-01** | API | FR-01, BR-01, AC-3.1 | Valid user login | HTTP 200; returns safe user object with session token/cookie | `server/tests/lab-03/auth.api.test.ts` | **PLANNED** |
 | **API-02** | API | BR-01, BR-04, AC-3.1 | Inactive account login | HTTP 401; returns generic error without leaking account state | `server/tests/lab-03/auth.api.test.ts` | **PLANNED** |
 | **API-03** | API | BR-04, AC-3.1 | Invalid credentials login | HTTP 401; returns generic "Invalid email or password" error | `server/tests/lab-03/auth.api.test.ts` | **PLANNED** |
@@ -52,6 +57,7 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **UI-06** | UI | FR-13, AC-6.4 | Visual distinction: Public Comments vs Notes | Comments have soft green theme; notes have soft gold theme + lock icon | `client/tests/lab-03/StaffTicketDetail.test.tsx` | **PLANNED** |
 | **UI-07** | UI | FR-14, FR-15, AC-7.1 | Admin user management directory & modals | Renders user list, opens Create/Edit modals with role & status controls | `client/tests/lab-03/UserManagement.test.tsx` | **PLANNED** |
 | **RESP-01** | Visual | AC-5.4, AC-9.1 | Responsive layout across viewports | Desktop table converts to stacked mobile cards ($< 768\text{px}$) | `client/tests/lab-03/Responsive.test.tsx` | **PLANNED** |
+| **A11Y-01** | Visual/A11y | AC-9.1 | Accessibility & WCAG audit | Verifies visible focus rings, color contrast (>4.5:1), and form labels | `client/tests/lab-03/Accessibility.test.tsx` | **PLANNED** |
 | **E2E-01** | E2E | AC-8.1 | End-to-end authentication & password change | Tests login error, valid login, mandatory password reset, and logout | `e2e/lab-03/authentication.spec.ts` | **PLANNED** |
 | **E2E-02** | E2E | AC-8.2 | End-to-end IT Staff ticket lifecycle | Tests queue search $\to$ claim ticket $\to$ update priority/status $\to$ notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | **PLANNED** |
 | **E2E-03** | E2E | AC-8.3 | End-to-end admin user management | Tests user creation $\to$ duplicate email check $\to$ reset pass $\to$ safety | `e2e/lab-03/user-administration.spec.ts` | **PLANNED** |
@@ -70,14 +76,14 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **AC-2.1** | Prisma User model with roles & flags | `server/prisma/schema.prisma` verification |
 | **AC-2.2** | Ticket relationships to requester and owner | `server/prisma/schema.prisma` verification |
 | **AC-2.3** | Comment and InternalNote models | `server/prisma/schema.prisma` verification |
-| **AC-2.4** | Migration of Lab 2 records preserved | `server/prisma/migrations/` verification |
+| **AC-2.4** | Migration of Lab 2 records preserved | `MIGR-01`, `server/prisma/migrations/` verification |
 | **AC-2.5** | Idempotent seed script with required counts | `server/prisma/seed.ts` execution check |
 | **AC-3.1** | Login verifies active credentials | `API-01`, `API-02`, `API-03`, `UI-01`, `E2E-01` |
 | **AC-3.2** | `/me` profile retrieval and logout | `API-04`, `API-05`, `E2E-01` |
 | **AC-3.3** | Mandatory password change redirection | `API-06`, `UI-02`, `E2E-01` |
 | **AC-3.4** | Change password API and complexity rules | `UNIT-01`, `API-07`, `UI-02`, `E2E-01` |
 | **AC-3.5** | App Header displays user name and role | `UI-03`, `E2E-01` |
-| **AC-4.1** | Requester APIs enforce session identity | `API-08`, `API-09` |
+| **AC-4.1** | Requester APIs enforce session identity | `API-08`, `API-09`, `REGR-01`, `REGR-02` |
 | **AC-4.2** | Public Comments viewing and posting | `API-10`, `UI-06`, `E2E-02` |
 | **AC-4.3** | Problem Appears Resolved indication | `API-11` |
 | **AC-4.4** | Requesters denied Internal Notes (403) | `API-12`, `E2E-02` |
@@ -98,7 +104,7 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **AC-8.2** | E2E staff ticket lifecycle suite | `E2E-02` |
 | **AC-8.3** | E2E user administration suite | `E2E-03` |
 | **AC-8.4** | 100% tests passing on main | Automated CI / test execution on `main` |
-| **AC-9.1** | Visual verification across viewports | `RESP-01` |
+| **AC-9.1** | Visual verification across viewports & A11y | `RESP-01`, `A11Y-01`, `docs/lab-03/ui-spec.md` §5.2 checklist |
 | **AC-9.2** | Screenshots in `artifacts/lab-03/screenshots/` | Submission artifact verification |
 | **AC-9.3** | Peer review documented in `reviewer.md` | Submission artifact verification |
 | **AC-9.4** | AI prompts and reflection in `ai-use.md` | Submission artifact verification |
@@ -108,13 +114,13 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 
 ## 4. Test Execution Instructions
 
-### Server Unit & Integration Tests
+### Server Unit, Regression & Integration Tests
 ```bash
 cd server
 npm test
 ```
 
-### Client Unit & Component Tests
+### Client Unit, Component & Accessibility Tests
 ```bash
 cd client
 npm test

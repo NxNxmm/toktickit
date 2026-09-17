@@ -89,7 +89,7 @@ Requesters must continue utilizing all Lab 2 ticket creation, viewing, and attac
 - **BR-06 (Requester Ticket Boundaries)**: A user with role `REQUESTER` may only query and view tickets where `ticket.requesterId == authenticatedUser.id`. Accessing another user's ticket must return HTTP 403 Forbidden without leaking metadata.
 - **BR-07 (Role Exclusivity)**: Each user account is assigned exactly one role: `REQUESTER`, `IT_STAFF`, or `ADMIN`. Multi-role assignments are not supported in Lab 3.
 - **BR-08 (Single Ticket Ownership)**: Each ticket may have at most one primary Ticket Owner (`ownerId`), which must reference an active user with role `IT_STAFF` or `ADMIN`. Unassigned tickets have `ownerId = null`.
-- **BR-09 (IT Priority Independence)**: `requestedPriority` is set at ticket creation by the requester and is immutable. `itPriority` is initially initialized to copy `requestedPriority`, but can subsequently be updated only by IT Staff or Administrators.
+- **BR-09 (IT Priority Independence & Initialization)**: `requestedPriority` is set at ticket creation by the requester and is immutable. `itPriority` is non-nullable (defaulting to `MEDIUM` in schema, but initialized upon ticket creation to copy `requestedPriority`), and can subsequently be updated only by IT Staff or Administrators.
 - **BR-10 (Ticket Status Set)**: Permitted ticket statuses are strictly defined as: `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, and `CANCELLED`.
 - **BR-11 (Initial Ticket Status)**: Every newly created ticket begins in status `NEW` with `ownerId = null`.
 - **BR-12 (Permitted Status Transitions)**: Status transitions must adhere to the Status Transition Matrix (Section 6). Direct jumps between incompatible statuses (e.g., `NEW` to `CLOSED`) are rejected with HTTP 422 Unprocessable Entity.
@@ -100,7 +100,7 @@ Requesters must continue utilizing all Lab 2 ticket creation, viewing, and attac
 - **BR-17 (Author Audit Integrity)**: Comment and note author IDs and creation timestamps are stamped by the backend from the verified session; client-supplied author data is ignored.
 - **BR-18 (Queue Query Limits)**: The IT Staff ticket queue supports pagination with page sizes of 10, 20, or 50. Default sort is descending by `createdAt`. Default page size is 10.
 - **BR-19 (Queue Search Scope)**: Queue search executes case-insensitive substring matching against `ticketNo` and `summary`.
-- **BR-20 (Administrator Scope)**: Administrators manage user accounts. Administrators do not automatically handle ticket workflows unless assigned as a ticket owner.
+- **BR-20 (Administrator Scope)**: Administrators manage user accounts. By approved engineering design, Administrators also retain escalation authority on ticket triage and operations (see Section 13 for explicit justification).
 - **BR-21 (Unique Email Constraint)**: User emails must be unique across the system (case-insensitive). Submitting a duplicate email during creation or edit returns HTTP 409 Conflict.
 - **BR-22 (Admin Initial Password Assignment)**: Creating a user or resetting a user's password sets a temporary password and automatically sets `requiresPasswordChange = true`.
 - **BR-23 (Self-Deactivation Guard)**: An Administrator cannot deactivate their own active account (`userId == authenticatedUser.id`), returning HTTP 422 Unprocessable Entity.
@@ -127,7 +127,37 @@ Requesters must continue utilizing all Lab 2 ticket creation, viewing, and attac
 
 ---
 
-## 7. UI Specification Summary
+## 7. Role & Authorization Matrix
+
+This matrix establishes the comprehensive security contract governing all system capabilities, endpoint protections, ownership constraints, and UI element permissions.
+
+| Capability / Resource | HTTP Endpoint | Anonymous | Requester | IT Staff | Administrator | Ownership & Authorization Rule |
+|---|---|:---:|:---:|:---:|:---:|---|
+| **User Login** | `POST /api/auth/login` | Allowed | Allowed | Allowed | Allowed | Publicly accessible; requires `isActive = true`. |
+| **Current User Profile** | `GET /api/auth/me` | 401 | Allowed | Allowed | Allowed | Validates active session token. |
+| **User Logout** | `POST /api/auth/logout` | 401 | Allowed | Allowed | Allowed | Invalidate session credentials. |
+| **Change Password** | `POST /api/auth/change-password` | 401 | Allowed | Allowed | Allowed | Permitted when `requiresPasswordChange = true` or user-initiated. |
+| **My Tickets List** | `GET /api/tickets` | 401 | Allowed | 403 | 403 | Requester view: scoped strictly to `ticket.requesterId == session.userId`. |
+| **Create Ticket** | `POST /api/tickets` | 401 | Allowed | Allowed | Allowed | Requester identity injected from session. |
+| **Requester Ticket Detail** | `GET /api/tickets/:id` | 401 | Owner Only | Allowed | Allowed | Requester gets 403/404 if not owner; response excludes Internal Notes. |
+| **Upload / Download Attachment** | `POST/GET /api/tickets/:id/attachments` | 401 | Owner Only | Allowed | Allowed | Requester can only manage attachments on owned tickets. |
+| **Soft Remove Attachment** | `POST /api/attachments/:id/remove` | 401 | Owner Only | Allowed | Allowed | Requester can only remove attachments on owned tickets. |
+| **Public Comments (List & Post)** | `GET/POST /api/tickets/:id/comments` | 401 | Owner Only | Allowed | Allowed | Requester can only post/view comments on owned tickets. |
+| **Problem Appears Resolved** | `POST /api/tickets/:id/resolve-indication` | 401 | Owner Only | 403 | 403 | Only owning Requester may signal resolution indication. |
+| **IT Staff Ticket Queue** | `GET /api/staff/tickets` | 401 | 403 | Allowed | Allowed | Global queue across all requesters; blocked for Requesters. |
+| **IT Staff Ticket Detail** | `GET /api/staff/tickets/:id` | 401 | 403 | Allowed | Allowed | Full operational view including Internal Notes; blocked for Requesters. |
+| **Claim / Reassign Ticket** | `PATCH /api/staff/tickets/:id/ownership` | 401 | 403 | Allowed | Allowed | Target `ownerId` must be active IT Staff or Admin. |
+| **Update IT Priority** | `PATCH /api/staff/tickets/:id/priority` | 401 | 403 | Allowed | Allowed | Operational calibration; blocked for Requesters. |
+| **Update Ticket Status** | `PATCH /api/staff/tickets/:id/status` | 401 | 403 | Allowed | Allowed | Enforces Section 6 Status Transition Matrix. |
+| **Internal Notes (List & Post)** | `GET/POST /api/tickets/:id/notes` | 401 | 403 | Allowed | Allowed | Confidential operational notes; strictly blocked for Requesters. |
+| **User Directory List** | `GET /api/admin/users` | 401 | 403 | 403 | Allowed | Administrator only; search & role filter. |
+| **Create User** | `POST /api/admin/users` | 401 | 403 | 403 | Allowed | Admin only; generates temporary initial password. |
+| **Edit User Profile / Status** | `PATCH /api/admin/users/:id` | 401 | 403 | 403 | Allowed | Admin only; enforces self-deactivation & last-admin guards. |
+| **Reset Initial Password** | `POST /api/admin/users/:id/reset-password`| 401 | 403 | 403 | Allowed | Admin only; forces `requiresPasswordChange = true`. |
+
+---
+
+## 8. UI Specification Summary
 
 *(See [ui-spec.md](file:///c:/Year3/Semester%201/CPE334%20Software%20Engineering/toktickit/docs/lab-03/ui-spec.md) for full visual designs, tokens, and responsive checklists)*
 
@@ -148,7 +178,7 @@ Requesters must continue utilizing all Lab 2 ticket creation, viewing, and attac
 
 ---
 
-## 8. Data Changes
+## 9. Data Changes
 
 ### Prisma Schema Design
 The PostgreSQL schema evolves from Lab 2 to introduce real users, roles, password hashes, comments, internal notes, and staff workflow fields:
@@ -227,7 +257,7 @@ model Ticket {
   summary                String
   description            String
   requestedPriority      Priority        @default(MEDIUM)
-  itPriority             Priority?
+  itPriority             Priority        @default(MEDIUM)
   currentStatus          TicketStatus    @default(NEW)
   resolvedIndicated      Boolean         @default(false)
   resolvedIndicatedAt    DateTime?
@@ -300,7 +330,7 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 
 ---
 
-## 9. API Contract Summary
+## 10. API Contract Summary
 
 *(See [api-spec.md](file:///c:/Year3/Semester%201/CPE334%20Software%20Engineering/toktickit/docs/lab-03/api-spec.md) for full endpoint specifications, request/response schemas, and status codes)*
 
@@ -314,10 +344,12 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 | **Auth** | `POST` | `/api/auth/change-password` | Authenticated (Must Change) | Update password & clear password-change flag |
 | **Requester** | `GET` | `/api/tickets` | Requester | Retrieve paginated owned tickets |
 | **Requester** | `POST` | `/api/tickets` | Requester | Create new ticket with session identity |
-| **Requester** | `GET` | `/api/tickets/:id` | Owner / Staff / Admin | View ticket details |
+| **Requester** | `GET` | `/api/tickets/:id` | Owner / Staff / Admin | View ticket details (excludes internal notes) |
+| **Comments** | `GET` | `/api/tickets/:id/comments` | Owner / Staff / Admin | Retrieve public comment thread |
 | **Comments** | `POST` | `/api/tickets/:id/comments` | Owner / Staff / Admin | Post append-only public comment |
 | **Comments** | `POST` | `/api/tickets/:id/resolve-indication` | Owner Requester | Indicate problem appears resolved |
 | **Staff Queue**| `GET` | `/api/staff/tickets` | IT Staff / Admin | Query tickets with search, filter, sort, page |
+| **Staff Ops** | `GET` | `/api/staff/tickets/:id` | IT Staff / Admin | Retrieve one ticket for operational workflow |
 | **Staff Ops** | `PATCH` | `/api/staff/tickets/:id/ownership` | IT Staff / Admin | Claim or reassign ticket owner |
 | **Staff Ops** | `PATCH` | `/api/staff/tickets/:id/priority` | IT Staff / Admin | Update operational IT Priority |
 | **Staff Ops** | `PATCH` | `/api/staff/tickets/:id/status` | IT Staff / Admin | Execute permitted status transition |
@@ -330,10 +362,10 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 
 ---
 
-## 10. Acceptance Criteria
+## 11. Acceptance Criteria
 
 ```text
-[ ] AC-1.1: docs/lab-03/specification.md defines numbered Functional Requirements (FRs), Business Rules (BRs), authorization matrix, status transition matrix, and Product Definition of Done.
+[ ] AC-1.1: docs/lab-03/specification.md defines numbered Functional Requirements (FRs), Business Rules (BRs), dedicated authorization matrix, status transition matrix, and Product Definition of Done.
 [ ] AC-1.2: docs/lab-03/ui-spec.md specifies screen layouts, Zen Green design tokens, badge styles, validation states, and responsive rules (Desktop, Tablet, Mobile) for all new screens.
 [ ] AC-1.3: docs/lab-03/api-spec.md documents all endpoints, request/response schemas, session handling, query parameters, and safe error responses.
 [ ] AC-1.4: docs/lab-03/tests.md maps every Acceptance Criterion across Sprint 3 to planned automated test IDs with explicit test file paths.
@@ -378,13 +410,13 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 
 ---
 
-## 11. Definition of Done
+## 12. Definition of Done
 
 ### Part 1: Product Completion
 - [ ] All Functional Requirements (FR-01 through FR-16) and Business Rules (BR-01 through BR-28) implemented.
 - [ ] Prisma schema evolved and migrated with existing Lab 2 data preserved.
 - [ ] Idempotent seed script populated with specified counts of Requesters, IT Staff, Admins, and distributed tickets.
-- [ ] 100% of planned automated tests passing across Server API, Client Component, and E2E test suites with zero skipped tests.
+- [ ] 100% of planned automated tests passing across Server API, Client Component, Regression, and E2E test suites with zero skipped tests.
 - [ ] Zen Green UI guidelines verified across Desktop, Tablet, and Mobile.
 - [ ] Security boundaries verified: server-side role enforcement, Requester data isolation, Internal Note confidentiality, and Admin safety guards.
 
@@ -397,9 +429,13 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 
 ---
 
-## 12. Assumptions and Decisions
+## 13. Assumptions and Decisions
 
-- **Session Architecture**: Authenticated sessions are managed using signed, HTTP-only, secure cookies (or Bearer tokens in local development) containing the user's ID, role, and password-change requirement flag.
+- **Session Architecture**: Authenticated sessions are managed using signed, HTTP-only, secure cookies (or Bearer tokens in local development) containing the user's ID, role, and password-change requirement flag (`requiresPasswordChange`).
+- **Standardized Property Name (`requiresPasswordChange`)**: To prevent payload and database impedance mismatch, the field name is strictly standardized as `requiresPasswordChange` across the Prisma schema, authentication tokens, API request/response bodies, and client state.
 - **Password Hashing**: Passwords are saved as one-way salted hashes using `bcrypt` (10 rounds) to ensure secure credential storage.
 - **Append-Only Immutability**: Public Comments and Internal Notes cannot be updated or deleted once created, preserving an unalterable audit log.
-- **Separate Administration & Operations**: Administrators manage user accounts and do not triage tickets unless explicitly assigned as an owner.
+- **Administrator Operational Authority Justification**: Handout Section 4.3 notes that Administrator and IT Staff responsibilities are conceptually separate, but allows Administrators to perform IT Staff operations if explicitly permitted by the authorization matrix. In our engineering contract, Administrators are granted parity on IT Staff ticket endpoints (`/api/staff/tickets`, ownership assignment, IT priority calibration, status transitions, and internal notes). This design choice is justified for operational continuity in small organizations and educational lab environments:
+  1. *System Oversight & Continuity*: Administrators must be able to claim or reassign tickets if an assigned IT Staff member is deactivated, unavailable, or on leave.
+  2. *Escalation & Intervention*: Administrators occasionally intervene directly on critical or blocked tickets without requiring a secondary IT Staff persona account.
+  3. *UI Role Separation Maintained*: Although permitted at the API level, the default Administrator UI shell directs exclusively to User Management. Ticketing operations are accessed strictly via explicit escalation or direct ticket links, preserving the conceptual role separation required by the stakeholder.

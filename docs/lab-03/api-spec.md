@@ -9,6 +9,7 @@ The TokTickIT Lab 3 API delivers enterprise authentication, role-based access co
 - **Token Payload**: Contains `userId`, `email`, `role`, and `requiresPasswordChange`.
 - **Decoupling**: The server validates the token on every request, verifying that the user exists and is active (`isActive = true`).
 - **First-Login Constraint**: If `requiresPasswordChange = true`, calls to any operational endpoint outside of `/api/auth/me`, `/api/auth/logout`, and `/api/auth/change-password` return HTTP 403 Forbidden with error code `PASSWORD_CHANGE_REQUIRED`.
+- **Property Standardization**: The property name `requiresPasswordChange` is strictly used across all endpoints, database fields, and token payloads (no deprecated variants such as `mustChangePassword`).
 
 ### 1.2 Standard Error Response Shape
 All 4xx and 5xx error responses return standard structured JSON:
@@ -50,7 +51,7 @@ Authenticate credentials, verify account is active, and initiate a session.
     "name": "Alex Turner",
     "email": "alex.turner@toktickit.kmutt.ac.th",
     "role": "IT_STAFF",
-    "mustChangePassword": false
+    "requiresPasswordChange": false
   },
   "token": "eyJhbGciOiJIUzI1NiIsIn..."
 }
@@ -68,7 +69,7 @@ Retrieve profile information for the currently authenticated session.
   "name": "Alex Turner",
   "email": "alex.turner@toktickit.kmutt.ac.th",
   "role": "IT_STAFF",
-  "mustChangePassword": false
+  "requiresPasswordChange": false
 }
 ```
 - **Errors**: `401 Unauthorized` (missing/expired session).
@@ -99,7 +100,7 @@ Update user password (mandatory for first-time login or administrative reset).
 ```json
 {
   "message": "Password updated successfully",
-  "mustChangePassword": false
+  "requiresPasswordChange": false
 }
 ```
 - **Errors**: `400 Bad Request` (password does not satisfy complexity policy or wrong current password).
@@ -152,7 +153,69 @@ Create a ticket using the authenticated user's ID as `requesterId`.
 ```
 - **Response 201 Created**: Returns created ticket object with status `NEW`.
 
-### 3.3 Post Public Comment
+### 3.3 Get Requester Ticket Detail
+Retrieve full details for an owned ticket. Crucially, the response includes attachments and Public Comments, but **strictly omits `internalNotes`**.
+- **Endpoint**: `GET /api/tickets/:id`
+- **Access**: Ticket Owner (`REQUESTER`), `IT_STAFF`, `ADMIN`
+- **Response 200 OK**:
+```json
+{
+  "id": 1,
+  "ticketNo": "TKT-2026-000001",
+  "summary": "Campus Wi-Fi drops intermittently",
+  "description": "Connecting in building CB2 drops connection every 5 minutes.",
+  "requestedPriority": "HIGH",
+  "currentStatus": "IN_PROGRESS",
+  "resolvedIndicated": false,
+  "resolvedIndicatedAt": null,
+  "createdAt": "2026-09-17T08:30:00.000Z",
+  "updatedAt": "2026-09-17T09:00:00.000Z",
+  "category": { "id": 4, "name": "Network" },
+  "relatedSystem": { "id": 2, "name": "Campus Wi-Fi" },
+  "requester": {
+    "id": 2,
+    "name": "Jennifer Anderson",
+    "email": "jennifer.anderson@kmutt.ac.th"
+  },
+  "attachments": [
+    {
+      "id": 1,
+      "originalName": "wifi-error.png",
+      "fileSize": 1048576,
+      "mimeType": "image/png",
+      "isRemoved": false
+    }
+  ],
+  "publicComments": [
+    {
+      "id": 10,
+      "author": { "id": 2, "name": "Jennifer Anderson", "role": "REQUESTER" },
+      "content": "Added a screenshot of the disconnect dialog.",
+      "createdAt": "2026-09-17T08:45:00.000Z"
+    }
+  ]
+}
+```
+- **Errors**: `403 Forbidden` / `404 Not Found` (when a Requester requests another user's ticket).
+
+### 3.4 Get Ticket Public Comments
+Retrieve only the public comments thread for a ticket.
+- **Endpoint**: `GET /api/tickets/:id/comments`
+- **Access**: Ticket Owner (`REQUESTER`), `IT_STAFF`, `ADMIN`
+- **Response 200 OK**:
+```json
+[
+  {
+    "id": 10,
+    "ticketId": 1,
+    "author": { "id": 2, "name": "Jennifer Anderson", "role": "REQUESTER" },
+    "content": "Added a screenshot of the disconnect dialog.",
+    "createdAt": "2026-09-17T08:45:00.000Z"
+  }
+]
+```
+
+### 3.5 Post Public Comment
 Append a public comment to a ticket.
 - **Endpoint**: `POST /api/tickets/:id/comments`
 - **Access**: Ticket Owner (`REQUESTER`), `IT_STAFF`, or `ADMIN`
@@ -178,7 +241,7 @@ Append a public comment to a ticket.
 ```
 - **Errors**: `400 Bad Request` (content empty or > 2000 chars), `403 Forbidden` (non-owner requester).
 
-### 3.4 Problem Appears Resolved Indication
+### 3.6 Problem Appears Resolved Indication
 Requester signals problem appears solved without modifying formal status.
 - **Endpoint**: `POST /api/tickets/:id/resolve-indication`
 - **Access**: Ticket Owner (`REQUESTER`)
@@ -239,7 +302,66 @@ Fetch paginated tickets across all requesters with filtering and sorting.
 ```
 - **Errors**: `403 Forbidden` (Requesters attempting access).
 
-### 4.2 Claim or Reassign Ticket Ownership
+### 4.2 Get IT Staff Ticket Detail
+Retrieve full operational details for a ticket, including attachments, public comments, **and confidential internal notes**.
+- **Endpoint**: `GET /api/staff/tickets/:id`
+- **Access**: `IT_STAFF`, `ADMIN`
+- **Response 200 OK**:
+```json
+{
+  "id": 1,
+  "ticketNo": "TKT-2026-000001",
+  "summary": "Campus Wi-Fi drops intermittently",
+  "description": "Connecting in building CB2 drops connection every 5 minutes.",
+  "requestedPriority": "HIGH",
+  "itPriority": "HIGH",
+  "currentStatus": "IN_PROGRESS",
+  "resolvedIndicated": false,
+  "resolvedIndicatedAt": null,
+  "createdAt": "2026-09-17T08:30:00.000Z",
+  "updatedAt": "2026-09-17T09:00:00.000Z",
+  "category": { "id": 4, "name": "Network" },
+  "relatedSystem": { "id": 2, "name": "Campus Wi-Fi" },
+  "requester": {
+    "id": 2,
+    "name": "Jennifer Anderson",
+    "email": "jennifer.anderson@kmutt.ac.th"
+  },
+  "owner": {
+    "id": 5,
+    "name": "Alex Turner",
+    "email": "alex.turner@toktickit.kmutt.ac.th"
+  },
+  "attachments": [
+    {
+      "id": 1,
+      "originalName": "wifi-error.png",
+      "fileSize": 1048576,
+      "mimeType": "image/png",
+      "isRemoved": false
+    }
+  ],
+  "publicComments": [
+    {
+      "id": 10,
+      "author": { "id": 2, "name": "Jennifer Anderson", "role": "REQUESTER" },
+      "content": "Added a screenshot of the disconnect dialog.",
+      "createdAt": "2026-09-17T08:45:00.000Z"
+    }
+  ],
+  "internalNotes": [
+    {
+      "id": 3,
+      "author": { "id": 5, "name": "Alex Turner", "role": "IT_STAFF" },
+      "content": "Network engineer rebooted the CB2 AP switch at 09:00.",
+      "createdAt": "2026-09-17T09:02:00.000Z"
+    }
+  ]
+}
+```
+- **Errors**: `403 Forbidden` (Requesters attempting access).
+
+### 4.3 Claim or Reassign Ticket Ownership
 Assign primary ticket ownership to an active IT Staff or Administrator.
 - **Endpoint**: `PATCH /api/staff/tickets/:id/ownership`
 - **Access**: `IT_STAFF`, `ADMIN`
@@ -253,7 +375,7 @@ Assign primary ticket ownership to an active IT Staff or Administrator.
 - **Response 200 OK**: Returns updated ticket with new owner.
 - **Errors**: `400 Bad Request` (owner is not an active staff/admin), `403 Forbidden`.
 
-### 4.3 Update IT Priority
+### 4.4 Update IT Priority
 Calibrate the internal operational priority of a ticket.
 - **Endpoint**: `PATCH /api/staff/tickets/:id/priority`
 - **Access**: `IT_STAFF`, `ADMIN`
@@ -265,7 +387,7 @@ Calibrate the internal operational priority of a ticket.
 ```
 - **Response 200 OK**: Returns updated ticket with new IT priority.
 
-### 4.4 Update Ticket Status
+### 4.5 Update Ticket Status
 Transition ticket through permitted state workflow.
 - **Endpoint**: `PATCH /api/staff/tickets/:id/status`
 - **Access**: `IT_STAFF`, `ADMIN`
@@ -278,7 +400,7 @@ Transition ticket through permitted state workflow.
 - **Response 200 OK**: Returns updated ticket with new status.
 - **Errors**: `422 Unprocessable Entity` (transition violates state transition matrix).
 
-### 4.5 Internal Notes (Get & Post)
+### 4.6 Internal Notes (Get & Post)
 Retrieve and create confidential operational notes.
 - **Endpoints**:
   - `GET /api/tickets/:id/notes`
