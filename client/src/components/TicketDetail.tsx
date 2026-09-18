@@ -6,8 +6,11 @@ import {
   uploadAttachment,
   downloadAttachmentBlob,
   softRemoveAttachment,
+  postPublicComment,
+  postResolveIndication,
   TicketDetail as ITicketDetail,
   Attachment,
+  PublicComment,
 } from '../api';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -83,6 +86,28 @@ const PriorityBadge: React.FC<{ priority: string }> = ({ priority }) => (
     {priority}
   </span>
 );
+
+const RoleBadge: React.FC<{ role: string }> = ({ role }) => {
+  if (role === 'IT_STAFF') {
+    return (
+      <span style={{ ...BADGE_BASE, backgroundColor: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0', fontSize: '11px' }}>
+        IT Staff
+      </span>
+    );
+  }
+  if (role === 'ADMIN') {
+    return (
+      <span style={{ ...BADGE_BASE, backgroundColor: '#F3E8FF', color: '#6B21A8', border: '1px solid #DDD6FE', fontSize: '11px' }}>
+        Administrator
+      </span>
+    );
+  }
+  return (
+    <span style={{ ...BADGE_BASE, backgroundColor: '#E0F2FE', color: '#0369A1', border: '1px solid #BAE6FD', fontSize: '11px' }}>
+      Requester
+    </span>
+  );
+};
 
 // ─── Read-only field ─────────────────────────────────────────────────────────
 
@@ -393,6 +418,69 @@ const UploadModal: React.FC<UploadModalProps> = ({ onUpload, onCancel, isLoading
   );
 };
 
+// ─── Problem Appears Resolved Modal ──────────────────────────────────────────
+
+const ResolveModal: React.FC<{
+  onConfirm: () => void;
+  onCancel: () => void;
+  isLoading: boolean;
+  error?: string;
+}> = ({ onConfirm, onCancel, isLoading, error }) => {
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000, padding: '16px',
+    }}>
+      <div style={{
+        backgroundColor: '#fff', borderRadius: '12px', padding: '24px', maxWidth: '480px', width: '100%',
+        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '24px' }}>💡</span>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1A2820' }}>
+            Problem Appears Resolved?
+          </h3>
+        </div>
+        <p style={{ fontSize: '14px', color: '#4B5563', lineHeight: 1.6, margin: '0 0 16px' }}>
+          Signal that this problem appears resolved? (Formal ticket status will remain unchanged until verified by IT Staff).
+        </p>
+        {error && (
+          <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', padding: '10px 14px', color: '#991B1B', fontSize: '13px', marginBottom: '16px' }}>
+            {error}
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <button
+            id="cancel-resolve-btn"
+            onClick={onCancel}
+            disabled={isLoading}
+            style={{
+              padding: '8px 16px', fontSize: '13px', fontWeight: 600,
+              backgroundColor: '#fff', border: '1px solid #D1D5DB', borderRadius: '8px',
+              color: '#4B5563', cursor: isLoading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            id="confirm-resolve-btn"
+            onClick={onConfirm}
+            disabled={isLoading}
+            style={{
+              padding: '8px 16px', fontSize: '13px', fontWeight: 600,
+              backgroundColor: '#006B3C', border: 'none', borderRadius: '8px',
+              color: '#fff', cursor: isLoading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isLoading ? 'Confirming...' : 'Yes, Problem Resolved'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main TicketDetail Component ──────────────────────────────────────────────
 
 interface TicketDetailProps {
@@ -421,12 +509,26 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
   // Download
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
+  // Public Comments
+  const [comments, setComments] = useState<PublicComment[]>([]);
+  const [commentContent, setCommentContent] = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState('');
+
+  // Problem Appears Resolved
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState('');
+
   const fetchTicket = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getTicketById(ticketId, requesterId);
       setTicket(data);
+      if (data.publicComments) {
+        setComments(data.publicComments);
+      }
     } catch (err: any) {
       setErrorCode(err.statusCode ?? null);
       setError(err.message || 'Failed to load ticket');
@@ -490,6 +592,45 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     }
   };
 
+  // ── Handle post public comment ──
+  const handlePostComment = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = commentContent.trim();
+    if (trimmed.length < 2 || trimmed.length > 2000) return;
+    try {
+      setCommentSubmitting(true);
+      setCommentError('');
+      const newComment = await postPublicComment(ticketId, trimmed, requesterId);
+      setComments((prev) => [...prev, newComment]);
+      setCommentContent('');
+    } catch (err: any) {
+      setCommentError(err.message || 'Failed to post comment');
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
+  // ── Handle problem appears resolved ──
+  const handleConfirmResolve = async () => {
+    try {
+      setResolving(true);
+      setResolveError('');
+      const res = await postResolveIndication(ticketId, requesterId);
+      if (ticket) {
+        setTicket({
+          ...ticket,
+          resolvedIndicated: true,
+          resolvedIndicatedAt: res.resolvedIndicatedAt || new Date().toISOString(),
+        });
+      }
+      setShowResolveModal(false);
+    } catch (err: any) {
+      setResolveError(err.message || 'Failed to indicate problem resolution');
+    } finally {
+      setResolving(false);
+    }
+  };
+
   // ── Loading state ──
   if (loading) {
     return (
@@ -536,6 +677,11 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
   const activeAttachments = ticket.attachments.filter((a) => !a.isRemoved);
   const removedAttachments = ticket.attachments.filter((a) => a.isRemoved);
   const canAddAttachment = activeAttachments.length < 5;
+  const isOwner = user
+    ? user.id === ticket.requesterId || user.email === ticket.requester.email
+    : selectedRequester
+    ? selectedRequester.id === ticket.requesterId
+    : true;
 
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', color: '#1A2820', maxWidth: '900px', margin: '0 auto' }}>
@@ -558,7 +704,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
               {ticket.ticketNo}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <StatusBadge status={ticket.currentStatus} />
             <PriorityBadge priority={ticket.requestedPriority} />
             {ticket.itPriority && (
@@ -566,6 +712,35 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
                 IT: <PriorityBadge priority={ticket.itPriority} />
               </span>
             )}
+            {ticket.resolvedIndicated ? (
+              <span
+                id="resolved-indicated-badge"
+                style={{ ...BADGE_BASE, backgroundColor: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0', fontSize: '12px' }}
+                title={`Resolution indicated on ${ticket.resolvedIndicatedAt ? formatDate(ticket.resolvedIndicatedAt) : 'N/A'}`}
+              >
+                ✓ Resolution Indicated
+              </span>
+            ) : isOwner && ticket.currentStatus !== 'RESOLVED' && ticket.currentStatus !== 'CLOSED' && ticket.currentStatus !== 'CANCELLED' ? (
+              <button
+                id="resolve-indication-btn"
+                onClick={() => { setResolveError(''); setShowResolveModal(true); }}
+                style={{
+                  padding: '4px 12px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  backgroundColor: '#FFFFFF',
+                  color: '#006B3C',
+                  border: '1px solid #006B3C',
+                  borderRadius: '9999px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                💡 Problem Appears Resolved
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -729,6 +904,113 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
         )}
       </div>
 
+      {/* ── Public Comments Card ── */}
+      <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', marginTop: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '8px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#1A2820' }}>
+            Public Comments ({comments.length})
+          </h2>
+          <span style={{ fontSize: '12px', color: '#6B7280' }}>
+            Shared thread between Requester & Support Staff
+          </span>
+        </div>
+
+        {/* Comments Feed */}
+        {comments.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px 16px', color: '#6B7280', fontSize: '14px', backgroundColor: '#F9FAFB', borderRadius: '8px', marginBottom: '24px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>💬</div>
+            No comments yet. Post a comment below to communicate with the IT support team.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+            {comments.map((comment) => (
+              <div
+                key={comment.id}
+                style={{
+                  backgroundColor: '#F9FAFB',
+                  border: '1px solid #E5E7EB',
+                  borderLeft: '4px solid #0B7A46',
+                  borderRadius: '8px',
+                  padding: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A2820' }}>
+                      {comment.author?.name || 'User'}
+                    </span>
+                    <RoleBadge role={comment.author?.role || 'REQUESTER'} />
+                  </div>
+                  <span style={{ fontSize: '12px', color: '#6B7280' }}>
+                    {formatDate(comment.createdAt)}
+                  </span>
+                </div>
+                <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                  {comment.content}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add Public Comment Form */}
+        <form onSubmit={handlePostComment} style={{ borderTop: '1px solid #E5E7EB', paddingTop: '20px' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1A2820', margin: '0 0 8px' }}>
+            Add Public Comment
+          </h3>
+          {commentError && (
+            <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', padding: '10px 14px', color: '#991B1B', fontSize: '13px', marginBottom: '12px' }}>
+              {commentError}
+            </div>
+          )}
+          <textarea
+            id="comment-content-input"
+            value={commentContent}
+            onChange={(e) => setCommentContent(e.target.value)}
+            placeholder="Type your comment here (2 - 2,000 characters)..."
+            rows={4}
+            maxLength={2000}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '12px',
+              fontSize: '14px',
+              border: '1px solid #D1D5DB',
+              borderRadius: '8px',
+              outline: 'none',
+              fontFamily: 'inherit',
+              lineHeight: 1.5,
+              resize: 'vertical',
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '12px', color: commentContent.length > 2000 ? '#DC2626' : '#6B7280' }}>
+              {commentContent.length} / 2,000 characters
+              {commentContent.trim().length > 0 && commentContent.trim().length < 2 && (
+                <span style={{ color: '#DC2626', marginLeft: '6px' }}>(minimum 2 characters required)</span>
+              )}
+            </span>
+            <button
+              id="post-comment-btn"
+              type="submit"
+              disabled={commentContent.trim().length < 2 || commentContent.length > 2000 || commentSubmitting}
+              style={{
+                padding: '8px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                backgroundColor: commentContent.trim().length >= 2 && commentContent.length <= 2000 && !commentSubmitting ? '#006B3C' : '#9CA3AF',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: commentContent.trim().length >= 2 && commentContent.length <= 2000 && !commentSubmitting ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {commentSubmitting ? 'Posting...' : 'Post Comment'}
+            </button>
+          </div>
+        </form>
+      </div>
+
       {/* Modals */}
       {removeTarget && (
         <RemoveModal
@@ -745,6 +1027,15 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
           onCancel={() => { setShowUploadModal(false); setUploadError(''); }}
           isLoading={uploadLoading}
           error={uploadError}
+        />
+      )}
+
+      {showResolveModal && (
+        <ResolveModal
+          onConfirm={handleConfirmResolve}
+          onCancel={() => { setShowResolveModal(false); setResolveError(''); }}
+          isLoading={resolving}
+          error={resolveError}
         />
       )}
     </div>

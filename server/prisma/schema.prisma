@@ -94,6 +94,8 @@ model ticket {
   updatedAt                       DateTime
   ownerId                         Int?
   itPriority                      RequestedPriority
+  resolvedIndicated               Boolean           @default(false)
+  resolvedIndicatedAt             DateTime?
   attachment                      attachment[]
   internal_note                   internal_note[]
   public_comment                  public_comment[]

@@ -46,4 +46,16 @@ app.get("/api/categories", async (req: Request, res: Response) => {
   }
 });
 
+// Global error handling middleware (e.g. Multer file upload errors)
+app.use((err: any, _req: Request, res: Response, next: express.NextFunction) => {
+  if (err?.name === 'MulterError' || err?.message?.includes('Invalid file type') || err?.message?.includes('File too large')) {
+    return res.status(400).json({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: err.message,
+    });
+  }
+  next(err);
+});
+
 export default app;
