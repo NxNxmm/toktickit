@@ -1,160 +1,160 @@
 -- ============================================================
 -- Lab 3 Migration: User Model, Auth Foundation, Ticket Fields,
--- PublicComment, InternalNote
+-- PublicComment, InternalNote, Session
 -- ============================================================
 
 -- ────────────────────────────────────────────────────────────
--- Step 1: Create new enums
+-- Step 1: Create the Role enum and the User table
 -- ────────────────────────────────────────────────────────────
-CREATE TYPE "Role" AS ENUM ('REQUESTER', 'IT_STAFF', 'ADMIN');
+CREATE TYPE "UserRole" AS ENUM ('REQUESTER', 'IT_STAFF', 'ADMIN');
 
--- Add new values to the existing TicketStatus enum
-ALTER TYPE "TicketStatus" ADD VALUE IF NOT EXISTS 'OPEN';
-ALTER TYPE "TicketStatus" ADD VALUE IF NOT EXISTS 'WAITING_FOR_REQUESTER';
-ALTER TYPE "TicketStatus" ADD VALUE IF NOT EXISTS 'REOPENED';
+CREATE TABLE "user" (
+    "id"                      SERIAL NOT NULL,
+    "name"                    TEXT NOT NULL,
+    "email"                   TEXT NOT NULL,
+    "isActive"                BOOLEAN NOT NULL DEFAULT true,
+    "createdAt"               TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"               TIMESTAMP(3) NOT NULL,
+    "role"                    "UserRole" NOT NULL,
+    "passwordHash"            TEXT NOT NULL,
+    "requiresPasswordChange"  BOOLEAN NOT NULL DEFAULT false,
+    "failedLoginAttempts"     INTEGER NOT NULL DEFAULT 0,
+    "lastFailedLoginAt"       TIMESTAMP(3),
 
--- ────────────────────────────────────────────────────────────
--- Step 2: Create User table
--- ────────────────────────────────────────────────────────────
-CREATE TABLE "User" (
-    "id"                     SERIAL NOT NULL,
-    "email"                  TEXT NOT NULL,
-    "passwordHash"           TEXT NOT NULL,
-    "name"                   TEXT NOT NULL,
-    "role"                   "Role" NOT NULL DEFAULT 'REQUESTER',
-    "isActive"               BOOLEAN NOT NULL DEFAULT true,
-    "requiresPasswordChange" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt"              TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt"              TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-CREATE INDEX "User_email_isActive_idx" ON "User"("email", "isActive");
-CREATE INDEX "User_role_isActive_idx" ON "User"("role", "isActive");
+CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
+
+-- CreateIndex
+CREATE INDEX "user_isActive_idx" ON "user"("isActive");
+
+-- CreateIndex
+CREATE INDEX "user_role_idx" ON "user"("role");
 
 -- ────────────────────────────────────────────────────────────
--- Step 3: Migrate RequesterUser data into User
+-- Step 2: Create Session table
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE "session" (
+    "id"        SERIAL NOT NULL,
+    "tokenHash" TEXT NOT NULL,
+    "userId"    INTEGER NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "session_tokenHash_key" ON "session"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "session_expiresAt_idx" ON "session"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "session_userId_idx" ON "session"("userId");
+
+-- ────────────────────────────────────────────────────────────
+-- Step 3: Create PublicComment table
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE "public_comment" (
+    "id"        SERIAL NOT NULL,
+    "ticketId"  INTEGER NOT NULL,
+    "authorId"  INTEGER NOT NULL,
+    "content"   TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "public_comment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "public_comment_ticketId_createdAt_idx" ON "public_comment"("ticketId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "public_comment_ticketId_idx" ON "public_comment"("ticketId");
+
+-- ────────────────────────────────────────────────────────────
+-- Step 4: Create InternalNote table
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE "internal_note" (
+    "id"        SERIAL NOT NULL,
+    "ticketId"  INTEGER NOT NULL,
+    "authorId"  INTEGER NOT NULL,
+    "content"   TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "internal_note_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "internal_note_ticketId_createdAt_idx" ON "internal_note"("ticketId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "internal_note_ticketId_idx" ON "internal_note"("ticketId");
+
+-- ────────────────────────────────────────────────────────────
+-- Step 5: Migrate Lab 2 RequesterUser records into User
 -- Each Lab 2 development requester becomes a real REQUESTER
 -- user with a known development password hash (Password123!)
 -- bcrypt hash of 'Password123!' with 10 rounds:
 -- $2b$10$CwTycUXWue0Thq9StjUM0uJ8/xDtMaBntxJEULTTMm4rSkgLlkl2W
 -- ────────────────────────────────────────────────────────────
-INSERT INTO "User" ("email", "passwordHash", "name", "role", "isActive", "requiresPasswordChange", "createdAt", "updatedAt")
+INSERT INTO "user" ("email", "passwordHash", "name", "role", "isActive", "requiresPasswordChange", "createdAt", "updatedAt")
 SELECT
     ru."email",
     '$2b$10$CwTycUXWue0Thq9StjUM0uJ8/xDtMaBntxJEULTTMm4rSkgLlkl2W',
     ru."name",
-    'REQUESTER'::"Role",
+    'REQUESTER'::"UserRole",
     ru."isActive",
     false,
     ru."createdAt",
-    ru."updatedAt"
+    COALESCE(ru."updatedAt", ru."createdAt")
 FROM "RequesterUser" ru
 ON CONFLICT ("email") DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────
--- Step 4: Drop old FK on Ticket, update requesterId to point to User
+-- Step 6: Re-point tickets to the new User table
 -- ────────────────────────────────────────────────────────────
-ALTER TABLE "Ticket" DROP CONSTRAINT IF EXISTS "Ticket_requesterId_fkey";
+ALTER TABLE "ticket" ADD COLUMN "submittedById" INTEGER;
 
--- Re-point requesterId FK to the new User table
--- The IDs from RequesterUser are preserved via the INSERT above
--- because the User table starts from a new serial but we need to
--- map IDs. We use a separate approach: update requesterId values
--- by joining on email.
-
--- Temporarily allow null to remap
-ALTER TABLE "Ticket" ADD COLUMN "requesterIdNew" INTEGER;
-
-UPDATE "Ticket" t
-SET "requesterIdNew" = u."id"
+UPDATE "ticket" t
+SET "submittedById" = u."id"
 FROM "RequesterUser" ru
-JOIN "User" u ON u."email" = ru."email"
+JOIN "user" u ON u."email" = ru."email"
 WHERE t."requesterId" = ru."id";
 
--- Swap columns
-ALTER TABLE "Ticket" DROP COLUMN "requesterId";
-ALTER TABLE "Ticket" RENAME COLUMN "requesterIdNew" TO "requesterId";
-ALTER TABLE "Ticket" ALTER COLUMN "requesterId" SET NOT NULL;
+ALTER TABLE "ticket" ALTER COLUMN "submittedById" SET NOT NULL;
+ALTER TABLE "ticket" DROP CONSTRAINT "ticket_requesterId_fkey";
+ALTER TABLE "ticket" DROP COLUMN "requesterId";
 
 -- ────────────────────────────────────────────────────────────
--- Step 5: Add new Ticket fields
+-- Step 7: Add optional owner to Ticket
 -- ────────────────────────────────────────────────────────────
-ALTER TABLE "Ticket"
-    ADD COLUMN IF NOT EXISTS "ownerId"             INTEGER,
-    ADD COLUMN IF NOT EXISTS "resolvedIndicated"   BOOLEAN NOT NULL DEFAULT false,
-    ADD COLUMN IF NOT EXISTS "resolvedIndicatedAt" TIMESTAMP(3);
+ALTER TABLE "ticket" ADD COLUMN "ownerId" INTEGER;
 
--- Make itPriority non-nullable with default MEDIUM
--- (was Priority? in Lab 2 - some rows may be NULL)
-UPDATE "Ticket" SET "itPriority" = "requestedPriority" WHERE "itPriority" IS NULL;
-ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL;
-ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET DEFAULT 'MEDIUM';
+-- CreateIndex
+CREATE INDEX "ticket_ownerId_idx" ON "ticket"("ownerId");
 
--- ────────────────────────────────────────────────────────────
--- Step 6: Add new indexes on Ticket
--- ────────────────────────────────────────────────────────────
-CREATE INDEX IF NOT EXISTS "Ticket_ownerId_currentStatus_idx" ON "Ticket"("ownerId", "currentStatus");
-CREATE INDEX IF NOT EXISTS "Ticket_currentStatus_itPriority_idx" ON "Ticket"("currentStatus", "itPriority");
+-- CreateIndex
+CREATE INDEX "ticket_submittedById_idx" ON "ticket"("submittedById");
+
+-- CreateIndex
+CREATE INDEX "ticket_submittedById_ticketDate_idx" ON "ticket"("submittedById", "ticketDate");
 
 -- ────────────────────────────────────────────────────────────
--- Step 7: Restore foreign keys on Ticket
+-- Step 8: Add foreign keys
 -- ────────────────────────────────────────────────────────────
-ALTER TABLE "Ticket"
-    ADD CONSTRAINT "Ticket_requesterId_fkey"
-    FOREIGN KEY ("requesterId") REFERENCES "User"("id")
-    ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-ALTER TABLE "Ticket"
-    ADD CONSTRAINT "Ticket_ownerId_fkey"
-    FOREIGN KEY ("ownerId") REFERENCES "User"("id")
-    ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public_comment" ADD CONSTRAINT "public_comment_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "ticket"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- ────────────────────────────────────────────────────────────
--- Step 8: Create PublicComment table
--- ────────────────────────────────────────────────────────────
-CREATE TABLE "PublicComment" (
-    "id"        SERIAL NOT NULL,
-    "ticketId"  INTEGER NOT NULL,
-    "authorId"  INTEGER NOT NULL,
-    "content"   TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ALTER TABLE "public_comment" ADD CONSTRAINT "public_comment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-    CONSTRAINT "PublicComment_pkey" PRIMARY KEY ("id")
-);
+ALTER TABLE "internal_note" ADD CONSTRAINT "internal_note_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "ticket"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-CREATE INDEX "PublicComment_ticketId_createdAt_idx" ON "PublicComment"("ticketId", "createdAt");
+ALTER TABLE "internal_note" ADD CONSTRAINT "internal_note_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-ALTER TABLE "PublicComment"
-    ADD CONSTRAINT "PublicComment_ticketId_fkey"
-    FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ticket" ADD CONSTRAINT "ticket_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
-ALTER TABLE "PublicComment"
-    ADD CONSTRAINT "PublicComment_authorId_fkey"
-    FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- ────────────────────────────────────────────────────────────
--- Step 9: Create InternalNote table
--- ────────────────────────────────────────────────────────────
-CREATE TABLE "InternalNote" (
-    "id"        SERIAL NOT NULL,
-    "ticketId"  INTEGER NOT NULL,
-    "authorId"  INTEGER NOT NULL,
-    "content"   TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "InternalNote_pkey" PRIMARY KEY ("id")
-);
-
-CREATE INDEX "InternalNote_ticketId_createdAt_idx" ON "InternalNote"("ticketId", "createdAt");
-
-ALTER TABLE "InternalNote"
-    ADD CONSTRAINT "InternalNote_ticketId_fkey"
-    FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "InternalNote"
-    ADD CONSTRAINT "InternalNote_authorId_fkey"
-    FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ticket" ADD CONSTRAINT "ticket_submittedById_fkey" FOREIGN KEY ("submittedById") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -123,7 +123,7 @@ model user {
   updatedAt                         DateTime
   role                              UserRole
   passwordHash                      String
-  mustChangePassword                Boolean          @default(true)
+  requiresPasswordChange            Boolean          @default(false)
   failedLoginAttempts               Int              @default(0)
   lastFailedLoginAt                 DateTime?
   internal_note                     internal_note[]

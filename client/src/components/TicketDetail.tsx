@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useRequester } from '../context/RequesterContext';
 import {
   getTicketById,
@@ -400,7 +401,10 @@ interface TicketDetailProps {
 }
 
 export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) => {
+  const { user } = useAuth();
   const { selectedRequester } = useRequester();
+  // Use authenticated session when available (Lab 3); fall back to selectedRequester for Lab 2 tests
+  const requesterId = user ? undefined : selectedRequester?.id;
   const [ticket, setTicket] = useState<ITicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -421,7 +425,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     try {
       setLoading(true);
       setError(null);
-      const data = await getTicketById(ticketId, selectedRequester?.id);
+      const data = await getTicketById(ticketId, requesterId);
       setTicket(data);
     } catch (err: any) {
       setErrorCode(err.statusCode ?? null);
@@ -429,7 +433,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     } finally {
       setLoading(false);
     }
-  }, [ticketId, selectedRequester?.id]);
+  }, [ticketId, requesterId]);
 
   useEffect(() => {
     fetchTicket();
@@ -439,7 +443,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
   const handleDownload = async (att: Attachment) => {
     try {
       setDownloadingId(att.id);
-      const { blob, filename } = await downloadAttachmentBlob(att.id, selectedRequester?.id);
+      const { blob, filename } = await downloadAttachmentBlob(att.id, requesterId);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -460,7 +464,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     try {
       setRemoveLoading(true);
       setRemoveError('');
-      await softRemoveAttachment(removeTarget.id, reason, selectedRequester?.id);
+      await softRemoveAttachment(removeTarget.id, reason, requesterId);
       setRemoveTarget(null);
       await fetchTicket(); // Refresh
     } catch (err: any) {
@@ -476,7 +480,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     try {
       setUploadLoading(true);
       setUploadError('');
-      await uploadAttachment(ticket.id, file, selectedRequester?.id);
+      await uploadAttachment(ticket.id, file, requesterId);
       setShowUploadModal(false);
       await fetchTicket();
     } catch (err: any) {

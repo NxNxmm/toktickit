@@ -66,28 +66,28 @@ async function main() {
       name: "Jennifer Anderson",
       role: UserRole.REQUESTER,
       isActive: true,
-      mustChangePassword: false,
+      requiresPasswordChange: false,
     },
     {
       email: "michael.brown@kmutt.ac.th",
       name: "Michael Brown",
       role: UserRole.REQUESTER,
       isActive: true,
-      mustChangePassword: false,
+      requiresPasswordChange: false,
     },
     {
       email: "sarah.johnson@kmutt.ac.th",
       name: "Sarah Johnson",
       role: UserRole.REQUESTER,
       isActive: true,
-      mustChangePassword: false,
+      requiresPasswordChange: false,
     },
     {
       email: "david.lee@kmutt.ac.th",
       name: "David Lee",
       role: UserRole.REQUESTER,
       isActive: true,
-      mustChangePassword: false,
+      requiresPasswordChange: false,
     },
     // 1 Inactive Requester (BR-01 testing)
     {
@@ -95,7 +95,7 @@ async function main() {
       name: "Robert Taylor",
       role: UserRole.REQUESTER,
       isActive: false,
-      mustChangePassword: false,
+      requiresPasswordChange: false,
     },
     // 3 Active IT Staff
     {
@@ -103,21 +103,21 @@ async function main() {
       name: "Alex Turner",
       role: UserRole.IT_STAFF,
       isActive: true,
-      mustChangePassword: true,
+      requiresPasswordChange: true,
     },
     {
       email: "jessica.miller@toktickit.kmutt.ac.th",
       name: "Jessica Miller",
       role: UserRole.IT_STAFF,
       isActive: true,
-      mustChangePassword: true,
+      requiresPasswordChange: true,
     },
     {
       email: "kevin.patel@toktickit.kmutt.ac.th",
       name: "Kevin Patel",
       role: UserRole.IT_STAFF,
       isActive: true,
-      mustChangePassword: true,
+      requiresPasswordChange: true,
     },
     // 1 Inactive IT Staff
     {
@@ -125,7 +125,7 @@ async function main() {
       name: "Rachel Green",
       role: UserRole.IT_STAFF,
       isActive: false,
-      mustChangePassword: false,
+      requiresPasswordChange: false,
     },
     // 1 Active Administrator
     {
@@ -133,7 +133,7 @@ async function main() {
       name: "System Admin",
       role: UserRole.ADMIN,
       isActive: true,
-      mustChangePassword: false,
+      requiresPasswordChange: false,
     },
   ];
 
@@ -144,6 +144,7 @@ async function main() {
         name: user.name,
         role: user.role,
         isActive: user.isActive,
+        requiresPasswordChange: user.requiresPasswordChange,
       },
       create: {
         ...user,
@@ -261,7 +262,7 @@ async function main() {
         ownerId: t.ownerId,
         itPriority: t.itPriority,
       },
-    create: { ...t, updatedAt: new Date() },
+      create: { ...t, updatedAt: new Date() },
     });
   }
   console.log("✓ Sample tickets seeded across multiple statuses.");

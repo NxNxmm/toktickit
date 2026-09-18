@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRequester } from '../context/RequesterContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ReferenceItem {
     id: number;
@@ -7,7 +7,7 @@ interface ReferenceItem {
 }
 
 export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
-    const { selectedRequester } = useRequester();
+    const { user } = useAuth();
 
     // Data Options
     const [categories, setCategories] = useState<ReferenceItem[]>([]);
@@ -106,11 +106,16 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
             formData.append('description', trimmedDesc);
             files.forEach((file) => formData.append('files', file));
 
+            const token = localStorage.getItem('toktickit_auth_token');
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const res = await fetch('/api/tickets', {
                 method: 'POST',
-                headers: {
-                    'X-Requester-Id': String(selectedRequester?.id),
-                },
+                credentials: 'include',
+                headers,
                 body: formData,
             });
 
@@ -152,7 +157,7 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
                         </div>
                         <div className="col-md-4">
                             <label className="form-label small text-muted mb-1">Requester</label>
-                            <input type="text" className="form-control form-control-sm" value={selectedRequester?.name || ''} disabled readOnly />
+                            <input type="text" className="form-control form-control-sm" value={user?.name || ''} disabled readOnly />
                         </div>
                         <div className="col-md-4">
                             <label className="form-label small text-muted mb-1">Date & Status</label>
