@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useRequester } from '../context/RequesterContext';
 import * as api from '../api';
 
@@ -8,7 +9,10 @@ interface MyTicketsListProps {
 }
 
 export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, onViewTicket }) => {
+  const { user } = useAuth();
   const { selectedRequester } = useRequester();
+  // Lab 3: use authenticated user; Lab 2 fallback: use selectedRequester from context/localStorage
+  const hasIdentity = Boolean(user) || Boolean(selectedRequester);
 
   // Reference data
   const [categories, setCategories] = useState<api.Category[]>([]);
@@ -58,10 +62,12 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
 
   // Fetch tickets function
   const fetchTickets = useCallback(async () => {
-    if (!selectedRequester) return;
+    if (!hasIdentity) return;
     setLoading(true);
     setError(null);
     try {
+      // Pass requesterId only when not authenticated (Lab 2 fallback)
+      const requesterId = user ? undefined : selectedRequester?.id;
       const data = await api.getTickets(
         {
           search: searchTerm,
@@ -73,7 +79,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
           page,
           pageSize,
         },
-        selectedRequester.id
+        requesterId
       );
       setTickets(data.items);
       setPagination(data.pagination);
@@ -84,6 +90,8 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
       setLoading(false);
     }
   }, [
+    hasIdentity,
+    user,
     selectedRequester,
     searchTerm,
     selectedCategory,

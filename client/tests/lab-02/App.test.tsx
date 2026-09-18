@@ -18,7 +18,9 @@ const mockRequesters = [
   },
 ];
 
-describe("App & Navigation Flow (Issue 3 - AC 4, AC 5)", () => {
+// Note: Legacy Lab 2 test suite for the temporary Development Requester selector.
+// Superseded in Lab 3 by AC-3.5 (Removal of Development Requester selector) and tested in client/tests/lab-03/AppShell.test.tsx.
+describe.skip("App & Navigation Flow (Lab 2 legacy selector superseded by Lab 3 AC-3.5)", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();

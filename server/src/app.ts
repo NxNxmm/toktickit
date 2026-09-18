@@ -4,13 +4,19 @@ import { getPrisma } from "./prisma.js";
 import requesterRoutes from "./routes/requester.routes.js";
 import ticketRoutes from "./routes/ticket.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import { authenticateSession, enforcePasswordChangePolicy } from "./middleware/auth.middleware.js";
 
 void getPrisma;
 
 export const app = express();
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+
+// Global session authentication & first-login password change constraint
+app.use(authenticateSession);
+app.use(enforcePasswordChangePolicy);
+
 app.use("/api", requesterRoutes);
 app.use("/api", ticketRoutes);
 app.use("/api", authRoutes);

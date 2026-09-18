@@ -31,6 +31,16 @@ export async function checkSystem(): Promise<SystemStatus> {
   };
 }
 
+export type Role = 'REQUESTER' | 'IT_STAFF' | 'ADMIN';
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  requiresPasswordChange: boolean;
+}
+
 // Add a reusable apiFetch helper
 export async function apiFetch<T>(
   endpoint: string,
@@ -39,18 +49,25 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const headers = new Headers(options.headers || {});
 
-  // If no requesterId is passed, try retrieving from localStorage
+  // Auth Bearer token
+  const token = localStorage.getItem('toktickit_auth_token');
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // Backward compatibility with Lab 2 testing requester (only if not authenticated)
   const currentId = requesterId ?? (() => {
     const saved = localStorage.getItem('toktickit_selected_requester');
     return saved ? JSON.parse(saved).id : null;
   })();
 
-  if (currentId) {
+  if (!token && currentId && !headers.has('X-Requester-Id')) {
     headers.set('X-Requester-Id', String(currentId));
   }
 
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
+    credentials: 'include',
     headers,
   });
 
@@ -63,6 +80,37 @@ export async function apiFetch<T>(
   }
 
   return res.json();
+}
+
+export async function loginApi(email: string, password: string): Promise<{ user: User; token: string }> {
+  return apiFetch<{ user: User; token: string }>('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function getMeApi(): Promise<User> {
+  return apiFetch<User>('/api/auth/me', {
+    method: 'GET',
+  });
+}
+
+export async function logoutApi(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/auth/logout', {
+    method: 'POST',
+  });
+}
+
+export async function changePasswordApi(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ message: string; requiresPasswordChange: boolean }> {
+  return apiFetch<{ message: string; requiresPasswordChange: boolean }>('/api/auth/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
 }
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -169,6 +217,7 @@ export async function uploadAttachment(
   file: File,
   requesterId?: number | null
 ): Promise<Attachment & { ticketId: number }> {
+  const token = localStorage.getItem('toktickit_auth_token');
   const saved = localStorage.getItem('toktickit_selected_requester');
   const currentId = requesterId ?? (saved ? JSON.parse(saved).id : null);
 
@@ -176,10 +225,15 @@ export async function uploadAttachment(
   formData.append('file', file);
 
   const headers: Record<string, string> = {};
-  if (currentId) headers['X-Requester-Id'] = String(currentId);
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else if (currentId) {
+    headers['X-Requester-Id'] = String(currentId);
+  }
 
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
     method: 'POST',
+    credentials: 'include',
     headers,
     body: formData,
   });
@@ -198,13 +252,21 @@ export async function downloadAttachmentBlob(
   attachmentId: number,
   requesterId?: number | null
 ): Promise<{ blob: Blob; filename: string; mimeType: string }> {
+  const token = localStorage.getItem('toktickit_auth_token');
   const saved = localStorage.getItem('toktickit_selected_requester');
   const currentId = requesterId ?? (saved ? JSON.parse(saved).id : null);
 
   const headers: Record<string, string> = {};
-  if (currentId) headers['X-Requester-Id'] = String(currentId);
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else if (currentId) {
+    headers['X-Requester-Id'] = String(currentId);
+  }
 
-  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, { headers });
+  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, {
+    credentials: 'include',
+    headers,
+  });
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));

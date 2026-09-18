@@ -19,22 +19,69 @@ async function validateRequester(requesterId: number) {
     });
 }
 
+// ─── Helper: resolve requester from session (preferred) or header (legacy) ───
+// Returns a discriminated union so endpoints can produce the correct HTTP status:
+//   { ok: true, requester }       — valid identity resolved
+//   { ok: false, status: 401 }    — no identity at all (missing header, no session)
+//   { ok: false, status: 403 }    — header present but user not found / inactive
+type ResolveResult =
+    | { ok: true; requester: { id: number; name: string; email: string; role: string; isActive: boolean } }
+    | { ok: false; status: 401 | 403 };
+
+async function resolveRequester(req: Request): Promise<ResolveResult> {
+    if (req.user) {
+        // Session authenticated — use identity from the verified session token
+        return {
+            ok: true,
+            requester: {
+                id: req.user.id,
+                name: req.user.name,
+                email: req.user.email,
+                role: req.user.role,
+                isActive: true, // session middleware already verified the user is active
+            },
+        };
+    }
+
+    // Fallback: legacy Lab-2 header (used by existing tests that don't authenticate)
+    const rawRequesterId = req.headers['x-requester-id'];
+    const requesterId = Number(rawRequesterId);
+
+    // No header provided at all → 401 Unauthorized
+    if (!rawRequesterId || isNaN(requesterId)) return { ok: false, status: 401 };
+
+    // Header present but user not found or inactive → 403 Forbidden (matches Lab-2 test expectations)
+    const user = await validateRequester(requesterId);
+    if (!user) return { ok: false, status: 403 };
+    return {
+        ok: true,
+        requester: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isActive: user.isActive,
+        },
+    };
+}
+
 // ─── POST /api/tickets ────────────────────────────────────────────────────────
 export const createTicket = async (req: Request, res: Response) => {
     try {
-        const rawRequesterId = req.headers['x-requester-id'];
-        const requesterId = Number(rawRequesterId);
+        const result = await resolveRequester(req);
 
-        if (!rawRequesterId || isNaN(requesterId)) {
-            return res.status(401).json({
-                statusCode: 401,
-                error: 'Unauthorized',
-                message: 'Requester ID header is missing or invalid',
+        if (!result.ok) {
+            const isUnauth = result.status === 401;
+            return res.status(result.status).json({
+                statusCode: result.status,
+                error: isUnauth ? 'Unauthorized' : 'Forbidden',
+                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
             });
         }
 
-        const requester = await validateRequester(requesterId);
-        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
+        const requester = result.requester;
+
+        if (!requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -116,7 +163,7 @@ export const createTicket = async (req: Request, res: Response) => {
         const newTicket = await getPrisma().ticket.create({
             data: {
                 ticketNumber,
-                submittedById: requesterId,
+                submittedById: requester.id,
                 categoryId: numCategoryId,
                 relatedSystemId: numRelatedSystemId,
                 requestedPriority: priority,
@@ -177,19 +224,20 @@ export const createTicket = async (req: Request, res: Response) => {
 // ─── GET /api/tickets ─────────────────────────────────────────────────────────
 export const getTickets = async (req: Request, res: Response) => {
     try {
-        const rawRequesterId = req.headers['x-requester-id'];
-        const requesterId = Number(rawRequesterId);
+        const result = await resolveRequester(req);
 
-        if (!rawRequesterId || isNaN(requesterId)) {
-            return res.status(401).json({
-                statusCode: 401,
-                error: 'Unauthorized',
-                message: 'Requester ID header is missing or invalid',
+        if (!result.ok) {
+            const isUnauth = result.status === 401;
+            return res.status(result.status).json({
+                statusCode: result.status,
+                error: isUnauth ? 'Unauthorized' : 'Forbidden',
+                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
             });
         }
 
-        const requester = await validateRequester(requesterId);
-        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
+        const requester = result.requester;
+
+        if (!requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -246,7 +294,7 @@ export const getTickets = async (req: Request, res: Response) => {
             });
         }
 
-        const where: any = { submittedById: requesterId };
+        const where: any = { submittedById: requester.id };
 
         if (typeof search === 'string' && search.trim() !== '') {
             const trimmedSearch = search.trim();
@@ -347,19 +395,20 @@ export const getTickets = async (req: Request, res: Response) => {
 // ─── GET /api/tickets/:id ─────────────────────────────────────────────────────
 export const getTicketById = async (req: Request, res: Response) => {
     try {
-        const rawRequesterId = req.headers['x-requester-id'];
-        const requesterId = Number(rawRequesterId);
+        const result = await resolveRequester(req);
 
-        if (!rawRequesterId || isNaN(requesterId)) {
-            return res.status(401).json({
-                statusCode: 401,
-                error: 'Unauthorized',
-                message: 'Requester ID header is missing or invalid',
+        if (!result.ok) {
+            const isUnauth = result.status === 401;
+            return res.status(result.status).json({
+                statusCode: result.status,
+                error: isUnauth ? 'Unauthorized' : 'Forbidden',
+                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
             });
         }
 
-        const requester = await validateRequester(requesterId);
-        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
+        const requester = result.requester;
+
+        if (!requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -407,7 +456,7 @@ export const getTicketById = async (req: Request, res: Response) => {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Ticket not found' });
         }
 
-        if (ticket.submittedById !== requesterId) {
+        if (ticket.submittedById !== requester.id) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -452,19 +501,20 @@ export const getTicketById = async (req: Request, res: Response) => {
 // ─── POST /api/tickets/:id/attachments ──────────────────────────────────────
 export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
     try {
-        const rawRequesterId = req.headers['x-requester-id'];
-        const requesterId = Number(rawRequesterId);
+        const result = await resolveRequester(req);
 
-        if (!rawRequesterId || isNaN(requesterId)) {
-            return res.status(401).json({
-                statusCode: 401,
-                error: 'Unauthorized',
-                message: 'Requester ID header is missing or invalid',
+        if (!result.ok) {
+            const isUnauth = result.status === 401;
+            return res.status(result.status).json({
+                statusCode: result.status,
+                error: isUnauth ? 'Unauthorized' : 'Forbidden',
+                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
             });
         }
 
-        const requester = await validateRequester(requesterId);
-        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
+        const requester = result.requester;
+
+        if (!requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -482,7 +532,7 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Ticket not found' });
         }
 
-        if (ticket.submittedById !== requesterId) {
+        if (ticket.submittedById !== requester.id) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -535,19 +585,20 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
 // ─── GET /api/attachments/:id/download ──────────────────────────────────────
 export const downloadAttachment = async (req: Request, res: Response) => {
     try {
-        const rawRequesterId = req.headers['x-requester-id'];
-        const requesterId = Number(rawRequesterId);
+        const result = await resolveRequester(req);
 
-        if (!rawRequesterId || isNaN(requesterId)) {
-            return res.status(401).json({
-                statusCode: 401,
-                error: 'Unauthorized',
-                message: 'Requester ID header is missing or invalid',
+        if (!result.ok) {
+            const isUnauth = result.status === 401;
+            return res.status(result.status).json({
+                statusCode: result.status,
+                error: isUnauth ? 'Unauthorized' : 'Forbidden',
+                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
             });
         }
 
-        const requester = await validateRequester(requesterId);
-        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
+        const requester = result.requester;
+
+        if (!requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -569,7 +620,7 @@ export const downloadAttachment = async (req: Request, res: Response) => {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Attachment not found' });
         }
 
-        if (attachment.ticket.submittedById !== requesterId) {
+        if (attachment.ticket.submittedById !== requester.id) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -610,19 +661,20 @@ export const downloadAttachment = async (req: Request, res: Response) => {
 // ─── DELETE /api/attachments/:id ─────────────────────────────────────────────
 export const removeAttachment = async (req: Request, res: Response) => {
     try {
-        const rawRequesterId = req.headers['x-requester-id'];
-        const requesterId = Number(rawRequesterId);
+        const result = await resolveRequester(req);
 
-        if (!rawRequesterId || isNaN(requesterId)) {
-            return res.status(401).json({
-                statusCode: 401,
-                error: 'Unauthorized',
-                message: 'Requester ID header is missing or invalid',
+        if (!result.ok) {
+            const isUnauth = result.status === 401;
+            return res.status(result.status).json({
+                statusCode: result.status,
+                error: isUnauth ? 'Unauthorized' : 'Forbidden',
+                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
             });
         }
 
-        const requester = await validateRequester(requesterId);
-        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
+        const requester = result.requester;
+
+        if (!requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -644,7 +696,7 @@ export const removeAttachment = async (req: Request, res: Response) => {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Attachment not found' });
         }
 
-        if (attachment.ticket.submittedById !== requesterId) {
+        if (attachment.ticket.submittedById !== requester.id) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
