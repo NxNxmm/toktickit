@@ -1,10 +1,25 @@
 import { Request, Response } from 'express';
-import { Priority, TicketStatus } from '@prisma/client';
+import { RequestedPriority, TicketStatus } from '@prisma/client';
 import { getPrisma } from '../prisma.js';
-import { generateTicketNumber } from '../utils/ticketNumber.js';
 import fs from 'fs';
 import path from 'path';
 
+// ─── Helper: generate ticket number ─────────────────────────────────────────
+async function generateTicketNumber(): Promise<string> {
+    const count = await getPrisma().ticket.count();
+    const padded = String(count + 1).padStart(5, '0');
+    const year = new Date().getFullYear();
+    return `TKT-${year}-${padded}`;
+}
+
+// ─── Helper: validate requester user ────────────────────────────────────────
+async function validateRequester(requesterId: number) {
+    return getPrisma().user.findUnique({
+        where: { id: requesterId },
+    });
+}
+
+// ─── POST /api/tickets ────────────────────────────────────────────────────────
 export const createTicket = async (req: Request, res: Response) => {
     try {
         const rawRequesterId = req.headers['x-requester-id'];
@@ -18,11 +33,8 @@ export const createTicket = async (req: Request, res: Response) => {
             });
         }
 
-        const requester = await getPrisma().requesterUser.findUnique({
-            where: { id: requesterId },
-        });
-
-        if (!requester || !requester.isActive) {
+        const requester = await validateRequester(requesterId);
+        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -43,10 +55,7 @@ export const createTicket = async (req: Request, res: Response) => {
             });
         }
 
-        const category = await getPrisma().category.findUnique({
-            where: { id: numCategoryId },
-        });
-
+        const category = await getPrisma().category.findUnique({ where: { id: numCategoryId } });
         if (!category) {
             return res.status(400).json({
                 statusCode: 400,
@@ -63,10 +72,7 @@ export const createTicket = async (req: Request, res: Response) => {
             });
         }
 
-        const relatedSystem = await getPrisma().relatedSystem.findUnique({
-            where: { id: numRelatedSystemId },
-        });
-
+        const relatedSystem = await getPrisma().related_system.findUnique({ where: { id: numRelatedSystemId } });
         if (!relatedSystem) {
             return res.status(400).json({
                 statusCode: 400,
@@ -75,14 +81,14 @@ export const createTicket = async (req: Request, res: Response) => {
             });
         }
 
-        const validPriorities: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-        const priority: Priority = requestedPriority ? (requestedPriority as Priority) : 'MEDIUM';
+        const validPriorities: RequestedPriority[] = ['LOW', 'MEDIUM', 'HIGH'];
+        const priority: RequestedPriority = requestedPriority ? (requestedPriority as RequestedPriority) : 'MEDIUM';
 
         if (requestedPriority && !validPriorities.includes(priority)) {
             return res.status(400).json({
                 statusCode: 400,
                 error: 'Bad Request',
-                message: 'Invalid priority level. Allowed: LOW, MEDIUM, HIGH, URGENT',
+                message: 'Invalid priority level. Allowed: LOW, MEDIUM, HIGH',
             });
         }
 
@@ -105,22 +111,24 @@ export const createTicket = async (req: Request, res: Response) => {
             });
         }
 
-        const ticketNo = await generateTicketNumber();
+        const ticketNumber = await generateTicketNumber();
 
         const newTicket = await getPrisma().ticket.create({
             data: {
-                ticketNo,
-                requesterId,
+                ticketNumber,
+                submittedById: requesterId,
                 categoryId: numCategoryId,
                 relatedSystemId: numRelatedSystemId,
                 requestedPriority: priority,
+                itPriority: priority,
                 summary: trimmedSummary,
                 description: trimmedDescription,
                 currentStatus: 'NEW',
+                updatedAt: new Date(),
             },
             include: {
                 category: true,
-                relatedSystem: true,
+                related_system: true,
             },
         });
 
@@ -129,27 +137,33 @@ export const createTicket = async (req: Request, res: Response) => {
         if (files && files.length > 0) {
             const attachmentsData = files.map((file) => ({
                 ticketId: newTicket.id,
-                originalName: file.originalname,
-                storedFileName: file.filename,
-                fileSize: file.size,
-                mimeType: file.mimetype,
+                originalFilename: file.originalname,
+                storedFilename: file.filename,
+                fileSizeBytes: file.size,
+                contentType: file.mimetype,
+                updatedAt: new Date(),
             }));
 
-            await getPrisma().attachment.createMany({
-                data: attachmentsData,
-            });
+            await getPrisma().attachment.createMany({ data: attachmentsData });
         }
 
         const fullTicket = await getPrisma().ticket.findUnique({
             where: { id: newTicket.id },
             include: {
                 category: true,
-                relatedSystem: true,
-                attachments: true,
+                related_system: true,
+                attachment: true,
             },
         });
 
-        return res.status(201).json(fullTicket);
+        const formattedTicket = fullTicket ? {
+            ...fullTicket,
+            ticketNo: fullTicket.ticketNumber,
+            relatedSystem: fullTicket.related_system,
+            attachments: fullTicket.attachment,
+        } : null;
+
+        return res.status(201).json(formattedTicket);
     } catch (error) {
         console.error('Error creating ticket:', error);
         return res.status(500).json({
@@ -160,6 +174,7 @@ export const createTicket = async (req: Request, res: Response) => {
     }
 };
 
+// ─── GET /api/tickets ─────────────────────────────────────────────────────────
 export const getTickets = async (req: Request, res: Response) => {
     try {
         const rawRequesterId = req.headers['x-requester-id'];
@@ -173,11 +188,8 @@ export const getTickets = async (req: Request, res: Response) => {
             });
         }
 
-        const requester = await getPrisma().requesterUser.findUnique({
-            where: { id: requesterId },
-        });
-
-        if (!requester || !requester.isActive) {
+        const requester = await validateRequester(requesterId);
+        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -196,8 +208,7 @@ export const getTickets = async (req: Request, res: Response) => {
             pageSize = '10',
         } = req.query;
 
-        // Validation for sortBy
-        const allowedSortBy = ['createdAt', 'ticketNo', 'requestedPriority', 'updatedAt'];
+        const allowedSortBy = ['createdAt', 'ticketNumber', 'ticketNo', 'requestedPriority', 'updatedAt'];
         if (typeof sortBy !== 'string' || !allowedSortBy.includes(sortBy)) {
             return res.status(400).json({
                 statusCode: 400,
@@ -205,8 +216,8 @@ export const getTickets = async (req: Request, res: Response) => {
                 message: `Invalid sortBy field. Allowed: ${allowedSortBy.join(', ')}`,
             });
         }
+        const dbSortBy = sortBy === 'ticketNo' ? 'ticketNumber' : sortBy;
 
-        // Validation for sortOrder
         const allowedSortOrder = ['asc', 'desc'];
         if (typeof sortOrder !== 'string' || !allowedSortOrder.includes(sortOrder.toLowerCase())) {
             return res.status(400).json({
@@ -216,7 +227,6 @@ export const getTickets = async (req: Request, res: Response) => {
             });
         }
 
-        // Validation for page
         const numPage = Number(page);
         if (isNaN(numPage) || !Number.isInteger(numPage) || numPage < 1) {
             return res.status(400).json({
@@ -226,7 +236,6 @@ export const getTickets = async (req: Request, res: Response) => {
             });
         }
 
-        // Validation for pageSize
         const numPageSize = Number(pageSize);
         const allowedPageSizes = [5, 10, 20, 50];
         if (isNaN(numPageSize) || !allowedPageSizes.includes(numPageSize)) {
@@ -237,21 +246,16 @@ export const getTickets = async (req: Request, res: Response) => {
             });
         }
 
-        // Build Prisma where clause
-        const where: any = {
-            requesterId,
-        };
+        const where: any = { submittedById: requesterId };
 
-        // Filter: search substring on ticketNo and summary
         if (typeof search === 'string' && search.trim() !== '') {
             const trimmedSearch = search.trim();
             where.OR = [
-                { ticketNo: { contains: trimmedSearch, mode: 'insensitive' } },
+                { ticketNumber: { contains: trimmedSearch, mode: 'insensitive' } },
                 { summary: { contains: trimmedSearch, mode: 'insensitive' } },
             ];
         }
 
-        // Filter: categoryId
         if (categoryId !== undefined && categoryId !== '') {
             const numCatId = Number(categoryId);
             if (isNaN(numCatId) || !Number.isInteger(numCatId) || numCatId < 1) {
@@ -264,22 +268,20 @@ export const getTickets = async (req: Request, res: Response) => {
             where.categoryId = numCatId;
         }
 
-        // Filter: requestedPriority
         if (requestedPriority !== undefined && requestedPriority !== '') {
-            const validPriorities: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-            if (typeof requestedPriority !== 'string' || !validPriorities.includes(requestedPriority as Priority)) {
+            const validPriorities: RequestedPriority[] = ['LOW', 'MEDIUM', 'HIGH'];
+            if (typeof requestedPriority !== 'string' || !validPriorities.includes(requestedPriority as RequestedPriority)) {
                 return res.status(400).json({
                     statusCode: 400,
                     error: 'Bad Request',
                     message: `Invalid requestedPriority. Allowed: ${validPriorities.join(', ')}`,
                 });
             }
-            where.requestedPriority = requestedPriority as Priority;
+            where.requestedPriority = requestedPriority as RequestedPriority;
         }
 
-        // Filter: status
         if (status !== undefined && status !== '') {
-            const validStatuses: TicketStatus[] = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELLED'];
+            const validStatuses: TicketStatus[] = ['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'REOPENED', 'CANCELLED'];
             if (typeof status !== 'string' || !validStatuses.includes(status as TicketStatus)) {
                 return res.status(400).json({
                     statusCode: 400,
@@ -294,27 +296,15 @@ export const getTickets = async (req: Request, res: Response) => {
             getPrisma().ticket.count({ where }),
             getPrisma().ticket.findMany({
                 where,
-                orderBy: {
-                    [sortBy]: sortOrder.toLowerCase() as 'asc' | 'desc',
-                },
+                orderBy: { [dbSortBy]: sortOrder.toLowerCase() as 'asc' | 'desc' },
                 skip: (numPage - 1) * numPageSize,
                 take: numPageSize,
                 select: {
                     id: true,
-                    ticketNo: true,
+                    ticketNumber: true,
                     summary: true,
-                    category: {
-                        select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
-                    relatedSystem: {
-                        select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
+                    category: { select: { id: true, name: true } },
+                    related_system: { select: { id: true, name: true } },
                     requestedPriority: true,
                     itPriority: true,
                     currentStatus: true,
@@ -324,10 +314,17 @@ export const getTickets = async (req: Request, res: Response) => {
             }),
         ]);
 
+        const formattedTickets = tickets.map((t) => ({
+            ...t,
+            ticketNo: t.ticketNumber,
+            relatedSystem: t.related_system,
+        }));
+
         const totalPages = Math.ceil(totalCount / numPageSize);
 
         return res.status(200).json({
-            items: tickets,
+            items: formattedTickets,
+            tickets: formattedTickets,
             pagination: {
                 page: numPage,
                 pageSize: numPageSize,
@@ -347,7 +344,7 @@ export const getTickets = async (req: Request, res: Response) => {
     }
 };
 
-// ─── Issue 6: Get Single Ticket Details (ownership enforced) ────────────────
+// ─── GET /api/tickets/:id ─────────────────────────────────────────────────────
 export const getTicketById = async (req: Request, res: Response) => {
     try {
         const rawRequesterId = req.headers['x-requester-id'];
@@ -361,8 +358,8 @@ export const getTicketById = async (req: Request, res: Response) => {
             });
         }
 
-        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
-        if (!requester || !requester.isActive) {
+        const requester = await validateRequester(requesterId);
+        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -378,19 +375,28 @@ export const getTicketById = async (req: Request, res: Response) => {
         const ticket = await getPrisma().ticket.findUnique({
             where: { id: ticketId },
             include: {
-                requester: { select: { id: true, name: true, email: true } },
+                user_ticket_submittedByIdTouser: { select: { id: true, name: true, email: true } },
                 category: { select: { id: true, name: true } },
-                relatedSystem: { select: { id: true, name: true } },
-                attachments: {
+                related_system: { select: { id: true, name: true } },
+                attachment: {
                     select: {
                         id: true,
-                        originalName: true,
-                        fileSize: true,
-                        mimeType: true,
+                        originalFilename: true,
+                        fileSizeBytes: true,
+                        contentType: true,
                         isRemoved: true,
                         removedAt: true,
                         removalReason: true,
                         createdAt: true,
+                    },
+                    orderBy: { createdAt: 'asc' },
+                },
+                public_comment: {
+                    select: {
+                        id: true,
+                        content: true,
+                        createdAt: true,
+                        user: { select: { id: true, name: true, role: true } },
                     },
                     orderBy: { createdAt: 'asc' },
                 },
@@ -401,7 +407,7 @@ export const getTicketById = async (req: Request, res: Response) => {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Ticket not found' });
         }
 
-        if (ticket.requesterId !== requesterId) {
+        if (ticket.submittedById !== requesterId) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -409,7 +415,30 @@ export const getTicketById = async (req: Request, res: Response) => {
             });
         }
 
-        return res.status(200).json(ticket);
+        const formattedAttachments = (ticket.attachment || []).map((a) => ({
+            ...a,
+            originalName: a.originalFilename,
+            fileSize: a.fileSizeBytes,
+            mimeType: a.contentType,
+        }));
+
+        const formattedPublicComments = (ticket.public_comment || []).map((c) => ({
+            ...c,
+            author: c.user,
+        }));
+
+        const responsePayload = {
+            ...ticket,
+            ticketNo: ticket.ticketNumber,
+            requesterId: ticket.submittedById,
+            requester: ticket.user_ticket_submittedByIdTouser,
+            relatedSystemId: ticket.relatedSystemId,
+            relatedSystem: ticket.related_system,
+            attachments: formattedAttachments,
+            publicComments: formattedPublicComments,
+        };
+
+        return res.status(200).json(responsePayload);
     } catch (error) {
         console.error('Error fetching ticket by ID:', error);
         return res.status(500).json({
@@ -420,7 +449,7 @@ export const getTicketById = async (req: Request, res: Response) => {
     }
 };
 
-// ─── Issue 6: Upload Attachment to Existing Ticket ─────────────────────────
+// ─── POST /api/tickets/:id/attachments ──────────────────────────────────────
 export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
     try {
         const rawRequesterId = req.headers['x-requester-id'];
@@ -434,8 +463,8 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
             });
         }
 
-        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
-        if (!requester || !requester.isActive) {
+        const requester = await validateRequester(requesterId);
+        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -453,7 +482,7 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Ticket not found' });
         }
 
-        if (ticket.requesterId !== requesterId) {
+        if (ticket.submittedById !== requesterId) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -466,13 +495,8 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
             return res.status(400).json({ statusCode: 400, error: 'Bad Request', message: 'No file was uploaded' });
         }
 
-        // Check active attachment quota
-        const activeCount = await getPrisma().attachment.count({
-            where: { ticketId, isRemoved: false },
-        });
-
+        const activeCount = await getPrisma().attachment.count({ where: { ticketId, isRemoved: false } });
         if (activeCount >= 5) {
-            // Remove the just-uploaded file from disk to avoid orphans
             fs.unlink(file.path, () => {});
             return res.status(400).json({
                 statusCode: 400,
@@ -484,14 +508,20 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
         const attachment = await getPrisma().attachment.create({
             data: {
                 ticketId,
-                originalName: file.originalname,
-                storedFileName: file.filename,
-                fileSize: file.size,
-                mimeType: file.mimetype,
+                originalFilename: file.originalname,
+                storedFilename: file.filename,
+                fileSizeBytes: file.size,
+                contentType: file.mimetype,
+                updatedAt: new Date(),
             },
         });
 
-        return res.status(201).json(attachment);
+        return res.status(201).json({
+            ...attachment,
+            originalName: attachment.originalFilename,
+            fileSize: attachment.fileSizeBytes,
+            mimeType: attachment.contentType,
+        });
     } catch (error) {
         console.error('Error uploading attachment:', error);
         return res.status(500).json({
@@ -502,7 +532,7 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
     }
 };
 
-// ─── Issue 6: Download Active Attachment Binary ─────────────────────────────
+// ─── GET /api/attachments/:id/download ──────────────────────────────────────
 export const downloadAttachment = async (req: Request, res: Response) => {
     try {
         const rawRequesterId = req.headers['x-requester-id'];
@@ -516,8 +546,8 @@ export const downloadAttachment = async (req: Request, res: Response) => {
             });
         }
 
-        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
-        if (!requester || !requester.isActive) {
+        const requester = await validateRequester(requesterId);
+        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -532,14 +562,14 @@ export const downloadAttachment = async (req: Request, res: Response) => {
 
         const attachment = await getPrisma().attachment.findUnique({
             where: { id: attachmentId },
-            include: { ticket: { select: { requesterId: true } } },
+            include: { ticket: { select: { submittedById: true } } },
         });
 
         if (!attachment) {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Attachment not found' });
         }
 
-        if (attachment.ticket.requesterId !== requesterId) {
+        if (attachment.ticket.submittedById !== requesterId) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -558,14 +588,14 @@ export const downloadAttachment = async (req: Request, res: Response) => {
         }
 
         const uploadDir = path.join(process.cwd(), 'uploads', 'attachments');
-        const filePath = path.join(uploadDir, attachment.storedFileName);
+        const filePath = path.join(uploadDir, attachment.storedFilename);
 
         if (!fs.existsSync(filePath)) {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'File not found on server' });
         }
 
-        res.setHeader('Content-Type', attachment.mimeType);
-        res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
+        res.setHeader('Content-Type', attachment.contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalFilename}"`);
         return res.sendFile(filePath);
     } catch (error) {
         console.error('Error downloading attachment:', error);
@@ -577,7 +607,7 @@ export const downloadAttachment = async (req: Request, res: Response) => {
     }
 };
 
-// ─── Issue 6: Soft-Remove an Attachment ─────────────────────────────────────
+// ─── DELETE /api/attachments/:id ─────────────────────────────────────────────
 export const removeAttachment = async (req: Request, res: Response) => {
     try {
         const rawRequesterId = req.headers['x-requester-id'];
@@ -591,8 +621,8 @@ export const removeAttachment = async (req: Request, res: Response) => {
             });
         }
 
-        const requester = await getPrisma().requesterUser.findUnique({ where: { id: requesterId } });
-        if (!requester || !requester.isActive) {
+        const requester = await validateRequester(requesterId);
+        if (!requester || !requester.isActive || requester.role !== 'REQUESTER') {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -607,14 +637,14 @@ export const removeAttachment = async (req: Request, res: Response) => {
 
         const attachment = await getPrisma().attachment.findUnique({
             where: { id: attachmentId },
-            include: { ticket: { select: { requesterId: true, id: true } } },
+            include: { ticket: { select: { submittedById: true, id: true } } },
         });
 
         if (!attachment) {
             return res.status(404).json({ statusCode: 404, error: 'Not Found', message: 'Attachment not found' });
         }
 
-        if (attachment.ticket.requesterId !== requesterId) {
+        if (attachment.ticket.submittedById !== requesterId) {
             return res.status(403).json({
                 statusCode: 403,
                 error: 'Forbidden',
@@ -632,7 +662,6 @@ export const removeAttachment = async (req: Request, res: Response) => {
 
         const { reason } = req.body;
         const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
-
         if (!trimmedReason || trimmedReason.length < 3 || trimmedReason.length > 250) {
             return res.status(400).json({
                 statusCode: 400,
@@ -643,22 +672,21 @@ export const removeAttachment = async (req: Request, res: Response) => {
 
         const updated = await getPrisma().attachment.update({
             where: { id: attachmentId },
-            data: {
-                isRemoved: true,
-                removedAt: new Date(),
-                removalReason: trimmedReason,
-            },
+            data: { isRemoved: true, removedAt: new Date(), removalReason: trimmedReason },
             select: {
                 id: true,
                 ticketId: true,
-                originalName: true,
+                originalFilename: true,
                 isRemoved: true,
                 removedAt: true,
                 removalReason: true,
             },
         });
 
-        return res.status(200).json(updated);
+        return res.status(200).json({
+            ...updated,
+            originalName: updated.originalFilename,
+        });
     } catch (error) {
         console.error('Error removing attachment:', error);
         return res.status(500).json({
@@ -667,4 +695,4 @@ export const removeAttachment = async (req: Request, res: Response) => {
             message: 'Internal server error while removing attachment',
         });
     }
-};
+};
