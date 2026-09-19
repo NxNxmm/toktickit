@@ -21,14 +21,15 @@ import { upload } from '../utils/upload.js';
 const router = Router();
 
 router.get('/related-systems', getRelatedSystems);
-router.get('/tickets', getTickets);
-router.post('/tickets', upload.array('files', 5), createTicket);
+// AC-4.1: Strictly enforce authenticated session identity on all ticket & attachment APIs
+router.get('/tickets', requireAuth, getTickets);
+router.post('/tickets', requireAuth, upload.array('files', 5), createTicket);
 
-// Issue 6 routes
-router.get('/tickets/:id', getTicketById);
-router.post('/tickets/:id/attachments', upload.single('file'), uploadAttachmentToTicket);
-router.get('/attachments/:id/download', downloadAttachment);
-router.post('/attachments/:id/remove', removeAttachment);
+// Issue 6 routes: Ticket details and attachment lifecycle (requireAuth per AC-4.1)
+router.get('/tickets/:id', requireAuth, getTicketById);
+router.post('/tickets/:id/attachments', requireAuth, upload.single('file'), uploadAttachmentToTicket);
+router.get('/attachments/:id/download', requireAuth, downloadAttachment);
+router.post('/attachments/:id/remove', requireAuth, removeAttachment);
 
 // ─── Issue 4 routes: Public Comments, Resolve Indication, Internal Notes ─────
 

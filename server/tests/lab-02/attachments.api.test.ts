@@ -19,6 +19,8 @@ function createMinimalPngBuffer(): Buffer {
 describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     let requester1Id: number;
     let requester2Id: number;
+    let requester1Token: string;
+    let requester2Token: string;
     let ticket1Id: number; // belongs to requester1
     let ticket2Id: number; // belongs to requester2
 
@@ -42,6 +44,17 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         const r2 = await getPrisma().user.findFirst({
             where: { isActive: true, role: 'REQUESTER', email: 'michael.brown@kmutt.ac.th' },
         });
+
+        const login1 = await request(app)
+            .post('/api/auth/login')
+            .send({ email: r1!.email, password: 'Password123!' });
+        requester1Token = login1.body.token;
+
+        const login2 = await request(app)
+            .post('/api/auth/login')
+            .send({ email: r2!.email, password: 'Password123!' });
+        requester2Token = login2.body.token;
+
         const cat = await getPrisma().category.findFirst({ where: { name: 'Software' } });
         const sys = await getPrisma().related_system.findFirst();
 
@@ -158,7 +171,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('uploads a valid file to an existing ticket (API-10)', async () => {
         const res = await request(app)
             .post(`/api/tickets/${ticket1Id}/attachments`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .attach('file', testFilePath);
 
         expect(res.status).toBe(201);
@@ -192,7 +205,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         // Now ticket1 has exactly 5 active attachments, next upload should fail
         const res = await request(app)
             .post(`/api/tickets/${ticket1Id}/attachments`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .attach('file', testFilePath);
 
         expect(res.status).toBe(400);
@@ -202,7 +215,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('returns 403 when uploading to another requester\'s ticket', async () => {
         const res = await request(app)
             .post(`/api/tickets/${ticket2Id}/attachments`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .attach('file', testFilePath);
         expect(res.status).toBe(403);
     });
@@ -210,7 +223,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('returns 404 when uploading to a non-existent ticket', async () => {
         const res = await request(app)
             .post('/api/tickets/999999/attachments')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .attach('file', testFilePath);
         expect(res.status).toBe(404);
     });
@@ -220,7 +233,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('streams the active attachment binary with correct headers (API-12)', async () => {
         const res = await request(app)
             .get(`/api/attachments/${activeAttachmentId}/download`)
-            .set('X-Requester-Id', String(requester1Id));
+            .set('Authorization', `Bearer ${requester1Token}`);
 
         expect(res.status).toBe(200);
         expect(res.headers['content-type']).toContain('image/png');
@@ -233,7 +246,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('soft-removes an attachment with a valid reason (API-13)', async () => {
         const res = await request(app)
             .post(`/api/attachments/${activeAttachmentId}/remove`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .send({ reason: 'Wrong file version attached' });
 
         expect(res.status).toBe(200);
@@ -262,13 +275,13 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
 
         const resMissing = await request(app)
             .post(`/api/attachments/${freshAtt.id}/remove`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .send({});
         expect(resMissing.status).toBe(400);
 
         const resTooShort = await request(app)
             .post(`/api/attachments/${freshAtt.id}/remove`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .send({ reason: 'ab' });
         expect(resTooShort.status).toBe(400);
     });
@@ -276,7 +289,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('returns 400 when trying to remove an already-removed attachment', async () => {
         const res = await request(app)
             .post(`/api/attachments/${removedAttachmentId}/remove`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .send({ reason: 'Trying to remove again' });
         expect(res.status).toBe(400);
         expect(res.body.message).toMatch(/already removed/i);
@@ -288,7 +301,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         // activeAttachmentId was just soft-removed in the test above
         const res = await request(app)
             .get(`/api/attachments/${activeAttachmentId}/download`)
-            .set('X-Requester-Id', String(requester1Id));
+            .set('Authorization', `Bearer ${requester1Token}`);
 
         expect(res.status).toBe(410);
         expect(res.body.error).toBe('Gone');
@@ -301,7 +314,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('returns 403 when requester1 tries to download requester2\'s attachment (API-15)', async () => {
         const res = await request(app)
             .get(`/api/attachments/${r2AttachmentId}/download`)
-            .set('X-Requester-Id', String(requester1Id));
+            .set('Authorization', `Bearer ${requester1Token}`);
         expect(res.status).toBe(403);
         expect(res.body.error).toBe('Forbidden');
     });
@@ -309,7 +322,7 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('returns 403 when requester1 tries to soft-remove requester2\'s attachment (API-15)', async () => {
         const res = await request(app)
             .post(`/api/attachments/${r2AttachmentId}/remove`)
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .send({ reason: 'Attempting unauthorized removal' });
         expect(res.status).toBe(403);
         expect(res.body.error).toBe('Forbidden');
@@ -318,13 +331,36 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
     it('returns 404 when attachment does not exist', async () => {
         const resDl = await request(app)
             .get('/api/attachments/999999/download')
-            .set('X-Requester-Id', String(requester1Id));
+            .set('Authorization', `Bearer ${requester1Token}`);
         expect(resDl.status).toBe(404);
 
         const resRm = await request(app)
             .post('/api/attachments/999999/remove')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .send({ reason: 'Valid removal reason here' });
         expect(resRm.status).toBe(404);
     });
+
+    it('strictly requires authentication and rejects unauthenticated requests with X-Requester-Id header (AC-4.1)', async () => {
+        // Upload without auth
+        const resUpload = await request(app)
+            .post(`/api/tickets/${ticket1Id}/attachments`)
+            .set('X-Requester-Id', String(requester1Id))
+            .attach('file', testFilePath);
+        expect(resUpload.status).toBe(401);
+
+        // Download without auth
+        const resDl = await request(app)
+            .get(`/api/attachments/${r2AttachmentId}/download`)
+            .set('X-Requester-Id', String(requester1Id));
+        expect(resDl.status).toBe(401);
+
+        // Remove without auth
+        const resRm = await request(app)
+            .post(`/api/attachments/${r2AttachmentId}/remove`)
+            .set('X-Requester-Id', String(requester1Id))
+            .send({ reason: 'Unauthenticated remove' });
+        expect(resRm.status).toBe(401);
+    });
+
 });
