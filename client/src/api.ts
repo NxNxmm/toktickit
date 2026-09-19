@@ -186,11 +186,25 @@ export interface Attachment {
   createdAt: string;
 }
 
+export interface PublicComment {
+  id: number;
+  ticketId: number;
+  author: {
+    id: number;
+    name: string;
+    role: string;
+  };
+  content: string;
+  createdAt: string;
+}
+
 export interface TicketDetail {
   id: number;
   ticketNo: string;
   requesterId: number;
   requester: { id: number; name: string; email: string };
+  ownerId?: number | null;
+  owner?: { id: number; name: string; email: string } | null;
   categoryId: number;
   category: { id: number; name: string };
   relatedSystemId: number;
@@ -200,9 +214,12 @@ export interface TicketDetail {
   requestedPriority: Priority;
   itPriority: Priority | null;
   currentStatus: TicketStatus;
+  resolvedIndicated?: boolean;
+  resolvedIndicatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   attachments: Attachment[];
+  publicComments?: PublicComment[];
 }
 
 export async function getTicketById(
@@ -210,6 +227,42 @@ export async function getTicketById(
   requesterId?: number | null
 ): Promise<TicketDetail> {
   return apiFetch<TicketDetail>(`/api/tickets/${id}`, {}, requesterId);
+}
+
+export async function getPublicComments(
+  ticketId: number,
+  requesterId?: number | null
+): Promise<PublicComment[]> {
+  return apiFetch<PublicComment[]>(`/api/tickets/${ticketId}/comments`, {}, requesterId);
+}
+
+export async function postPublicComment(
+  ticketId: number,
+  content: string,
+  requesterId?: number | null
+): Promise<PublicComment> {
+  return apiFetch<PublicComment>(
+    `/api/tickets/${ticketId}/comments`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    },
+    requesterId
+  );
+}
+
+export async function postResolveIndication(
+  ticketId: number,
+  requesterId?: number | null
+): Promise<{ message: string; resolvedIndicated: boolean; resolvedIndicatedAt: string }> {
+  return apiFetch<{ message: string; resolvedIndicated: boolean; resolvedIndicatedAt: string }>(
+    `/api/tickets/${ticketId}/resolve-indication`,
+    {
+      method: 'POST',
+    },
+    requesterId
+  );
 }
 
 export async function uploadAttachment(

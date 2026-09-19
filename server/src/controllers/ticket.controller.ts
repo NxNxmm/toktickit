@@ -12,21 +12,13 @@ async function generateTicketNumber(): Promise<string> {
     return `TKT-${year}-${padded}`;
 }
 
-// ─── Helper: validate requester user ────────────────────────────────────────
-async function validateRequester(requesterId: number) {
-    return getPrisma().user.findUnique({
-        where: { id: requesterId },
-    });
-}
-
-// ─── Helper: resolve requester from session (preferred) or header (legacy) ───
-// Returns a discriminated union so endpoints can produce the correct HTTP status:
-//   { ok: true, requester }       — valid identity resolved
-//   { ok: false, status: 401 }    — no identity at all (missing header, no session)
-//   { ok: false, status: 403 }    — header present but user not found / inactive
+// ─── Helper: resolve requester strictly from the authenticated session ───────
+// AC-4.1 / BR-05: Identity is extracted exclusively from the verified session.
+// Client-supplied IDs (body fields or X-Requester-Id header) are always ignored;
+// unauthenticated requests are handled by the `requireAuth` middleware (HTTP 401).
 type ResolveResult =
     | { ok: true; requester: { id: number; name: string; email: string; role: string; isActive: boolean } }
-    | { ok: false; status: 401 | 403 };
+    | { ok: false };
 
 async function resolveRequester(req: Request): Promise<ResolveResult> {
     if (req.user) {
@@ -43,26 +35,7 @@ async function resolveRequester(req: Request): Promise<ResolveResult> {
         };
     }
 
-    // Fallback: legacy Lab-2 header (used by existing tests that don't authenticate)
-    const rawRequesterId = req.headers['x-requester-id'];
-    const requesterId = Number(rawRequesterId);
-
-    // No header provided at all → 401 Unauthorized
-    if (!rawRequesterId || isNaN(requesterId)) return { ok: false, status: 401 };
-
-    // Header present but user not found or inactive → 403 Forbidden (matches Lab-2 test expectations)
-    const user = await validateRequester(requesterId);
-    if (!user) return { ok: false, status: 403 };
-    return {
-        ok: true,
-        requester: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            isActive: user.isActive,
-        },
-    };
+    return { ok: false };
 }
 
 // ─── POST /api/tickets ────────────────────────────────────────────────────────
@@ -71,11 +44,10 @@ export const createTicket = async (req: Request, res: Response) => {
         const result = await resolveRequester(req);
 
         if (!result.ok) {
-            const isUnauth = result.status === 401;
-            return res.status(result.status).json({
-                statusCode: result.status,
-                error: isUnauth ? 'Unauthorized' : 'Forbidden',
-                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Authentication required to access this resource',
             });
         }
 
@@ -227,11 +199,10 @@ export const getTickets = async (req: Request, res: Response) => {
         const result = await resolveRequester(req);
 
         if (!result.ok) {
-            const isUnauth = result.status === 401;
-            return res.status(result.status).json({
-                statusCode: result.status,
-                error: isUnauth ? 'Unauthorized' : 'Forbidden',
-                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Authentication required to access this resource',
             });
         }
 
@@ -398,11 +369,10 @@ export const getTicketById = async (req: Request, res: Response) => {
         const result = await resolveRequester(req);
 
         if (!result.ok) {
-            const isUnauth = result.status === 401;
-            return res.status(result.status).json({
-                statusCode: result.status,
-                error: isUnauth ? 'Unauthorized' : 'Forbidden',
-                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Authentication required to access this resource',
             });
         }
 
@@ -504,11 +474,10 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
         const result = await resolveRequester(req);
 
         if (!result.ok) {
-            const isUnauth = result.status === 401;
-            return res.status(result.status).json({
-                statusCode: result.status,
-                error: isUnauth ? 'Unauthorized' : 'Forbidden',
-                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Authentication required to access this resource',
             });
         }
 
@@ -547,7 +516,7 @@ export const uploadAttachmentToTicket = async (req: Request, res: Response) => {
 
         const activeCount = await getPrisma().attachment.count({ where: { ticketId, isRemoved: false } });
         if (activeCount >= 5) {
-            fs.unlink(file.path, () => {});
+            fs.unlink(file.path, () => { });
             return res.status(400).json({
                 statusCode: 400,
                 error: 'Bad Request',
@@ -588,11 +557,10 @@ export const downloadAttachment = async (req: Request, res: Response) => {
         const result = await resolveRequester(req);
 
         if (!result.ok) {
-            const isUnauth = result.status === 401;
-            return res.status(result.status).json({
-                statusCode: result.status,
-                error: isUnauth ? 'Unauthorized' : 'Forbidden',
-                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Authentication required to access this resource',
             });
         }
 
@@ -664,11 +632,10 @@ export const removeAttachment = async (req: Request, res: Response) => {
         const result = await resolveRequester(req);
 
         if (!result.ok) {
-            const isUnauth = result.status === 401;
-            return res.status(result.status).json({
-                statusCode: result.status,
-                error: isUnauth ? 'Unauthorized' : 'Forbidden',
-                message: isUnauth ? 'Requester ID header is missing or invalid' : 'Requester is inactive or does not exist',
+            return res.status(401).json({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: 'Authentication required to access this resource',
             });
         }
 

@@ -7,6 +7,8 @@ import { generateTicketNumber } from '../../src/utils/ticketNumber.js';
 describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
     let requester1Id: number;
     let requester2Id: number;
+    let requester1Token: string;
+    let requester2Token: string;
     let category1Id: number;
     let category2Id: number;
     let relatedSystemId: number;
@@ -24,6 +26,11 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         category1Id = cat1!.id;
         category2Id = cat2!.id;
         relatedSystemId = sys!.id;
+
+        const login1 = await request(app).post('/api/auth/login').send({ email: r1!.email, password: 'Password123!' });
+        requester1Token = login1.body.token;
+        const login2 = await request(app).post('/api/auth/login').send({ email: r2!.email, password: 'Password123!' });
+        requester2Token = login2.body.token;
 
         // Clean up tickets for requester 1 and 2 before testing (order: notes > comments > attachments > tickets)
         await getPrisma().internal_note.deleteMany({
@@ -84,31 +91,31 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         }
     });
 
-    it('should return 401 if X-Requester-Id is missing or invalid', async () => {
+    it('should return 401 if authentication is missing or unauthenticated X-Requester-Id is sent (AC-4.1)', async () => {
         const resMissing = await request(app).get('/api/tickets');
         expect(resMissing.status).toBe(401);
 
-        const resInvalid = await request(app).get('/api/tickets').set('X-Requester-Id', 'abc');
+        const resInvalid = await request(app).get('/api/tickets').set('X-Requester-Id', String(requester1Id));
         expect(resInvalid.status).toBe(401);
     });
 
-    it('should return 403 if requester is inactive or not found', async () => {
+    it('should return 401 if inactive account tries to access tickets', async () => {
         const inactiveUser = await getPrisma().user.findFirst({ where: { isActive: false, role: 'REQUESTER' } });
         const resInactive = await request(app)
             .get('/api/tickets')
             .set('X-Requester-Id', String(inactiveUser!.id));
-        expect(resInactive.status).toBe(403);
+        expect(resInactive.status).toBe(401);
 
         const resNotFound = await request(app)
             .get('/api/tickets')
             .set('X-Requester-Id', '999999');
-        expect(resNotFound.status).toBe(403);
+        expect(resNotFound.status).toBe(401);
     });
 
-    it('strictly returns only tickets owned by the active X-Requester-Id (AC 1)', async () => {
+    it('strictly returns only tickets owned by the active requester session (AC 1, AC-4.1)', async () => {
         const res1 = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ pageSize: 50 });
 
         expect(res1.status).toBe(200);
@@ -119,7 +126,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
 
         const res2 = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester2Id));
+            .set('Authorization', `Bearer ${requester2Token}`);
 
         expect(res2.status).toBe(200);
         expect(res2.body.pagination.totalCount).toBe(2);
@@ -132,7 +139,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Search by summary keyword
         const resKeyword = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ search: 'Unique Keyword' });
 
         expect(resKeyword.status).toBe(200);
@@ -142,7 +149,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Search case-insensitively
         const resCase = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ search: 'unique keyword' });
         expect(resCase.status).toBe(200);
         expect(resCase.body.items.length).toBe(1);
@@ -152,7 +159,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         const subTicketNumber = sampleTicketNumber.slice(4, 11); // e.g. "2026-00"
         const resTicketNumber = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ search: subTicketNumber });
 
         expect(resTicketNumber.status).toBe(200);
@@ -164,7 +171,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Filter by Priority (HIGH — seeded for i <= 4)
         const resPriority = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ requestedPriority: 'HIGH' });
 
         expect(resPriority.status).toBe(200);
@@ -176,7 +183,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Filter by Status
         const resStatus = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ status: 'RESOLVED' });
 
         expect(resStatus.status).toBe(200);
@@ -186,7 +193,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Filter by Category
         const resCat = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ categoryId: category1Id });
 
         expect(resCat.status).toBe(200);
@@ -199,7 +206,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Default page size (10)
         const resPage1 = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ page: 1, pageSize: 10 });
 
         expect(resPage1.status).toBe(200);
@@ -216,7 +223,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Page 2
         const resPage2 = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ page: 2, pageSize: 10 });
 
         expect(resPage2.status).toBe(200);
@@ -233,7 +240,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         // Page size 20
         const resPageSize20 = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ pageSize: 20 });
 
         expect(resPageSize20.status).toBe(200);
@@ -256,7 +263,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         for (const tc of testCases) {
             const res = await request(app)
                 .get('/api/tickets')
-                .set('X-Requester-Id', String(requester1Id))
+                .set('Authorization', `Bearer ${requester1Token}`)
                 .query(tc.query);
 
             expect(res.status).toBe(400);
@@ -267,7 +274,7 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
     it('supports sorting by ticketNumber and createdAt', async () => {
         const resAsc = await request(app)
             .get('/api/tickets')
-            .set('X-Requester-Id', String(requester1Id))
+            .set('Authorization', `Bearer ${requester1Token}`)
             .query({ sortBy: 'createdAt', sortOrder: 'asc', pageSize: 10 });
 
         expect(resAsc.status).toBe(200);

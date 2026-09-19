@@ -7,6 +7,8 @@ import { generateTicketNumber } from '../../src/utils/ticketNumber.js';
 describe('GET /api/tickets/:id (Issue 6 - API-08, API-09)', () => {
     let requester1Id: number;
     let requester2Id: number;
+    let requester1Token: string;
+    let requester2Token: string;
     let ticket1Id: number;
     let ticket2Id: number; // belongs to requester2
 
@@ -22,6 +24,11 @@ describe('GET /api/tickets/:id (Issue 6 - API-08, API-09)', () => {
 
         requester1Id = r1!.id;
         requester2Id = r2!.id;
+
+        const login1 = await request(app).post('/api/auth/login').send({ email: r1!.email, password: 'Password123!' });
+        requester1Token = login1.body.token;
+        const login2 = await request(app).post('/api/auth/login').send({ email: r2!.email, password: 'Password123!' });
+        requester2Token = login2.body.token;
 
         // Clean previous test data (order matters: notes > comments > attachments > tickets)
         await getPrisma().internal_note.deleteMany({
@@ -102,7 +109,7 @@ describe('GET /api/tickets/:id (Issue 6 - API-08, API-09)', () => {
         ticket2Id = t2.id;
     });
 
-    it('should return 401 if X-Requester-Id is missing or invalid', async () => {
+    it('should return 401 if authentication is missing or unauthenticated X-Requester-Id is sent (AC-4.1)', async () => {
         const resMissing = await request(app).get(`/api/tickets/${ticket1Id}`);
         expect(resMissing.status).toBe(401);
 
@@ -110,32 +117,37 @@ describe('GET /api/tickets/:id (Issue 6 - API-08, API-09)', () => {
             .get(`/api/tickets/${ticket1Id}`)
             .set('X-Requester-Id', 'not-a-number');
         expect(resInvalid.status).toBe(401);
+
+        const resWithId = await request(app)
+            .get(`/api/tickets/${ticket1Id}`)
+            .set('X-Requester-Id', String(requester1Id));
+        expect(resWithId.status).toBe(401);
     });
 
-    it('should return 403 if requester is inactive or does not exist', async () => {
+    it('should return 401 if inactive account tries to access tickets', async () => {
         const inactive = await getPrisma().user.findFirst({ where: { isActive: false, role: 'REQUESTER' } });
         const resInactive = await request(app)
             .get(`/api/tickets/${ticket1Id}`)
             .set('X-Requester-Id', String(inactive!.id));
-        expect(resInactive.status).toBe(403);
+        expect(resInactive.status).toBe(401);
 
         const resNotFound = await request(app)
             .get(`/api/tickets/${ticket1Id}`)
             .set('X-Requester-Id', '999999');
-        expect(resNotFound.status).toBe(403);
+        expect(resNotFound.status).toBe(401);
     });
 
     it('returns 404 when ticket does not exist (API-08)', async () => {
         const res = await request(app)
             .get('/api/tickets/999999')
-            .set('X-Requester-Id', String(requester1Id));
+            .set('Authorization', `Bearer ${requester1Token}`);
         expect(res.status).toBe(404);
     });
 
     it('returns full ticket detail with attachments when owner requests it (API-08)', async () => {
         const res = await request(app)
             .get(`/api/tickets/${ticket1Id}`)
-            .set('X-Requester-Id', String(requester1Id));
+            .set('Authorization', `Bearer ${requester1Token}`);
 
         expect(res.status).toBe(200);
 
@@ -177,14 +189,14 @@ describe('GET /api/tickets/:id (Issue 6 - API-08, API-09)', () => {
         // requester1 tries to access requester2's ticket
         const res = await request(app)
             .get(`/api/tickets/${ticket2Id}`)
-            .set('X-Requester-Id', String(requester1Id));
+            .set('Authorization', `Bearer ${requester1Token}`);
         expect(res.status).toBe(403);
         expect(res.body.error).toBe('Forbidden');
 
         // requester2 tries to access requester1's ticket
         const res2 = await request(app)
             .get(`/api/tickets/${ticket1Id}`)
-            .set('X-Requester-Id', String(requester2Id));
+            .set('Authorization', `Bearer ${requester2Token}`);
         expect(res2.status).toBe(403);
         expect(res2.body.error).toBe('Forbidden');
     });
