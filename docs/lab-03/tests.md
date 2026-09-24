@@ -34,9 +34,9 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **API-10** | API | FR-07, BR-14, AC-4.2 | Post and get Public Comments | HTTP 201; comment appended with author name, role, timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | **PLANNED** |
 | **API-11** | API | FR-08, BR-13, AC-4.3 | Problem appears resolved indication | HTTP 200; flags `resolvedIndicated = true` without altering formal status | `server/tests/lab-03/comments-notes.api.test.ts` | **PLANNED** |
 | **API-12** | API | FR-13, BR-15, AC-4.4 | Requester denied Internal Notes access | HTTP 403 Forbidden; internal notes completely omitted from ticket payload | `server/tests/lab-03/comments-notes.api.test.ts` | **PLANNED** |
-| **API-13** | API | FR-09, BR-18, AC-5.1 | IT Staff queue retrieval | HTTP 200; returns all tickets across requesters for IT Staff | `server/tests/lab-03/staff-queue.api.test.ts` | **PLANNED** |
-| **API-14** | API | FR-09, BR-19, AC-5.2 | Queue search, filters, and pagination | HTTP 200; filters by status/category/priority; paginates correctly | `server/tests/lab-03/staff-queue.api.test.ts` | **PLANNED** |
-| **API-15** | API | FR-09, AC-5.3 | Requester denied Queue API access | HTTP 403 Forbidden when Requester attempts `GET /api/staff/tickets` | `server/tests/lab-03/staff-queue.api.test.ts` | **PLANNED** |
+| **API-13** | API | FR-09, BR-18, AC-5.1 | IT Staff queue retrieval | HTTP 200; returns all tickets across requesters for IT Staff | `server/tests/lab-03/staff-queue.api.test.ts` | **PASS** |
+| **API-14** | API | FR-09, BR-19, AC-5.2 | Queue search, filters, and pagination | HTTP 200; filters by status/category/priority; paginates correctly | `server/tests/lab-03/staff-queue.api.test.ts` | **PASS** |
+| **API-15** | API | FR-09, AC-5.3 | Requester denied Queue API access | HTTP 403 Forbidden when Requester attempts `GET /api/staff/tickets` | `server/tests/lab-03/staff-queue.api.test.ts` | **PASS** |
 | **API-16** | API | FR-10, BR-08, AC-6.1 | Claim and reassign ticket ownership | HTTP 200; updates ticket `ownerId` to active staff/admin | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PLANNED** |
 | **API-17** | API | FR-11, BR-09, AC-6.2 | IT Priority modification | HTTP 200; updates `itPriority` while keeping `requestedPriority` unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PLANNED** |
 | **API-18** | API | FR-12, BR-12, AC-6.2 | Permitted status transition execution | HTTP 200 on valid transition; HTTP 422 on invalid transition jump | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PLANNED** |
@@ -52,11 +52,11 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **UI-01** | UI | FR-01, AC-3.1 | Login form validation & busy states | Inline errors on empty inputs; button disables with spinner on submit | `client/tests/lab-03/Login.test.tsx` | **PLANNED** |
 | **UI-02** | UI | FR-02, AC-3.3 | Mandatory password change form checks | Validates matching password, enforces complexity rules checklist | `client/tests/lab-03/ChangePassword.test.tsx` | **PLANNED** |
 | **UI-03** | UI | FR-04, AC-3.5 | App shell renders user name and role badge | Displays authenticated user info and dynamic role navigation links | `client/tests/lab-03/AppShell.test.tsx` | **PLANNED** |
-| **UI-04** | UI | FR-09, AC-5.4 | Staff queue table rendering and empty state | Renders ticket rows with badges; shows clean empty state on no results | `client/tests/lab-03/StaffTicketQueue.test.tsx` | **PLANNED** |
+| **UI-04** | UI | FR-09, AC-5.4 | Staff queue table rendering and empty state | Renders ticket rows with badges; shows clean empty state on no results | `client/tests/lab-03/StaffTicketQueue.test.tsx` | **PASS** |
 | **UI-05** | UI | FR-10, FR-11, AC-6.1 | Staff ticket detail operational controls | Renders claim/reassign dropdown, IT Priority selector, status dropdown | `client/tests/lab-03/StaffTicketDetail.test.tsx` | **PLANNED** |
 | **UI-06** | UI | FR-13, AC-6.4 | Visual distinction: Public Comments vs Notes | Comments have soft green theme; notes have soft gold theme + lock icon | `client/tests/lab-03/StaffTicketDetail.test.tsx` | **PLANNED** |
 | **UI-07** | UI | FR-14, FR-15, AC-7.1 | Admin user management directory & modals | Renders user list, opens Create/Edit modals with role & status controls | `client/tests/lab-03/UserManagement.test.tsx` | **PLANNED** |
-| **RESP-01** | Visual | AC-5.4, AC-9.1 | Responsive layout across viewports | Desktop table converts to stacked mobile cards ($< 768\text{px}$) | `client/tests/lab-03/Responsive.test.tsx` | **PLANNED** |
+| **RESP-01** | Visual | AC-5.4, AC-9.1 | Responsive layout across viewports | Desktop table converts to stacked mobile cards ($< 768\text{px}$) | `client/tests/lab-03/Responsive.test.tsx` | **PASS** |
 | **A11Y-01** | Visual/A11y | AC-9.1 | Accessibility & WCAG audit | Verifies visible focus rings, color contrast (>4.5:1), and form labels | `client/tests/lab-03/Accessibility.test.tsx` | **PLANNED** |
 | **E2E-01** | E2E | AC-8.1 | End-to-end authentication & password change | Tests login error, valid login, mandatory password reset, and logout | `e2e/lab-03/authentication.spec.ts` | **PLANNED** |
 | **E2E-02** | E2E | AC-8.2 | End-to-end IT Staff ticket lifecycle | Tests queue search $\to$ claim ticket $\to$ update priority/status $\to$ notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | **PLANNED** |
@@ -131,3 +131,25 @@ npm test
 npm run test:e2e
 ```
 *(Or `npx playwright test --config playwright.config.ts`)*
+
+---
+
+## 5. Issue 5 Execution Log — IT Staff Ticket Queue
+
+Ran on branch `feature/lab3-staff-queue` with the dev PostgreSQL database (`toktickit`).
+
+### Server tests (`cd server && npm test`)
+- **14 test files, 98 tests — all passing (0 failures, 0 skipped).**
+- Relevant to Issue 5: `tests/lab-03/staff-queue.api.test.ts` (13 tests) covering — AC-5.1 queue retrieval for IT Staff, AC-5.2 search/filter/sort/pagination (incl. `URGENT` priority and `Unassigned` owner), AC-5.3 Requester denied access (403) and unauthenticated 401.
+- `RequestedPriority.URGENT` value added to `server/prisma/schema.prisma` and applied to the dev DB via dedicated migration `20260924000000_add_urgent_priority`.
+- Database migration history note: the local `prisma/migrations` folder is out of sync with the dev DB history (pre-existing mismatch). Changes are applied with `prisma db execute` + `prisma generate` on this environment; `prisma migrate deploy` reports `relation "category" already exists`.
+
+### Client tests (`cd client && npm test`)
+- **13 test files, 52 tests — all passing (0 failures, 0 skipped).** (`act(...)` warnings from Lab 3 `Login.test.tsx` and Lab 2 `MyTickets.test.tsx` are non-fatal.)
+- New for Issue 5:
+  - `tests/lab-03/StaffTicketQueue.test.tsx` (UI-04, 5 tests): AC-5.4 table rows/badges rendering, row click → `onViewTicket(id)`, clean empty state, pagination controls when `totalPages > 1`, and all filter dropdowns (Category, Status, Req/IT Priority incl. `URGENT`, Owner with `Unassigned`).
+  - `tests/lab-03/Responsive.test.tsx` (RESP-01, 3 tests): desktop table container `.d-none.d-lg-block` with all 9 column headers vs. mobile stacked cards `.d-lg-none`, and card click → `onViewTicket(id)`.
+- Client `TicketStatus` type and StaffQueue priority dropdowns extended with `URGENT` in `client/src/api.ts`.
+
+### Coverage status
+- Spec coverage for Issue 5 documented under **`API-13`**, **`API-14`**, **`API-15`**, **`UI-04`**, **`RESP-01`** (all **PASS** in §2) and traceability **AC-5.1 – AC-5.4** (checked in `docs/lab-03/specification.md`).

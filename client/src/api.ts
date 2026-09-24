@@ -114,7 +114,7 @@ export async function changePasswordApi(
 }
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-export type TicketStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'CANCELLED';
+export type TicketStatus = 'NEW' | 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_REQUESTER' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'CANCELLED';
 
 export interface TicketListItem {
   id: number;
@@ -349,3 +349,67 @@ export async function softRemoveAttachment(
     requesterId
   );
 }
+
+// ─── Issue 5: IT Staff Ticket Queue Types & API ───────────────────────────────
+
+export interface StaffTicketListItem {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  category: { id: number; name: string };
+  relatedSystem: { id: number; name: string };
+  requester: { id: number; name: string; email: string };
+  owner: { id: number; name: string; email: string } | null;
+  requestedPriority: Priority;
+  itPriority: Priority | null;
+  currentStatus: TicketStatus;
+  resolvedIndicated: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffTicketQueueResponse {
+  tickets: StaffTicketListItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    hasPrevious: boolean;
+    hasNext: boolean;
+  };
+}
+
+export interface GetStaffTicketsParams {
+  search?: string;
+  categoryId?: number | string;
+  status?: string;
+  requestedPriority?: string;
+  itPriority?: string;
+  ownerId?: number | string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getStaffTickets(
+  params: GetStaffTicketsParams = {}
+): Promise<StaffTicketQueueResponse> {
+  const query = new URLSearchParams();
+  if (params.search && params.search.trim()) query.set('search', params.search.trim());
+  if (params.categoryId) query.set('categoryId', String(params.categoryId));
+  if (params.status) query.set('status', params.status);
+  if (params.requestedPriority) query.set('requestedPriority', params.requestedPriority);
+  if (params.itPriority) query.set('itPriority', params.itPriority);
+  if (params.ownerId !== undefined && params.ownerId !== '') query.set('ownerId', String(params.ownerId));
+  if (params.sortBy) query.set('sortBy', params.sortBy);
+  if (params.sortOrder) query.set('sortOrder', params.sortOrder);
+  if (params.page) query.set('page', String(params.page));
+  if (params.pageSize) query.set('pageSize', String(params.pageSize));
+
+  const queryString = query.toString();
+  const endpoint = `/api/staff/tickets${queryString ? `?${queryString}` : ''}`;
+  return apiFetch<StaffTicketQueueResponse>(endpoint);
+}
+

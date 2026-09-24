@@ -384,10 +384,10 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 [ ] AC-4.2: Requesters can view and post Public Comments (POST /api/tickets/:id/comments) on their owned tickets.
 [ ] AC-4.3: Requesters can click "Problem Appears Resolved" button, which logs an audit entry without directly forcing status to RESOLVED or CLOSED.
 [ ] AC-4.4: Requesters are strictly denied access to Internal Notes endpoints (HTTP 403 Forbidden).
-[ ] AC-5.1: GET /api/staff/tickets returns all tickets across all requesters, filtered by IT Staff authorization.
-[ ] AC-5.2: Supports substring search (Ticket No/Summary), filters (Category, Status, Requested Priority, IT Priority, Owner), and pagination (10, 20, 50).
-[ ] AC-5.3: Non-IT Staff / Non-Admin roles attempting to access the queue API receive HTTP 403 Forbidden.
-[ ] AC-5.4: Renders full Data Table on Desktop (>= 992px) and converts to stacked Cards on Mobile (< 768px) using Zen Green theme.
+[x] AC-5.1: GET /api/staff/tickets returns all tickets across all requesters, filtered by IT Staff authorization.
+[x] AC-5.2: Supports substring search (Ticket No/Summary), filters (Category, Status, Requested Priority, IT Priority, Owner), and pagination (10, 20, 50).
+[x] AC-5.3: Non-IT Staff / Non-Admin roles attempting to access the queue API receive HTTP 403 Forbidden.
+[x] AC-5.4: Renders full Data Table on Desktop (>= 992px) and converts to stacked Cards on Mobile (< 768px) using Zen Green theme.
 [ ] AC-6.1: IT Staff can claim unassigned tickets or reassign primary ownership to active IT Staff members.
 [ ] AC-6.2: IT Staff can update IT Priority and perform permitted status transitions according to the status matrix.
 [ ] AC-6.3: IT Staff can create and view append-only Internal Notes (POST /api/tickets/:id/notes).
