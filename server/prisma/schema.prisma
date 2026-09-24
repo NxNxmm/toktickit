@@ -153,6 +153,7 @@ enum RequestedPriority {
   LOW
   MEDIUM
   HIGH
+  URGENT
 }
 
 enum UserRole {

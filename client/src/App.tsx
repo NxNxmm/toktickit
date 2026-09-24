@@ -7,19 +7,26 @@ import { AppHeader } from './components/AppHeader';
 import { CreateTicketForm } from './components/CreateTicketForm';
 import { MyTicketsList } from './components/MyTicketsList';
 import { TicketDetail } from './components/TicketDetail';
+import { StaffQueue } from './components/StaffQueue';
 
 type AppView = 'my-tickets' | 'create-ticket' | 'ticket-detail' | 'staff-queue' | 'admin-users';
+
+/** Returns the appropriate default landing view for a given user role. */
+function defaultViewForRole(role: string | undefined): AppView {
+  if (role === 'IT_STAFF' || role === 'ADMIN') return 'staff-queue';
+  return 'my-tickets';
+}
 
 const MainApp: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>('my-tickets');
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
-  // Reset selected ticket and view when user changes
+  // Reset selected ticket and view when user changes (e.g. login/logout/switch)
   React.useEffect(() => {
     setSelectedTicketId(null);
-    setCurrentView('my-tickets');
-  }, [user?.id]);
+    setCurrentView(defaultViewForRole(user?.role));
+  }, [user?.id, user?.role]);
 
   // 1. Loading state while checking active session
   if (isLoading) {
@@ -54,7 +61,8 @@ const MainApp: React.FC = () => {
 
   const handleBackToTickets = () => {
     setSelectedTicketId(null);
-    setCurrentView('my-tickets');
+    // Return to the role-appropriate queue view
+    setCurrentView(defaultViewForRole(user.role));
   };
 
   return (
@@ -70,17 +78,20 @@ const MainApp: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="container py-4" style={{ maxWidth: '1200px' }}>
-        {currentView === 'my-tickets' && (
+        {/* REQUESTER: My Tickets list */}
+        {currentView === 'my-tickets' && user.role === 'REQUESTER' && (
           <MyTicketsList
             onCreateTicket={() => setCurrentView('create-ticket')}
             onViewTicket={handleViewTicket}
           />
         )}
 
-        {currentView === 'create-ticket' && (
+        {/* Create Ticket (REQUESTER) */}
+        {currentView === 'create-ticket' && user.role === 'REQUESTER' && (
           <CreateTicketForm onSuccess={() => setCurrentView('my-tickets')} />
         )}
 
+        {/* Ticket Detail */}
         {currentView === 'ticket-detail' && selectedTicketId !== null && (
           <TicketDetail
             ticketId={selectedTicketId}
@@ -88,24 +99,13 @@ const MainApp: React.FC = () => {
           />
         )}
 
-        {currentView === 'staff-queue' && (
-          <div className="card shadow-sm border-0 p-4 rounded-3 text-center">
-            <h3 className="h5 fw-bold text-success mb-2">IT Staff Ticket Queue</h3>
-            <p className="text-muted small mb-3">
-              Staff queue operational views will be fully wired in Sprint Issue 5.
-            </p>
-            <div>
-              <button
-                className="btn btn-sm btn-outline-success"
-                onClick={() => setCurrentView('my-tickets')}
-              >
-                Return to My Tickets
-              </button>
-            </div>
-          </div>
+        {/* IT Staff / Admin: Staff Queue (AC-5.1, AC-5.4) */}
+        {currentView === 'staff-queue' && (user.role === 'IT_STAFF' || user.role === 'ADMIN') && (
+          <StaffQueue onViewTicket={handleViewTicket} />
         )}
 
-        {currentView === 'admin-users' && (
+        {/* Admin: User Management placeholder (Issue 7) */}
+        {currentView === 'admin-users' && user.role === 'ADMIN' && (
           <div className="card shadow-sm border-0 p-4 rounded-3 text-center">
             <h3 className="h5 fw-bold text-primary mb-2">Administrator User Management</h3>
             <p className="text-muted small mb-3">
@@ -114,9 +114,9 @@ const MainApp: React.FC = () => {
             <div>
               <button
                 className="btn btn-sm btn-outline-primary"
-                onClick={() => setCurrentView('my-tickets')}
+                onClick={() => setCurrentView('staff-queue')}
               >
-                Return to My Tickets
+                Return to Ticket Queue
               </button>
             </div>
           </div>
