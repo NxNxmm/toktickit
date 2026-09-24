@@ -258,6 +258,29 @@ Requester signals problem appears solved without modifying formal status.
 
 ## 4. IT Staff Ticket Operations Endpoints
 
+### 4.0 Get Assignable IT Staff / Admins
+List active `IT_STAFF` and `ADMIN` users eligible for primary ticket ownership (BR-08). Powers the Ticket Owner dropdown on the Staff Ticket Detail screen.
+- **Endpoint**: `GET /api/staff/assignees`
+- **Access**: `IT_STAFF`, `ADMIN`
+- **Response 200 OK**:
+```json
+[
+  {
+    "id": 5,
+    "name": "Alex Turner",
+    "email": "alex.turner@toktickit.kmutt.ac.th",
+    "role": "IT_STAFF"
+  },
+  {
+    "id": 9,
+    "name": "System Admin",
+    "email": "admin@toktickit.kmutt.ac.th",
+    "role": "ADMIN"
+  }
+]
+```
+- **Errors**: `403 Forbidden` (Requesters attempting access).
+
 ### 4.1 IT Staff Ticket Queue
 Fetch paginated tickets across all requesters with filtering and sorting.
 - **Endpoint**: `GET /api/staff/tickets`

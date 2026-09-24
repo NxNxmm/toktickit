@@ -18,7 +18,7 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | Test ID | Type | Requirement / AC | What It Tests | Expected Result | Automated Test File | Status |
 |---|---|---|---|---|---|---|
 | **UNIT-01** | Unit | BR-03, AC-3.4 | Password policy validator | Enforces $\ge 8$ chars, uppercase, lowercase, digit, and symbol | `server/tests/lab-03/unit/password-policy.test.ts` | **PLANNED** |
-| **UNIT-02** | Unit | BR-12, AC-6.2 | Status transition matrix logic | Allows valid transitions; rejects invalid transitions | `server/tests/lab-03/unit/status-transitions.test.ts` | **PLANNED** |
+| **UNIT-02** | Unit | BR-12, AC-6.2 | Status transition matrix logic | Allows valid transitions; rejects invalid transitions | `server/tests/lab-03/unit/status-transitions.test.ts` | **PASS** |
 | **MIGR-01** | Migration | AC-2.4 | Database migration integrity | Migrates Lab 2 `RequesterUser` to `User` without losing tickets/attachments | `server/tests/lab-03/migration.test.ts` | **PLANNED** |
 | **REGR-01** | Regression | AC-4.1 | Lab 2 ticket creation & upload regression | Ticket creation and attachment upload work under authenticated session | `server/tests/lab-03/requester-regression.api.test.ts` | **PLANNED** |
 | **REGR-02** | Regression | AC-4.1 | Lab 2 attachment soft-removal regression | Soft-remove records reason, retains metadata, blocks download with 410 | `server/tests/lab-03/requester-regression.api.test.ts` | **PLANNED** |
@@ -37,10 +37,10 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **API-13** | API | FR-09, BR-18, AC-5.1 | IT Staff queue retrieval | HTTP 200; returns all tickets across requesters for IT Staff | `server/tests/lab-03/staff-queue.api.test.ts` | **PASS** |
 | **API-14** | API | FR-09, BR-19, AC-5.2 | Queue search, filters, and pagination | HTTP 200; filters by status/category/priority; paginates correctly | `server/tests/lab-03/staff-queue.api.test.ts` | **PASS** |
 | **API-15** | API | FR-09, AC-5.3 | Requester denied Queue API access | HTTP 403 Forbidden when Requester attempts `GET /api/staff/tickets` | `server/tests/lab-03/staff-queue.api.test.ts` | **PASS** |
-| **API-16** | API | FR-10, BR-08, AC-6.1 | Claim and reassign ticket ownership | HTTP 200; updates ticket `ownerId` to active staff/admin | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PLANNED** |
-| **API-17** | API | FR-11, BR-09, AC-6.2 | IT Priority modification | HTTP 200; updates `itPriority` while keeping `requestedPriority` unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PLANNED** |
-| **API-18** | API | FR-12, BR-12, AC-6.2 | Permitted status transition execution | HTTP 200 on valid transition; HTTP 422 on invalid transition jump | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PLANNED** |
-| **API-19** | API | FR-13, BR-15, AC-6.3 | Create and retrieve Internal Notes (Staff) | HTTP 201; note saved with author identity and timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | **PLANNED** |
+| **API-16** | API | FR-10, BR-08, AC-6.1 | Claim and reassign ticket ownership | HTTP 200; updates ticket `ownerId` to active staff/admin | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PASS** |
+| **API-17** | API | FR-11, BR-09, AC-6.2 | IT Priority modification | HTTP 200; updates `itPriority` while keeping `requestedPriority` unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PASS** |
+| **API-18** | API | FR-12, BR-12, AC-6.2 | Permitted status transition execution | HTTP 200 on valid transition; HTTP 422 on invalid transition jump | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | **PASS** |
+| **API-19** | API | FR-13, BR-15, AC-6.3 | Create and retrieve Internal Notes (Staff) | HTTP 201; note saved with author identity and timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | **PASS** |
 | **API-20** | API | FR-14, AC-7.1 | Admin list users with search and filter | HTTP 200; returns user directory; supports name/email search & role filter | `server/tests/lab-03/users-admin.api.test.ts` | **PLANNED** |
 | **API-21** | API | FR-15, BR-22, AC-7.2 | Admin create user with initial password | HTTP 201; user created with `requiresPasswordChange = true` | `server/tests/lab-03/users-admin.api.test.ts` | **PLANNED** |
 | **API-22** | API | BR-21, AC-7.4 | Reject duplicate user email | HTTP 409 Conflict when creating/updating user with existing email | `server/tests/lab-03/users-admin.api.test.ts` | **PLANNED** |
@@ -53,8 +53,8 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **UI-02** | UI | FR-02, AC-3.3 | Mandatory password change form checks | Validates matching password, enforces complexity rules checklist | `client/tests/lab-03/ChangePassword.test.tsx` | **PLANNED** |
 | **UI-03** | UI | FR-04, AC-3.5 | App shell renders user name and role badge | Displays authenticated user info and dynamic role navigation links | `client/tests/lab-03/AppShell.test.tsx` | **PLANNED** |
 | **UI-04** | UI | FR-09, AC-5.4 | Staff queue table rendering and empty state | Renders ticket rows with badges; shows clean empty state on no results | `client/tests/lab-03/StaffTicketQueue.test.tsx` | **PASS** |
-| **UI-05** | UI | FR-10, FR-11, AC-6.1 | Staff ticket detail operational controls | Renders claim/reassign dropdown, IT Priority selector, status dropdown | `client/tests/lab-03/StaffTicketDetail.test.tsx` | **PLANNED** |
-| **UI-06** | UI | FR-13, AC-6.4 | Visual distinction: Public Comments vs Notes | Comments have soft green theme; notes have soft gold theme + lock icon | `client/tests/lab-03/StaffTicketDetail.test.tsx` | **PLANNED** |
+| **UI-05** | UI | FR-10, FR-11, AC-6.1 | Staff ticket detail operational controls | Renders claim/reassign dropdown, IT Priority selector, status dropdown | `client/tests/lab-03/StaffTicketDetail.test.tsx` | **PASS** |
+| **UI-06** | UI | FR-13, AC-6.4 | Visual distinction: Public Comments vs Notes | Comments have soft green theme; notes have soft gold theme + lock icon | `client/tests/lab-03/StaffTicketDetail.test.tsx` | **PASS** |
 | **UI-07** | UI | FR-14, FR-15, AC-7.1 | Admin user management directory & modals | Renders user list, opens Create/Edit modals with role & status controls | `client/tests/lab-03/UserManagement.test.tsx` | **PLANNED** |
 | **RESP-01** | Visual | AC-5.4, AC-9.1 | Responsive layout across viewports | Desktop table converts to stacked mobile cards ($< 768\text{px}$) | `client/tests/lab-03/Responsive.test.tsx` | **PASS** |
 | **A11Y-01** | Visual/A11y | AC-9.1 | Accessibility & WCAG audit | Verifies visible focus rings, color contrast (>4.5:1), and form labels | `client/tests/lab-03/Accessibility.test.tsx` | **PLANNED** |
@@ -153,3 +153,28 @@ Ran on branch `feature/lab3-staff-queue` with the dev PostgreSQL database (`tokt
 
 ### Coverage status
 - Spec coverage for Issue 5 documented under **`API-13`**, **`API-14`**, **`API-15`**, **`UI-04`**, **`RESP-01`** (all **PASS** in §2) and traceability **AC-5.1 – AC-5.4** (checked in `docs/lab-03/specification.md`).
+
+---
+
+## 6. Issue 6 Execution Log — IT Staff Ticket Operations, Ownership, Status, and Internal Notes
+
+Ran on branch `feature/lab3-staff-operations` with the dev PostgreSQL database (`toktickit`).
+
+### Environment note
+The dev DB contained stale bcrypt password hashes (cost-12, from an earlier seed) for the seeded accounts, so `Password123!` login returned HTTP 401. The ten seeded accounts documented in `server/prisma/seed.ts` were reset to `bcrypt.hash('Password123!', 10)`, restoring the documented development credentials; re-running `npx prisma db seed` alone does not refresh `passwordHash` (the `upsert` `update` clause excludes it).
+
+### Server tests (`cd server && npm test`)
+- **16 test files, 126 tests — all passing (0 failures, 0 skipped).**
+- New for Issue 6:
+  - `tests/lab-03/unit/status-transitions.test.ts` (UNIT-02, 6 tests): whole matrix per §6 — every permitted transition allowed, illegal jumps rejected, `CANCELLED` terminal, self/reverse transitions rejected, exact 8 statuses.
+  - `tests/lab-03/staff-ticket-detail.api.test.ts` (API-16/17/18, 22 tests): `GET /api/staff/tickets/:id` full operational detail incl. `internalNotes` (Requester 403, missing ticket 404), `GET /api/staff/assignees` (active IT_STAFF/ADMIN only, inactive/Requester excluded), ownership claim/reassign (active staff target, null unassign, inactive/Requester target 400), IT Priority (400 invalid value), and status transitions (200 valid, 422 illegal jump, 400 unknown status, 403 Requester).
+- API-19 (Internal Notes staff create/retrieve) continues to pass via `tests/lab-03/comments-notes.api.test.ts`.
+
+### Client tests (`cd client && npm test`)
+- **14 test files, 64 tests — all passing (0 failures, 0 skipped).**
+- New for Issue 6:
+  - `tests/lab-03/StaffTicketDetail.test.tsx` (UI-05 + UI-06, 12 tests): read-only requester section + badges; owner dropdown of active staff/admins with Claim quick-action and Apply Owner reassignment; IT Priority selector (4 levels) and update call; status dropdown restricted to the §6 matrix for `OPEN`; green comment cards vs. gold `--color-note-bg`/`--color-note-gold` internal-note cards with 🔒 lock icon and the privacy banner; tab switching; internal-note submission.
+- `client/src/api.ts` gained `StaffTicketDetail`, `InternalNote`, `StaffAssignee` and `TICKET_STATUS_TRANSITIONS` plus staff operations functions; `App.tsx` routes staff/admin row clicks to the new `staff-ticket-detail` view.
+
+### Coverage status
+- Spec coverage for Issue 6 documented under **`UNIT-02`**, **`API-16`**, **`API-17`**, **`API-18`**, **`API-19`**, **`UI-05`**, **`UI-06`** (all **PASS** in §2) and traceability **AC-6.1 – AC-6.4** (checked in `docs/lab-03/specification.md`).

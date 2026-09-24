@@ -8,8 +8,9 @@ import { CreateTicketForm } from './components/CreateTicketForm';
 import { MyTicketsList } from './components/MyTicketsList';
 import { TicketDetail } from './components/TicketDetail';
 import { StaffQueue } from './components/StaffQueue';
+import { StaffTicketDetail } from './components/StaffTicketDetail';
 
-type AppView = 'my-tickets' | 'create-ticket' | 'ticket-detail' | 'staff-queue' | 'admin-users';
+type AppView = 'my-tickets' | 'create-ticket' | 'ticket-detail' | 'staff-queue' | 'staff-ticket-detail' | 'admin-users';
 
 /** Returns the appropriate default landing view for a given user role. */
 function defaultViewForRole(role: string | undefined): AppView {
@@ -54,9 +55,13 @@ const MainApp: React.FC = () => {
   }
 
   // 4. Authenticated application shell with App Header (AC-3.5, UI-03)
+  const isStaff = user.role === 'IT_STAFF' || user.role === 'ADMIN';
+
   const handleViewTicket = (id: number) => {
     setSelectedTicketId(id);
-    setCurrentView('ticket-detail');
+    // IT Staff / Admin open the operational detail view (Issue 6);
+    // Requesters open the classic requester detail view.
+    setCurrentView(isStaff ? 'staff-ticket-detail' : 'ticket-detail');
   };
 
   const handleBackToTickets = () => {
@@ -100,8 +105,16 @@ const MainApp: React.FC = () => {
         )}
 
         {/* IT Staff / Admin: Staff Queue (AC-5.1, AC-5.4) */}
-        {currentView === 'staff-queue' && (user.role === 'IT_STAFF' || user.role === 'ADMIN') && (
+        {currentView === 'staff-queue' && isStaff && (
           <StaffQueue onViewTicket={handleViewTicket} />
+        )}
+
+        {/* IT Staff / Admin: Staff Ticket Operational Detail (AC-6.x) */}
+        {currentView === 'staff-ticket-detail' && isStaff && selectedTicketId !== null && (
+          <StaffTicketDetail
+            ticketId={selectedTicketId}
+            onBack={handleBackToTickets}
+          />
         )}
 
         {/* Admin: User Management placeholder (Issue 7) */}

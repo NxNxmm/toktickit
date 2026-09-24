@@ -117,7 +117,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                   <>
                     <button
                       className={`btn btn-sm ${
-                        currentView === 'staff-queue' || currentView === 'ticket-detail'
+                        currentView === 'staff-queue' || currentView === 'staff-ticket-detail'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
                       }`}
