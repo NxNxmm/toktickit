@@ -68,7 +68,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
 
           {/* Hamburger toggle button for smaller screens */}
           <button
-            className="navbar-toggler border-white-50"
+            className="navbar-toggler border-white-50 d-inline-flex d-lg-none"
             type="button"
             aria-controls="toktickitNavbar"
             aria-expanded={!isNavCollapsed}
@@ -78,7 +78,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
               padding: '0.35rem 0.6rem',
               minWidth: '44px',
               minHeight: '44px',
-              display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}

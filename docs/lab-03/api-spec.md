@@ -153,6 +153,20 @@ Create a ticket using the authenticated user's ID as `requesterId`.
 ```
 - **Response 201 Created**: Returns created ticket object with status `NEW`.
 
+### 3.2a Get Related Systems (dropdown metadata, carried over from Lab 2)
+List systems available in the "Affected System" dropdown on the ticket creation form.
+- **Endpoint**: `GET /api/related-systems`
+- **Access**: Public (no `requireAuth`) — reference metadata only, contains no user or ticket data.
+- **Response 200 OK**:
+```json
+[
+  { "id": 1, "name": "Campus Wi-Fi" },
+  { "id": 2, "name": "Laboratory Printing" }
+]
+```
+- **Errors**: `500 Internal Server Error` with `{ "error": "Failed to fetch related systems" }`. Note this legacy handler does **not** use the standard §1.2 error envelope; it is retained for Lab 2 compatibility.
+- **Path hazard**: This endpoint must stay at `/api/related-systems`. It is deliberately registered *before* `/tickets/:id`; requesting `/api/tickets/related-systems` matches the `/:id` pattern and returns `400` with `"Invalid ticket ID"`.
+
 ### 3.3 Get Requester Ticket Detail
 Retrieve full details for an owned ticket. Crucially, the response includes attachments and Public Comments, but **strictly omits `internalNotes`**.
 - **Endpoint**: `GET /api/tickets/:id`
@@ -515,3 +529,33 @@ Reset a user's password to a temporary password, forcing a change on next login.
   "requiresPasswordChange": true
 }
 ```
+
+---
+
+## 6. API Contract Verification (Issue 8)
+
+This section records how the contract above is proven by automated tests, and the API-layer defects the end-to-end suites exposed. Test identifiers cross-reference `docs/lab-03/tests.md` §2.
+
+### 6.1 Contract Coverage by Endpoint Group
+
+| Endpoint Group | Server API Tests | End-to-End Tests |
+|---|---|---|
+| `/api/auth/*` (§2) | `auth.api.test.ts` — API-01…API-07 (7 tests) | `authentication.spec.ts` — E2E-01 (4 tests) |
+| `/api/tickets/*` (§3) | `authorization.api.test.ts` — API-08/09; `comments-notes.api.test.ts` — API-10/11 | `staff-ticket-flow.spec.ts` — E2E-02; `requester-ticket-flow.spec.ts` — E2E-04 |
+| `/api/staff/*` (§4) | `staff-queue.api.test.ts` — API-13…API-15; `staff-ticket-detail.api.test.ts` — API-16…API-18 | `staff-ticket-flow.spec.ts` — E2E-02 (7 tests) |
+| `/api/tickets/:id/notes` (§4.6) | `comments-notes.api.test.ts` — API-12/19 (19 tests) | `staff-ticket-flow.spec.ts` — E2E-02.4 |
+| `/api/admin/users/*` (§5) | `users-admin.api.test.ts` — API-20…API-27 (16 tests) | `user-administration.spec.ts` — E2E-03 (5 tests) |
+
+### 6.2 Session Semantics Confirmed Against the Running Server
+- **Cookie is the only session carrier in the browser path.** `POST /api/auth/login` sets an HTTP-only `toktickit_session` cookie; no bearer token is required. The E2E suites therefore authenticate purely through the UI and never inject credentials, so the §1.1 mechanism is verified as shipped rather than as designed.
+- **Logout invalidates server-side, not just client-side (AC-3.2).** E2E-01.4 logs out through the App Header, then replays the *pre-logout* cookie against `GET /api/auth/me` and asserts `401 Unauthorized`. A browser-only session wipe would have passed a weaker test; this one would not.
+- **Anonymous vs. authenticated failures are distinct and correctly ordered (AC-7.5).** E2E-03.5 asserts `401` for a truly anonymous request and `403` for an authenticated Requester/IT Staff request. Because the session lives in a cookie, the anonymous assertion must be issued before any login in the same test context; Playwright's `page.request` shares the browser cookie jar, which is a test-harness constraint documented in `specification.md` §13.
+- **First-login gating is enforced by middleware, not only by the client (AC-3.3).** E2E-01.3 confirms a `requiresPasswordChange` account is blocked from the application shell, and the E2E suites confirm the same by having a seeded staff account fail on operational endpoints until the mandated change completes.
+
+### 6.3 Defects Found and Fixed
+1. **`401` responses on unauthenticated multipart requests reset the connection (fixed).** `POST /api/tickets/:id/attachments` and the ticket-creation upload accept `multipart/form-data`. The global auth middleware wrote its `401` response before the incoming request stream had been consumed, so Node tore the socket down and the client observed `socket hang up` / `ECONNRESET` instead of the documented `401`. `server/src/middleware/auth.middleware.ts` now drains the request body before responding, so the §1.2 error shape is actually delivered for multipart bodies. Regression coverage: `server/tests/lab-02/attachments.api.test.ts`.
+2. **Mobile-only hamburger toggle suppressed on Desktop (fixed).** `client/src/components/AppHeader.tsx` applied an inline `display: inline-flex`, which outranks the Bootstrap `d-none` utility at every breakpoint. The navbar collapse had no visible trigger on Desktop. The inline style was removed in favour of the `d-inline-flex d-lg-none` classes, and the contract is asserted in `client/tests/lab-03/AppShell.test.tsx`.
+
+### 6.4 Observed Contract Discrepancy — Not Fixed in Issue 8
+- **Ticket number padding differs between two generators.** The canonical format in this specification (see the `ticketNo` examples in §3.1) is `TKT-YYYY-NNNNNN` — a **6-digit** sequence, which is what `server/src/utils/ticketNumber.ts` implements and what `server/tests/lab-02/unit/ticket-number.test.ts` asserts. However, `server/src/controllers/ticket.controller.ts` contains a second, controller-local generator that pads to **5** digits, and that is the code path actually executed by `POST /api/tickets`. Live tickets therefore look like `TKT-2026-00026` rather than the specified `TKT-2026-000026`. This is an implementation defect against the documented contract, not a spec ambiguity. The E2E assertions deliberately match `/TKT-\d{4}-\d{5,6}/` so the suites report the real behaviour instead of masking it; the correct fix is to delete the duplicate controller-local generator and delegate to the shared utility, deferred to a follow-up issue.
+- **Route ordering hazard (verified, documented for integrators).** See §3.2a — the related-system metadata endpoint must not be nested under `/api/tickets/:id`, because Express matches `/tickets/related-systems` against the `/:id` pattern first and answers `400 {"message":"Invalid ticket ID"}`. The correct paths are `GET /api/related-systems` and `GET /api/staff/assignees`.

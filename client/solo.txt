@@ -1,0 +1,349 @@
+﻿
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Year3/Semester 1/CPE334 Software Engineering/toktickit/client[39m
+
+ [31mΓ¥»[39m tests/lab-03/Accessibility.test.tsx [2m([22m[2m37 tests[22m[2m | [22m[31m27 failed[39m[2m)[22m[90m 172[2mms[22m[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22mparses the Zen Green token palette from src/index.css[90m 4[2mms[22m[31m[39m
+[31m     ΓåÆ stylesheet text was 0 chars: expected 0 to be greater than 1000[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'body text on page background' clears WCAG AA (4.5:1)[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-primary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'body text on surface' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-primary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'body text on subtle surface' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-primary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'secondary text on surface' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-secondary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'muted text on surface' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-muted should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'muted text on page background' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-muted should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'primary green on surface (links, actiΓÇª' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-primary-green should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'secondary green on surface (focus rinΓÇª' clears WCAG AA (3:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-secondary-green should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'error text on error background' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-error-text should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'error text on surface (inline error tΓÇª' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-error-text should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'note text on note background (internaΓÇª' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-primary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'note gold on note background (note caΓÇª' clears WCAG AA (3:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-note-gold should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'note gold on surface (note tab underlΓÇª' clears WCAG AA (3:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-note-gold should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'white on note gold (Add Internal NoteΓÇª' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-surface should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'body text on pale green (info banner)' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-primary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'secondary text on pale green' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-secondary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'warning amber on warning background (ΓÇª' clears WCAG AA (3:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-warning-amber should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'success green on success background (ΓÇª' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-success-green should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'text on read-only field background' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-primary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'text on read-only field background (sΓÇª' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-text-secondary should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'white on primary green (primary buttoΓÇª' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-surface should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22m'white on error red (danger button)' clears WCAG AA (4.5:1)[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ token --color-surface should be defined: expected undefined to be defined[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22mkeeps body text at AAA (7:1) against the page background[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'length')[39m
+[31m   [31m├ù[31m A11Y-01: WCAG AA colour contrast (AC-9.1, ui-spec 1.1)[2m > [22morders the text hierarchy from strongest ink to weakest[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'length')[39m
+[31m   [31m├ù[31m A11Y-01: visible focus indicators (AC-9.1, ui-spec 5.2)[2m > [22mdefines a focus-visible outline for every interactive element[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ index.css should contain a :focus-visible rule: expected null not to be null[39m
+[31m   [31m├ù[31m A11Y-01: visible focus indicators (AC-9.1, ui-spec 5.2)[2m > [22mcovers links, buttons, inputs, selects and textareas[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ a:focus-visible should be styled: expected '' to match /a:focus-visible/[39m
+
+node.exe : [31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1m[7m Failed Tests 27 [27m[22mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Norawit\AppData\Roamin ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31mΓÄ»ΓÄ»ΓÄ»Γ...»ΓÄ»ΓÄ»ΓÄ»[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22mparses the Zen Green token palette from src/index.css
+[31m[1mAssertionError[22m: stylesheet text was 0 chars: expected 0 to be greater than 1000[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m125:7[22m[39m
+    [90m123| [39m      [33mSTYLESHEET[39m[33m.[39mlength[33m,[39m
+    [90m124| [39m      [32m`stylesheet text was 
+[39m[36m${[39m[33mSTYLESHEET[39m[33m.[39mlength[36m}[39m[32m chars`[39m[33m,[39m
+    [90m125| [39m    )[33m.[39m[34mtoBeGreaterThan[39m([34m1000[39m)[33m;[39m
+    [90m   | [39m      [31m^[39m
+    [90m126| [39m    [34mexpect[39m([33mObject[39m[33m.[39m[34mkeys[39m(tokens)[33m.[39mlength)[33m.[39m
+[34mtoBeGreaterThanOrEqual[39m([34m20[39m)[33m;[39m
+    [90m127| [39m    [34mexpect[39m(tokens[[32m'color-primary-green'[39m])[33m.[39m[34mtoMatch[39m([36m/^#[0
+-9a-fA-F]{6}$/[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'body text on page background' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'body text on surface' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'body text on subtle surface' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'note text on note background (internaΓÇª' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'body text on pale green (info banner)' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'text on read-only field background' clears WCAG AA (4.5:1)
+[31m[1mAssertionError[22m: token --color-text-primary should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'secondary text on surface' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'secondary text on pale green' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'text on read-only field background (sΓÇª' clears WCAG AA (4.5:1)
+[31m[1mAssertionError[22m: token --color-text-secondary should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'muted text on surface' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'muted text on page background' clears WCAG AA (4.5:1)
+[31m[1mAssertionError[22m: token --color-text-muted should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'primary green on surface (links, actiΓÇª' clears WCAG AA (4.5:1)
+[31m[1mAssertionError[22m: token --color-primary-green should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'secondary green on surface (focus rinΓÇª' clears WCAG AA (3:1)
+[31m[1mAssertionError[22m: token --color-secondary-green should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'error text on error background' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'error text on surface (inline error tΓÇª' clears WCAG AA (4.5:1)
+[31m[1mAssertionError[22m: token --color-error-text should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'note gold on note background (note caΓÇª' clears WCAG AA (3:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'note gold on surface (note tab underlΓÇª' clears WCAG AA (3:1)
+[31m[1mAssertionError[22m: token --color-note-gold should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'white on note gold (Add Internal NoteΓÇª' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'white on primary green (primary buttoΓÇª' clears WCAG AA (4.5:1)
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'white on error red (danger button)' clears WCAG AA (4.5:1)
+[31m[1mAssertionError[22m: token --color-surface should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'warning amber on warning background (ΓÇª' clears WCAG AA (3:1)
+[31m[1mAssertionError[22m: token --color-warning-amber should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22m'success green on success background (ΓÇª' clears WCAG AA (4.5:1)
+[31m[1mAssertionError[22m: token --color-success-green should be defined: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m161:59[22m[39m
+    [90m159| [39m
+    [90m160| [39m  it[33m.[39m[34meach[39m([33mPAIRS[39m)([32m'$label clears WCAG AA 
+($min:1)'[39m[33m,[39m ({ fg[33m,[39m bg[33m,[39m min }) [33m=[39mΓÇª
+    [90m161| [39m    [34mexpect[39m(tokens[fg][33m,[39m [32m`token --[39m[36m${[39mfg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m   | [39m                                                          [31m^[39m
+    [90m162| [39m    [34mexpect[39m(tokens[bg][33m,[39m [32m`token --[39m[36m${[39mbg[36m}[39m[32m should 
+be defined`[39m)[33m.[39m[34mtoBeDefined[39m(ΓÇª
+    [90m163| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22mkeeps body text at AAA (7:1) against the page background
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[36m [2mΓ¥»[22m channel tests/lab-03/Accessibility.test.tsx:[2m66:9[22m[39m
+    [90m 64| [39m[35mconst[39m channel [33m=[39m (hex[33m:[39m string)[33m:[39m [number[33m,[39m 
+number[33m,[39m number] [33m=>[39m {
+    [90m 65| [39m  [35mconst[39m full [33m=[39m
+    [90m 66| [39m    hex[33m.[39mlength [33m===[39m [34m4[39m
+    [90m   | [39m        [31m^[39m
+    [90m 67| [39m      [33m?[39m [32m`#[39m[36m${[39mhex[[34m1[39m][36m}[39m[32m[39m[36m${[39mhex[[34m
+1[39m][36m}[39m[32m[39m[36m${[39mhex[[34m2[39m][36m}[39m[32m[39m[36m${[39mhex[[34m2[39m][36m}[39m[3
+2m[39m[36m${[39mhex[[34m3[39m][36m}[39m[32m[39m[36m${[39mhex[[34m3[39m][36m}[39m[32m`[39m
+    [90m 68| [39m      [33m:[39m hex[33m.[39m[34mslice[39m([34m0[39m[33m,[39m [34m7[39m)[33m;[39m
+[90m [2mΓ¥»[22m luminance tests/lab-03/Accessibility.test.tsx:[2m78:21[22m[39m
+[90m [2mΓ¥»[22m contrastRatio tests/lab-03/Accessibility.test.tsx:[2m87:14[22m[39m
+[90m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m174:19[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: WCAG AA colour contrast 
+(AC-9.1, ui-spec 1.1)[2m > [22morders the text hierarchy from strongest ink to weakest
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[36m [2mΓ¥»[22m channel tests/lab-03/Accessibility.test.tsx:[2m66:9[22m[39m
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m27 failed[39m[22m[2m | [22m[1m[32m10 passed[39m[22m[90m (37)[39m
+[2m   Start at [22m 23:58:45
+[2m   Duration [22m 1.38s[2m (transform 133ms, setup 87ms, collect 233ms, tests 172ms, environment 556ms, prepare 110ms)[22m
+
+    [90m 64| [39m[35mconst[39m channel [33m=[39m (hex[33m:[39m string)[33m:[39m [number[33m,[39m 
+number[33m,[39m number] [33m=>[39m {
+    [90m 65| [39m  [35mconst[39m full [33m=[39m
+    [90m 66| [39m    hex[33m.[39mlength [33m===[39m [34m4[39m
+    [90m   | [39m        [31m^[39m
+    [90m 67| [39m      [33m?[39m [32m`#[39m[36m${[39mhex[[34m1[39m][36m}[39m[32m[39m[36m${[39mhex[[34m
+1[39m][36m}[39m[32m[39m[36m${[39mhex[[34m2[39m][36m}[39m[32m[39m[36m${[39mhex[[34m2[39m][36m}[39m[3
+2m[39m[36m${[39mhex[[34m3[39m][36m}[39m[32m[39m[36m${[39mhex[[34m3[39m][36m}[39m[32m`[39m
+    [90m 68| [39m      [33m:[39m hex[33m.[39m[34mslice[39m([34m0[39m[33m,[39m [34m7[39m)[33m;[39m
+[90m [2mΓ¥»[22m luminance tests/lab-03/Accessibility.test.tsx:[2m78:21[22m[39m
+[90m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m181:21[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: visible focus indicators 
+(AC-9.1, ui-spec 5.2)[2m > [22mdefines a focus-visible outline for every interactive element
+[31m[1mAssertionError[22m: index.css should contain a :focus-visible rule: expected null not to be null[39m
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m195:78[22m[39m
+    [90m193| [39m  [34mit[39m([32m'defines a focus-visible outline for every interactive element'[39m[33m,[39m 
+ΓÇª
+    [90m194| [39m    [35mconst[39m focusBlock [33m=[39m 
+css[33m.[39m[34mmatch[39m([36m/:focus-visible[^{]*\{([^}]*)\}/[39m)[33m;[39m
+    [90m195| [39m    [34mexpect[39m(focusBlock[33m,[39m [32m'index.css should contain a :focus-visible 
+rule[39mΓÇª
+    [90m   | [39m                                                                             [31m^[39m
+    [90m196| [39m
+    [90m197| [39m    [35mconst[39m declarations [33m=[39m focusBlock[33m![39m[[34m1[39m][33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/27]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/lab-03/Accessibility.test.tsx[2m > [22mA11Y-01: visible focus indicators 
+(AC-9.1, ui-spec 5.2)[2m > [22mcovers links, buttons, inputs, selects and textareas
+[31m[1mAssertionError[22m: a:focus-visible should be styled: expected '' to match /a:focus-visible/[39m
+
+[32m- Expected:[39m 
+/a:focus-visible/
+
+[31m+ Received:[39m 
+""
+
+[36m [2mΓ¥»[22m tests/lab-03/Accessibility.test.tsx:[2m204:65[22m[39m
+    [90m202| [39m  [34mit[39m([32m'covers links, buttons, inputs, selects and textareas'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m203| [39m    [35mfor[39m ([35mconst[39m selector [35mof[39m [[32m'a'[39m[33m,[39m 
+[32m'button'[39m[33m,[39m [32m'input'[39m[33m,[39m [32m'select'[39m[33m,[39m [32m'textare[39mΓÇª
+    [90m204| [39m      [34mexpect[39m(css[33m,[39m [32m`[39m[36m${[39mselector[36m}[39m[32m:focus-visible 
+should be styled`[39m)[33m.[39m[34mtoMatc[39mΓÇª
+    [90m   | [39m                                                                [31m^[39m
+    [90m205| [39m        [35mnew[39m 
+[33mRegExp[39m([32m`[39m[36m${[39mselector[36m}[39m[32m:focus-visible`[39m)[33m,[39m
+    [90m206| [39m      )[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/27]ΓÄ»[22m[39m
+

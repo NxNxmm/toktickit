@@ -132,6 +132,12 @@ describe('UI-03: App Shell Renders User Name and Role Badge (FR-04, AC-3.5)', ()
     const toggler = screen.getByRole('button', { name: /toggle navigation/i });
     expect(toggler).toHaveStyle({ minWidth: '44px', minHeight: '44px' });
 
+    // Hamburger is mobile-only: hidden at the lg breakpoint (>=992px) and never
+    // force-shown by an inline `display` style, which would outrank Bootstrap's
+    // `.navbar-expand-lg .navbar-toggler { display: none }` media query.
+    expect(toggler).toHaveClass('d-lg-none');
+    expect(toggler.style.display).toBe('');
+
     const navRow = screen.getByRole('button', { name: /ticket queue/i }).parentElement as HTMLElement;
     expect(navRow).toHaveClass('flex-wrap');
     expect(navRow).toHaveStyle({ minWidth: '0' });

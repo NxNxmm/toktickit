@@ -70,6 +70,10 @@ TokTickIT preserves and extends the **Zen Green** design language established in
   - Displays authenticated user's Name.
   - Role badge (`Requester`, `IT Staff`, or `Admin`).
   - Secure **Logout** button (`#006B3C` outline or ghost button) that triggers `/api/auth/logout`.
+- **Collapse Toggle (hamburger)**:
+  - Visible **only below the `lg` breakpoint** (`< 992px`), implemented with the Bootstrap utility classes `d-inline-flex d-lg-none` so that the visibility contract lives in CSS utilities rather than inline styles.
+  - Must never be styled with an inline `display` declaration: an inline `display` value outranks the `d-none` utility, which silently hides the toggle at every breakpoint and leaves the Desktop navbar with no way to collapse.
+  - Toggles the expanded/collapsed nav region and is reachable by keyboard with a visible focus ring (see §5.2).
 
 ```
 +-------------------------------------------------------------------------------+
@@ -178,9 +182,9 @@ TokTickIT preserves and extends the **Zen Green** design language established in
 ## 5. Responsive Breakpoints & Accessibility Checklist
 
 ### 5.1 Responsive Breakpoints
-- **Desktop ($\ge 992\text{px}$)**: Full multi-column grids, data tables with complete headers, side-by-side modal form controls.
-- **Tablet ($768\text{--}991\text{px}$)**: Fluid table columns, 2-column forms collapsing to single column where necessary.
-- **Mobile ($< 768\text{px}$)**: Stacked cards replacing tables, full-width touch targets (minimum height 44px), zero horizontal overflow.
+- **Desktop ($\ge 992\text{px}$)**: Full multi-column grids, data tables with complete headers, side-by-side modal form controls. The collapse toggle is hidden (`d-lg-none`) and the full nav is inline.
+- **Tablet ($768\text{--}991\text{px}$)**: Fluid table columns, 2-column forms collapsing to single column where necessary. The collapse toggle is visible.
+- **Mobile ($< 768\text{px}$)**: Stacked cards replacing tables, full-width touch targets (minimum height 44px), zero horizontal overflow. The collapse toggle is visible.
 
 ### 5.2 Accessibility Checklist
 - [x] Color contrast: Text `--color-text-primary` on background meets WCAG AA ($> 4.5:1$).
@@ -188,3 +192,28 @@ TokTickIT preserves and extends the **Zen Green** design language established in
 - [x] Semantic HTML: Main content wrapped in `<main>`, headings strictly ordered (`h1` $\to$ `h2` $\to$ `h3`).
 - [x] Accessible form labels: Every input explicitly linked with `<label htmlFor="...">`.
 - [x] Touch targets: All buttons and dropdown controls measure at least $44 \times 44\text{px}$ on mobile screens.
+
+---
+
+## 6. UI Verification (Issue 8)
+
+This section records how the screens above are proven by automated tests. Test identifiers cross-reference `docs/lab-03/tests.md` §2.
+
+### 6.1 Screen-to-Test Coverage
+
+| Screen | Component Tests | End-to-End Coverage |
+|---|---|---|
+| Login (`/login`) | `Login.test.tsx` (UI-01, 6 tests) | E2E-01.1 wrong password & inactive account; E2E-01.2 active login |
+| Mandatory Password Change (`/change-password`) | `ChangePassword.test.tsx` (UI-02, 4 tests) | E2E-01.3 gate blocks the app shell until the change completes; E2E-03.3 reset forces a change at next login |
+| App Shell / header | `AppShell.test.tsx` (UI-03, 5 tests) | E2E-01.2 name, initials and role badge; E2E-01.4 logout; E2E-02.0 staff land on the Queue |
+| Requester Ticket Detail (`/tickets/:id`) | `RequesterTicketDetail.test.tsx` (UI-08, 4 tests) | E2E-04 create $\to$ upload $\to$ download $\to$ soft-remove journey |
+| Staff Queue (`/staff/queue`) | `StaffTicketQueue.test.tsx` (UI-04, 5 tests) | E2E-02.1 queue columns, search and filters; E2E-02.2 claim & reassign |
+| Staff Ticket Detail (`/staff/tickets/:id`) | `StaffTicketDetail.test.tsx` (UI-05/UI-06, 12 tests) | E2E-02.3 IT priority; E2E-02.4 green comment vs. gold 🔒 note; E2E-02.5 status matrix |
+| User Management (`/admin/users`) | `UserManagement.test.tsx` (UI-07, 15 tests) | E2E-03.1–03.5 create, duplicate, reset, self-deactivation guard, non-admin 403 |
+| Responsive behaviour | `Responsive.test.tsx` (RESP-01, 4 tests) | Desktop viewport asserted in the App Shell coverage |
+
+### 6.2 Defects Found and Fixed
+- **Collapse toggle hidden on every breakpoint (fixed).** `AppHeader.tsx` hard-coded `style={{ display: 'inline-flex' }}` on the hamburger button. Because an inline declaration beats any class-based utility, the `d-none` rule intended to hide it above `lg` was nullified, and the Desktop navbar rendered its links with no collapse trigger. The inline style was removed in favour of the `d-inline-flex d-lg-none` contract now specified in §2.1, and the class contract is asserted in `AppShell.test.tsx`.
+
+### 6.3 Verification Gap
+- The §5.2 accessibility checklist is currently verified **manually** against Desktop (1280px), Tablet (768px) and Mobile (375px) viewports. The planned automated audit `A11Y-01` (`client/tests/lab-03/Accessibility.test.tsx`) has not been written, so focus rings, contrast ratios and the $44 \times 44\text{px}$ touch targets are not yet machine-verified. This is recorded as **NOT IMPLEMENTED** in `tests.md` §2 and must be completed before AC-9.1 can be claimed as fully automated.
