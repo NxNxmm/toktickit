@@ -470,35 +470,35 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
                 }}
               >
                 {/* Card header */}
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-primary-green)' }}>
+                <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-primary-green)', overflowWrap: 'anywhere' }}>
                     {ticket.ticketNo}
                   </span>
                   <StatusBadge status={ticket.currentStatus} />
                 </div>
 
                 {/* Summary */}
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--color-text-primary)' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--color-text-primary)', overflowWrap: 'anywhere' }}>
                   {ticket.summary}
                 </div>
 
                 {/* Meta rows */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem 1rem', marginBottom: '0.6rem' }}>
-                  <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.4rem 1rem', marginBottom: '0.6rem' }}>
+                  <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Category</span>
-                    <div style={{ fontSize: '0.82rem' }}>{ticket.category.name}</div>
+                    <div style={{ fontSize: '0.82rem', overflowWrap: 'anywhere' }}>{ticket.category.name}</div>
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Requester</span>
-                    <div style={{ fontSize: '0.82rem' }}>{ticket.requester?.name ?? '—'}</div>
+                    <div style={{ fontSize: '0.82rem', overflowWrap: 'anywhere' }}>{ticket.requester?.name ?? '—'}</div>
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Owner</span>
-                    <div style={{ fontSize: '0.82rem' }}>
+                    <div style={{ fontSize: '0.82rem', overflowWrap: 'anywhere' }}>
                       {ticket.owner ? ticket.owner.name : <em style={{ color: 'var(--color-text-muted)' }}>Unassigned</em>}
                     </div>
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Created</span>
                     <div style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>{formatDate(ticket.createdAt)}</div>
                   </div>
@@ -583,7 +583,8 @@ function paginationBtnStyle(disabled: boolean): React.CSSProperties {
     fontSize: '0.85rem',
     opacity: disabled ? 0.45 : 1,
     transition: 'all 0.15s',
-    minWidth: '34px',
+    minWidth: '44px',
+    minHeight: '44px',
     textAlign: 'center',
   };
 }

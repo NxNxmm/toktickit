@@ -128,6 +128,8 @@ const ReadOnlyField: React.FC<{ label: string; value: React.ReactNode }> = ({ la
         minHeight: '38px',
         display: 'flex',
         alignItems: 'center',
+        minWidth: 0,
+        overflowWrap: 'anywhere',
       }}
     >
       {value}
@@ -193,7 +195,7 @@ const RemoveModal: React.FC<RemoveModalProps> = ({ attachment, onConfirm, onCanc
         <h3 id="remove-modal-title" style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#1A2820' }}>
           🗑️ Remove Attachment
         </h3>
-        <p style={{ margin: '0 0 16px', fontSize: '14px', color: '#4B5563', lineHeight: 1.55 }}>
+        <p style={{ margin: '0 0 16px', fontSize: '14px', color: '#4B5563', lineHeight: 1.55, overflowWrap: 'anywhere' }}>
           <strong>"{attachment.originalName}"</strong> will be soft-removed. The file record and your
           removal reason will remain visible for auditing, but the file will no longer be downloadable.
         </p>
@@ -744,7 +746,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '16px' }}>
           <ReadOnlyField label="Requester" value={`${ticket.requester.name}`} />
           <ReadOnlyField label="Email" value={ticket.requester.email} />
           <ReadOnlyField label="Category" value={ticket.category.name} />
@@ -762,7 +764,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
         <div style={{ fontSize: '16px', fontWeight: 600, color: '#1A2820', marginBottom: '12px' }}>
           {ticket.summary}
         </div>
-        <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.7, whiteSpace: 'pre-wrap', backgroundColor: '#F9FAFB', borderRadius: '8px', padding: '16px' }}>
+        <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.7, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', backgroundColor: '#F9FAFB', borderRadius: '8px', padding: '16px' }}>
           {ticket.description}
         </div>
       </div>
@@ -853,12 +855,12 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
         {/* Removed Attachments (Audit Log) */}
         {removedAttachments.length > 0 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #E5E7EB' }} />
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', whiteSpace: 'nowrap', padding: '0 8px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <hr style={{ flex: 1, minWidth: '16px', border: 'none', borderTop: '1px solid #E5E7EB' }} />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', padding: '0 8px', overflowWrap: 'anywhere' }}>
                 Removed Attachments — Audit Log
               </span>
-              <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #E5E7EB' }} />
+              <hr style={{ flex: 1, minWidth: '16px', border: 'none', borderTop: '1px solid #E5E7EB' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {removedAttachments.map((att) => (
@@ -945,7 +947,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
                     {formatDate(comment.createdAt)}
                   </span>
                 </div>
-                <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                   {comment.content}
                 </div>
               </div>

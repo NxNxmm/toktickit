@@ -524,3 +524,67 @@ export async function postInternalNote(ticketId: number, content: string): Promi
   });
 }
 
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  requiresPasswordChange: boolean;
+  createdAt: string;
+}
+
+export interface AdminUsersParams {
+  search?: string;
+  role?: Role;
+}
+
+export interface CreateAdminUserInput {
+  name: string;
+  email: string;
+  role: Role;
+  isActive?: boolean;
+  initialPassword: string;
+}
+
+export interface UpdateAdminUserInput {
+  name?: string;
+  email?: string;
+  role?: Role;
+  isActive?: boolean;
+}
+
+export async function getAdminUsers(params: AdminUsersParams = {}): Promise<AdminUser[]> {
+  const query = new URLSearchParams();
+  if (params.search && params.search.trim()) query.set('search', params.search.trim());
+  if (params.role) query.set('role', params.role);
+  const queryString = query.toString();
+  return apiFetch<AdminUser[]>(`/api/admin/users${queryString ? `?${queryString}` : ''}`);
+}
+
+export async function createAdminUser(input: CreateAdminUserInput): Promise<AdminUser> {
+  return apiFetch<AdminUser>('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateAdminUser(id: number, input: UpdateAdminUserInput): Promise<AdminUser> {
+  return apiFetch<AdminUser>(`/api/admin/users/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function resetAdminUserPassword(id: number, newInitialPassword: string): Promise<{ message: string; requiresPasswordChange: boolean }> {
+  return apiFetch<{ message: string; requiresPasswordChange: boolean }>(`/api/admin/users/${id}/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newInitialPassword }),
+  });
+}
+
+export const resetUserPassword = resetAdminUserPassword;
+

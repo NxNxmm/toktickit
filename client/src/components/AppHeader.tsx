@@ -48,6 +48,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
       .toUpperCase();
   };
 
+  const navButtonStyle = { minHeight: '44px' };
+
   return (
     <header>
       <nav
@@ -58,7 +60,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
           {/* Brand */}
           <span
             className="navbar-brand text-white fw-bold fs-4 me-3 cursor-pointer"
-            onClick={() => onNavigate('my-tickets')}
+            onClick={() => onNavigate(user.role === 'ADMIN' ? 'admin-users' : user.role === 'IT_STAFF' ? 'staff-queue' : 'my-tickets')}
             style={{ cursor: 'pointer' }}
           >
             TokTickIT
@@ -72,7 +74,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
             aria-expanded={!isNavCollapsed}
             aria-label="Toggle navigation"
             onClick={() => setIsNavCollapsed(!isNavCollapsed)}
-            style={{ padding: '0.35rem 0.6rem' }}
+            style={{
+              padding: '0.35rem 0.6rem',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             <span className="navbar-toggler-icon"></span>
           </button>
@@ -81,15 +90,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
           <div className={`collapse navbar-collapse ${!isNavCollapsed ? 'show' : ''}`} id="toktickitNavbar">
             <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-between w-100 py-2 py-lg-0 gap-3">
               {/* Role-Aware Navigation Links */}
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex flex-wrap align-items-center gap-2" style={{ minWidth: 0 }}>
                 {user.role === 'REQUESTER' && (
                   <>
                     <button
-                      className={`btn btn-sm ${
-                        currentView === 'my-tickets' || currentView === 'ticket-detail'
+                      className={`btn btn-sm ${currentView === 'my-tickets' || currentView === 'ticket-detail'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
-                      }`}
+                        }`}
+                      style={navButtonStyle}
                       onClick={() => {
                         onNavigate('my-tickets');
                         setIsNavCollapsed(true);
@@ -98,11 +107,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                       My Tickets
                     </button>
                     <button
-                      className={`btn btn-sm ${
-                        currentView === 'create-ticket'
+                      className={`btn btn-sm ${currentView === 'create-ticket'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
-                      }`}
+                        }`}
+                      style={navButtonStyle}
                       onClick={() => {
                         onNavigate('create-ticket');
                         setIsNavCollapsed(true);
@@ -116,11 +125,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                 {user.role === 'IT_STAFF' && (
                   <>
                     <button
-                      className={`btn btn-sm ${
-                        currentView === 'staff-queue' || currentView === 'staff-ticket-detail'
+                      className={`btn btn-sm ${currentView === 'staff-queue' || currentView === 'staff-ticket-detail'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
-                      }`}
+                        }`}
+                      style={navButtonStyle}
                       onClick={() => {
                         onNavigate('staff-queue');
                         setIsNavCollapsed(true);
@@ -129,11 +138,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                       Ticket Queue
                     </button>
                     <button
-                      className={`btn btn-sm ${
-                        currentView === 'create-ticket'
+                      className={`btn btn-sm ${currentView === 'create-ticket'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
-                      }`}
+                        }`}
+                      style={navButtonStyle}
                       onClick={() => {
                         onNavigate('create-ticket');
                         setIsNavCollapsed(true);
@@ -146,11 +155,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
 
                 {user.role === 'ADMIN' && (
                   <button
-                    className={`btn btn-sm ${
-                      currentView === 'admin-users'
+                    className={`btn btn-sm ${currentView === 'admin-users'
                         ? 'btn-light text-success fw-bold'
                         : 'btn-outline-light'
-                    }`}
+                      }`}
+                    style={navButtonStyle}
                     onClick={() => {
                       onNavigate('admin-users');
                       setIsNavCollapsed(true);
@@ -169,7 +178,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
 
               {/* User Profile Area (§2.1 & AC-3.5) */}
               <div className="d-flex flex-wrap align-items-center justify-content-between justify-content-lg-end gap-3">
-                <div className="d-flex align-items-center gap-2">
+                <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
                   {/* Avatar Initials Badge */}
                   <div
                     className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
@@ -187,7 +196,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
 
                   {/* User Name & Role Badge */}
                   <div className="text-white text-start">
-                    <div className="fw-medium small text-truncate" style={{ maxWidth: '180px' }}>
+                    <div className="fw-medium small text-truncate" style={{ maxWidth: 'min(180px, 42vw)' }}>
                       {user.name}
                     </div>
                     <div className="mt-1">
@@ -201,6 +210,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                 {/* Secure Logout Action Button */}
                 <button
                   className="btn btn-outline-light btn-sm flex-shrink-0 ms-auto ms-lg-2"
+                  style={navButtonStyle}
                   onClick={() => {
                     logout();
                     setIsNavCollapsed(true);

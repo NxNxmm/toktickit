@@ -9,12 +9,14 @@ import { MyTicketsList } from './components/MyTicketsList';
 import { TicketDetail } from './components/TicketDetail';
 import { StaffQueue } from './components/StaffQueue';
 import { StaffTicketDetail } from './components/StaffTicketDetail';
+import { UserManagement } from './components/UserManagement';
 
 type AppView = 'my-tickets' | 'create-ticket' | 'ticket-detail' | 'staff-queue' | 'staff-ticket-detail' | 'admin-users';
 
 /** Returns the appropriate default landing view for a given user role. */
 function defaultViewForRole(role: string | undefined): AppView {
-  if (role === 'IT_STAFF' || role === 'ADMIN') return 'staff-queue';
+  if (role === 'ADMIN') return 'admin-users';
+  if (role === 'IT_STAFF') return 'staff-queue';
   return 'my-tickets';
 }
 
@@ -117,22 +119,8 @@ const MainApp: React.FC = () => {
           />
         )}
 
-        {/* Admin: User Management placeholder (Issue 7) */}
         {currentView === 'admin-users' && user.role === 'ADMIN' && (
-          <div className="card shadow-sm border-0 p-4 rounded-3 text-center">
-            <h3 className="h5 fw-bold text-primary mb-2">Administrator User Management</h3>
-            <p className="text-muted small mb-3">
-              User administration console will be fully wired in Sprint Issue 7.
-            </p>
-            <div>
-              <button
-                className="btn btn-sm btn-outline-primary"
-                onClick={() => setCurrentView('staff-queue')}
-              >
-                Return to Ticket Queue
-              </button>
-            </div>
-          </div>
+          <UserManagement />
         )}
       </main>
     </div>

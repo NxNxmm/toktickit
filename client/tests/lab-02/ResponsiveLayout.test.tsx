@@ -101,4 +101,33 @@ describe('ResponsiveLayout & Viewport Adaptation (RESP-01, AC-15)', () => {
       expect(btn).toHaveClass('text-white');
     });
   });
+
+  it('wraps pagination and long summaries instead of overflowing at 375px (AC-9.1)', async () => {
+    vi.spyOn(api, 'getTickets').mockResolvedValue({
+      ...mockTicketsResponse,
+      pagination: { page: 1, pageSize: 10, totalCount: 250, totalPages: 25, hasPrevious: false, hasNext: true },
+    });
+
+    const { container } = render(
+      <RequesterProvider>
+        <MyTicketsList onCreateTicket={vi.fn()} />
+      </RequesterProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Next page')).toBeInTheDocument();
+    });
+
+    const paginationRow = screen.getByLabelText('Next page').parentElement as HTMLElement;
+    expect(paginationRow).toHaveClass('flex-wrap');
+    expect(screen.getByLabelText('Next page')).toHaveStyle({ minHeight: '44px' });
+    expect(screen.getByLabelText('Previous page')).toHaveStyle({ minHeight: '44px' });
+    expect(container.querySelector('#page-size-select')).toHaveStyle({ minHeight: '44px' });
+
+    const mobileContainer = container.querySelector('.d-block.d-lg-none') as HTMLElement;
+    const summary = Array.from(mobileContainer.querySelectorAll('*')).find(
+      (element) => element.textContent === 'Responsive testing ticket summary'
+    ) as HTMLElement;
+    expect(summary).toHaveStyle({ overflowWrap: 'anywhere' });
+  });
 });

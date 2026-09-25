@@ -102,4 +102,31 @@ describe('RESP-01: Staff Queue responsive layout (AC-5.4, AC-9.1)', () => {
     fireEvent.click(screen.getAllByText('TKT-2026-000001')[1]);
     expect(onViewTicket).toHaveBeenCalledWith(1);
   });
+
+  it('mobile cards wrap and shrink so they fit a 375px viewport (AC-9.1)', async () => {
+    const { container } = render(<StaffQueue onViewTicket={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('TKT-2026-000001').length).toBe(2);
+    });
+
+    const mobileContainer = container.querySelector('.d-lg-none') as HTMLElement;
+    expect(mobileContainer.querySelector('.d-flex.flex-wrap.justify-content-between')).toBeInTheDocument();
+
+    const shrinkableGrids = Array.from(mobileContainer.querySelectorAll<HTMLElement>('div')).filter((element) =>
+      element.style.gridTemplateColumns.includes('minmax(0')
+    );
+    expect(shrinkableGrids.length).toBeGreaterThan(0);
+
+    const overflowingMinWidths = Array.from(mobileContainer.querySelectorAll<HTMLElement>('*')).filter((element) => {
+      const declared = element.style.minWidth;
+      return declared !== '' && Number.parseInt(declared, 10) >= 375;
+    });
+    expect(overflowingMinWidths).toHaveLength(0);
+
+    const summary = Array.from(mobileContainer.querySelectorAll<HTMLElement>('div')).find(
+      (element) => element.style.overflowWrap === 'anywhere'
+    );
+    expect(summary).toBeInTheDocument();
+  });
 });
