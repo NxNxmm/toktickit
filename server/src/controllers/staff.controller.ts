@@ -1,6 +1,124 @@
 import { Request, Response } from 'express';
 import { RequestedPriority, TicketStatus } from '@prisma/client';
 import { getPrisma } from '../prisma.js';
+import { TICKET_STATUSES, canTransition } from '../utils/statusTransitions.js';
+
+// ─── Helpers: staff role guard & serialization ────────────────────────────────
+function isStaffOrAdmin(role: string): boolean {
+    return role === 'IT_STAFF' || role === 'ADMIN';
+}
+
+function staffForbidden(res: Response) {
+    return res.status(403).json({
+        statusCode: 403,
+        error: 'Forbidden',
+        message: 'Access to staff ticket operations is restricted to IT Staff and Administrators',
+    });
+}
+
+function invalidId(res: Response, message = 'Invalid ticket ID') {
+    return res.status(400).json({ statusCode: 400, error: 'Bad Request', message });
+}
+
+function notFound(res: Response, message = 'Ticket not found') {
+    return res.status(404).json({ statusCode: 404, error: 'Not Found', message });
+}
+
+// ─── Internal shape: full operational ticket fetch (includes Internal Notes) ──
+async function findStaffTicketOrFail(ticketId: number) {
+    return getPrisma().ticket.findUnique({
+        where: { id: ticketId },
+        include: {
+            user_ticket_submittedByIdTouser: { select: { id: true, name: true, email: true } },
+            user_ticket_ownerIdTouser: { select: { id: true, name: true, email: true } },
+            category: { select: { id: true, name: true } },
+            related_system: { select: { id: true, name: true } },
+            attachment: {
+                select: {
+                    id: true,
+                    originalFilename: true,
+                    fileSizeBytes: true,
+                    contentType: true,
+                    isRemoved: true,
+                    removedAt: true,
+                    removalReason: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: 'asc' },
+            },
+            public_comment: {
+                select: {
+                    id: true,
+                    content: true,
+                    createdAt: true,
+                    user: { select: { id: true, name: true, role: true } },
+                },
+                orderBy: { createdAt: 'asc' },
+            },
+            internal_note: {
+                select: {
+                    id: true,
+                    content: true,
+                    createdAt: true,
+                    user: { select: { id: true, name: true, role: true } },
+                },
+                orderBy: { createdAt: 'asc' },
+            },
+        },
+    });
+}
+
+type StaffTicket = NonNullable<Awaited<ReturnType<typeof findStaffTicketOrFail>>>;
+
+function formatStaffTicketDetail(t: StaffTicket) {
+    const attachments = (t.attachment || []).map((a) => ({
+        id: a.id,
+        originalName: a.originalFilename,
+        fileSize: a.fileSizeBytes,
+        mimeType: a.contentType,
+        isRemoved: a.isRemoved,
+        removedAt: a.removedAt,
+        removalReason: a.removalReason,
+        createdAt: a.createdAt,
+    }));
+
+    const publicComments = (t.public_comment || []).map((c) => ({
+        id: c.id,
+        ticketId: t.id,
+        author: { id: c.user.id, name: c.user.name, role: c.user.role },
+        content: c.content,
+        createdAt: c.createdAt,
+    }));
+
+    const internalNotes = (t.internal_note || []).map((n) => ({
+        id: n.id,
+        ticketId: t.id,
+        author: { id: n.user.id, name: n.user.name, role: n.user.role },
+        content: n.content,
+        createdAt: n.createdAt,
+    }));
+
+    return {
+        id: t.id,
+        ticketNo: t.ticketNumber,
+        summary: t.summary,
+        description: t.description,
+        requestedPriority: t.requestedPriority,
+        itPriority: t.itPriority,
+        currentStatus: t.currentStatus,
+        resolvedIndicated: t.resolvedIndicated,
+        resolvedIndicatedAt: t.resolvedIndicatedAt,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+        category: t.category,
+        relatedSystem: t.related_system,
+        requester: t.user_ticket_submittedByIdTouser,
+        owner: t.user_ticket_ownerIdTouser,
+        attachments,
+        publicComments,
+        internalNotes,
+    };
+}
 
 // ─── GET /api/staff/tickets ───────────────────────────────────────────────────
 // AC-5.1: Returns all tickets across all requesters.
@@ -217,6 +335,226 @@ export const getStaffTicketQueue = async (req: Request, res: Response) => {
             statusCode: 500,
             error: 'Internal Server Error',
             message: 'Internal server error while fetching staff ticket queue',
+        });
+    }
+};
+
+// ─── GET /api/staff/assignees ─────────────────────────────────────────────────
+// UI support: active IT_STAFF and ADMIN users eligible for primary ticket
+// ownership (BR-08). REQUESTER role receives 403 Forbidden.
+export const getStaffAssignees = async (req: Request, res: Response) => {
+    try {
+        const user = req.user!;
+        if (!isStaffOrAdmin(user.role)) {
+            return staffForbidden(res);
+        }
+
+        const assignees = await getPrisma().user.findMany({
+            where: { isActive: true, role: { in: ['IT_STAFF', 'ADMIN'] } },
+            select: { id: true, name: true, email: true, role: true },
+            orderBy: { name: 'asc' },
+        });
+
+        return res.status(200).json(assignees);
+    } catch (error) {
+        console.error('Error fetching staff assignees:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while fetching assignable staff',
+        });
+    }
+};
+
+// ─── GET /api/staff/tickets/:id ───────────────────────────────────────────────
+// AC-6.x / api-spec.md §4.2: Full operational ticket detail for IT_STAFF/ADMIN,
+// including confidential internal notes. REQUESTER receives 403.
+export const getStaffTicketDetail = async (req: Request, res: Response) => {
+    try {
+        const user = req.user!;
+        if (!isStaffOrAdmin(user.role)) {
+            return staffForbidden(res);
+        }
+
+        const ticketId = Number(req.params.id);
+        if (isNaN(ticketId) || !Number.isInteger(ticketId)) {
+            return invalidId(res);
+        }
+
+        const ticket = await findStaffTicketOrFail(ticketId);
+        if (!ticket) {
+            return notFound(res);
+        }
+
+        return res.status(200).json(formatStaffTicketDetail(ticket));
+    } catch (error) {
+        console.error('Error fetching staff ticket detail:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while fetching staff ticket detail',
+        });
+    }
+};
+
+// ─── PATCH /api/staff/tickets/:id/ownership ───────────────────────────────────
+// AC-6.1 / BR-08: Claim unassigned tickets or reassign primary ownership to an
+// active IT_STAFF / ADMIN. ownerId = null clears ownership (ticket unassigned).
+export const updateTicketOwnership = async (req: Request, res: Response) => {
+    try {
+        const user = req.user!;
+        if (!isStaffOrAdmin(user.role)) {
+            return staffForbidden(res);
+        }
+
+        const ticketId = Number(req.params.id);
+        if (isNaN(ticketId) || !Number.isInteger(ticketId)) {
+            return invalidId(res);
+        }
+
+        const existing = await getPrisma().ticket.findUnique({ where: { id: ticketId }, select: { id: true } });
+        if (!existing) {
+            return notFound(res);
+        }
+
+        const { ownerId } = req.body;
+
+        if (ownerId !== null && ownerId !== undefined) {
+            if (typeof ownerId !== 'number' || !Number.isInteger(ownerId)) {
+                return res.status(400).json({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'ownerId must be an integer user ID or null to unassign',
+                });
+            }
+
+            const target = await getPrisma().user.findUnique({ where: { id: ownerId } });
+            if (!target || !target.isActive || (target.role !== 'IT_STAFF' && target.role !== 'ADMIN')) {
+                return res.status(400).json({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'Owner must be an active IT Staff or Administrator',
+                });
+            }
+        }
+
+        await getPrisma().ticket.update({
+            where: { id: ticketId },
+            data: { ownerId: ownerId ?? null, updatedAt: new Date() },
+        });
+
+        const updated = await findStaffTicketOrFail(ticketId);
+        return res.status(200).json(formatStaffTicketDetail(updated!));
+    } catch (error) {
+        console.error('Error updating ticket ownership:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while updating ticket ownership',
+        });
+    }
+};
+
+// ─── PATCH /api/staff/tickets/:id/priority ────────────────────────────────────
+// AC-6.2 / BR-09: Calibrate operational IT Priority independently from the
+// Requester's immutable requestedPriority.
+export const updateTicketItPriority = async (req: Request, res: Response) => {
+    try {
+        const user = req.user!;
+        if (!isStaffOrAdmin(user.role)) {
+            return staffForbidden(res);
+        }
+
+        const ticketId = Number(req.params.id);
+        if (isNaN(ticketId) || !Number.isInteger(ticketId)) {
+            return invalidId(res);
+        }
+
+        const existing = await getPrisma().ticket.findUnique({ where: { id: ticketId }, select: { id: true } });
+        if (!existing) {
+            return notFound(res);
+        }
+
+        const { itPriority } = req.body;
+        const validPriorities: RequestedPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+        if (typeof itPriority !== 'string' || !validPriorities.includes(itPriority as RequestedPriority)) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: `Invalid itPriority. Allowed: ${validPriorities.join(', ')}`,
+            });
+        }
+
+        await getPrisma().ticket.update({
+            where: { id: ticketId },
+            data: { itPriority: itPriority as RequestedPriority, updatedAt: new Date() },
+        });
+
+        const updated = await findStaffTicketOrFail(ticketId);
+        return res.status(200).json(formatStaffTicketDetail(updated!));
+    } catch (error) {
+        console.error('Error updating ticket IT priority:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while updating ticket IT priority',
+        });
+    }
+};
+
+// ─── PATCH /api/staff/tickets/:id/status ──────────────────────────────────────
+// AC-6.2 / BR-12: Execute permitted status transitions per Section 6 matrix.
+// Illegal jumps are rejected with HTTP 422 Unprocessable Entity.
+export const updateTicketStatus = async (req: Request, res: Response) => {
+    try {
+        const user = req.user!;
+        if (!isStaffOrAdmin(user.role)) {
+            return staffForbidden(res);
+        }
+
+        const ticketId = Number(req.params.id);
+        if (isNaN(ticketId) || !Number.isInteger(ticketId)) {
+            return invalidId(res);
+        }
+
+        const existing = await getPrisma().ticket.findUnique({
+            where: { id: ticketId },
+            select: { id: true, currentStatus: true },
+        });
+        if (!existing) {
+            return notFound(res);
+        }
+
+        const { status } = req.body;
+        if (typeof status !== 'string' || !TICKET_STATUSES.includes(status as TicketStatus)) {
+            return res.status(400).json({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: `Invalid status. Allowed: ${TICKET_STATUSES.join(', ')}`,
+            });
+        }
+
+        if (!canTransition(existing.currentStatus as TicketStatus, status as TicketStatus)) {
+            return res.status(422).json({
+                statusCode: 422,
+                error: 'Unprocessable Entity',
+                message: `Status transition from ${existing.currentStatus} to ${status} is not permitted by the status transition matrix`,
+            });
+        }
+
+        await getPrisma().ticket.update({
+            where: { id: ticketId },
+            data: { currentStatus: status as TicketStatus, updatedAt: new Date() },
+        });
+
+        const updated = await findStaffTicketOrFail(ticketId);
+        return res.status(200).json(formatStaffTicketDetail(updated!));
+    } catch (error) {
+        console.error('Error updating ticket status:', error);
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Internal Server Error',
+            message: 'Internal server error while updating ticket status',
         });
     }
 };

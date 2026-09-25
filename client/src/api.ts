@@ -413,3 +413,114 @@ export async function getStaffTickets(
   return apiFetch<StaffTicketQueueResponse>(endpoint);
 }
 
+// ─── Issue 6: IT Staff Ticket Detail & Operational Controls ───────────────────
+
+/**
+ * Permitted status transitions per the Section 6 state matrix (BR-12, AC-6.2).
+ * Mirrors server/src/utils/statusTransitions.ts so the Staff Detail UI only
+ * offers transitions allowed by the backend.
+ */
+export const TICKET_STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  NEW: ['OPEN', 'CANCELLED'],
+  OPEN: ['IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'CANCELLED'],
+  IN_PROGRESS: ['WAITING_FOR_REQUESTER', 'RESOLVED', 'CANCELLED'],
+  WAITING_FOR_REQUESTER: ['IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+  RESOLVED: ['CLOSED', 'REOPENED'],
+  CLOSED: ['REOPENED'],
+  REOPENED: ['IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+  CANCELLED: [],
+};
+
+export interface InternalNote {
+  id: number;
+  ticketId: number;
+  author: {
+    id: number;
+    name: string;
+    role: string;
+  };
+  content: string;
+  createdAt: string;
+}
+
+export interface StaffAssignee {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+}
+
+export interface StaffTicketDetail {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  description: string;
+  requestedPriority: Priority;
+  itPriority: Priority;
+  currentStatus: TicketStatus;
+  resolvedIndicated: boolean;
+  resolvedIndicatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category: { id: number; name: string };
+  relatedSystem: { id: number; name: string };
+  requester: { id: number; name: string; email: string };
+  owner: { id: number; name: string; email: string } | null;
+  attachments: Attachment[];
+  publicComments: PublicComment[];
+  internalNotes: InternalNote[];
+}
+
+export async function getStaffTicketDetail(ticketId: number): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}`);
+}
+
+export async function updateTicketOwnership(
+  ticketId: number,
+  ownerId: number | null
+): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}/ownership`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ownerId }),
+  });
+}
+
+export async function updateTicketItPriority(
+  ticketId: number,
+  itPriority: Priority
+): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}/priority`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itPriority }),
+  });
+}
+
+export async function updateTicketStatus(
+  ticketId: number,
+  status: TicketStatus
+): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function getStaffAssignees(): Promise<StaffAssignee[]> {
+  return apiFetch<StaffAssignee[]>('/api/staff/assignees');
+}
+
+export async function getInternalNotes(ticketId: number): Promise<InternalNote[]> {
+  return apiFetch<InternalNote[]>(`/api/tickets/${ticketId}/notes`);
+}
+
+export async function postInternalNote(ticketId: number, content: string): Promise<InternalNote> {
+  return apiFetch<InternalNote>(`/api/tickets/${ticketId}/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+}
+

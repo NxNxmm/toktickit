@@ -388,10 +388,10 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 [x] AC-5.2: Supports substring search (Ticket No/Summary), filters (Category, Status, Requested Priority, IT Priority, Owner), and pagination (10, 20, 50).
 [x] AC-5.3: Non-IT Staff / Non-Admin roles attempting to access the queue API receive HTTP 403 Forbidden.
 [x] AC-5.4: Renders full Data Table on Desktop (>= 992px) and converts to stacked Cards on Mobile (< 768px) using Zen Green theme.
-[ ] AC-6.1: IT Staff can claim unassigned tickets or reassign primary ownership to active IT Staff members.
-[ ] AC-6.2: IT Staff can update IT Priority and perform permitted status transitions according to the status matrix.
-[ ] AC-6.3: IT Staff can create and view append-only Internal Notes (POST /api/tickets/:id/notes).
-[ ] AC-6.4: UI clearly distinguishes Public Comments (soft green cards) from Internal Notes (soft gold/yellow cards with lock icon).
+[x] AC-6.1: IT Staff can claim unassigned tickets or reassign primary ownership to active IT Staff members.
+[x] AC-6.2: IT Staff can update IT Priority and perform permitted status transitions according to the status matrix.
+[x] AC-6.3: IT Staff can create and view append-only Internal Notes (POST /api/tickets/:id/notes).
+[x] AC-6.4: UI clearly distinguishes Public Comments (soft green cards) from Internal Notes (soft gold/yellow cards with lock icon).
 [ ] AC-7.1: Admin can list users with name/email search and role filter.
 [ ] AC-7.2: Admin can create new user with single role and initial password (flagging requiresPasswordChange = true).
 [ ] AC-7.3: Admin can edit user details, toggle isActive state, and trigger password reset.
