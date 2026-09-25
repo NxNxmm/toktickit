@@ -241,8 +241,9 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          <label style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>Show:</label>
+          <label htmlFor="staff-queue-page-size" style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>Show:</label>
           <select
+            id="staff-queue-page-size"
             value={pageSize}
             onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
             style={{ ...inputStyle, width: 'auto', padding: '0.35rem 0.6rem' }}
@@ -268,6 +269,7 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
             <input
               id="staff-queue-search"
               type="text"
+              aria-label="Search tickets by ticket number or summary"
               placeholder="Search by Ticket No or Summary..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -279,13 +281,13 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
         {/* Filter row */}
         <div className="row g-2">
           <div className="col-6 col-md-4 col-lg-2">
-            <select id="filter-category" value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }} style={inputStyle}>
+            <select id="filter-category" aria-label="Filter by category" value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">All Categories</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div className="col-6 col-md-4 col-lg-2">
-            <select id="filter-status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }} style={inputStyle}>
+            <select id="filter-status" aria-label="Filter by status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">All Statuses</option>
               {['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'REOPENED', 'CANCELLED'].map((s) => (
                 <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
@@ -293,19 +295,19 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
             </select>
           </div>
           <div className="col-6 col-md-4 col-lg-2">
-            <select id="filter-req-priority" value={filterReqPriority} onChange={(e) => { setFilterReqPriority(e.target.value); setPage(1); }} style={inputStyle}>
+            <select id="filter-req-priority" aria-label="Filter by requester priority" value={filterReqPriority} onChange={(e) => { setFilterReqPriority(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">Req. Priority</option>
               {['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
           <div className="col-6 col-md-4 col-lg-2">
-            <select id="filter-it-priority" value={filterItPriority} onChange={(e) => { setFilterItPriority(e.target.value); setPage(1); }} style={inputStyle}>
+            <select id="filter-it-priority" aria-label="Filter by IT priority" value={filterItPriority} onChange={(e) => { setFilterItPriority(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">IT Priority</option>
               {['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
           <div className="col-6 col-md-4 col-lg-2">
-            <select id="filter-owner" value={filterOwner} onChange={(e) => { setFilterOwner(e.target.value); setPage(1); }} style={inputStyle}>
+            <select id="filter-owner" aria-label="Filter by owner" value={filterOwner} onChange={(e) => { setFilterOwner(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">All Owners</option>
               <option value="unassigned">Unassigned</option>
               {user && <option value={user.id}>{user.name} (me)</option>}

@@ -101,16 +101,38 @@ export async function authenticateSession(req: Request, res: Response, next: Nex
 }
 
 /**
+ * Sends a JSON error response only after the request body has been fully drained.
+ *
+ * Guard middleware runs before body parsers such as `multer`, so rejecting a
+ * request while its body is still in flight makes Node tear the socket down with
+ * unread bytes left in the receive buffer. The peer then observes a TCP RST
+ * (ECONNRESET) instead of the intended HTTP status. Draining first keeps the
+ * documented 401/403 status codes reliably observable by clients and tests.
+ */
+function respondAfterDraining(req: Request, res: Response, statusCode: number, payload: Record<string, unknown>): void {
+  if (req.readableEnded) {
+    res.status(statusCode).json(payload);
+    return;
+  }
+
+  req.resume();
+  req.once('end', () => {
+    res.status(statusCode).json(payload);
+  });
+}
+
+/**
  * Middleware guarding endpoints that require authentication.
  */
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
-    return res.status(401).json({
+    respondAfterDraining(req, res, 401, {
       statusCode: 401,
       error: 'Unauthorized',
       message: 'Authentication required to access this resource',
       timestamp: new Date().toISOString(),
     });
+    return;
   }
   return next();
 }
@@ -139,13 +161,14 @@ export function enforcePasswordChangePolicy(req: Request, res: Response, next: N
     const isAllowed = allowedEndpoints.some((endpoint) => currentPath.endsWith(endpoint));
 
     if (!isAllowed) {
-      return res.status(403).json({
+      respondAfterDraining(req, res, 403, {
         statusCode: 403,
         error: 'Forbidden',
         message: 'Password change is required before accessing application resources',
         code: 'PASSWORD_CHANGE_REQUIRED',
         timestamp: new Date().toISOString(),
       });
+      return;
     }
   }
 
