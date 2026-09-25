@@ -92,6 +92,8 @@ describe('UI-03: App Shell Renders User Name and Role Badge (FR-04, AC-3.5)', ()
       expect(screen.getByText('AB')).toBeInTheDocument();
       expect(screen.getByText('Admin')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /user management/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /user management/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /\+ create user/i })).toBeInTheDocument();
     });
   });
 
@@ -115,5 +117,39 @@ describe('UI-03: App Shell Renders User Name and Role Badge (FR-04, AC-3.5)', ()
       expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
       expect(screen.queryByText('Jennifer Anderson')).not.toBeInTheDocument();
     });
+  });
+
+  it('mobile navigation keeps 44px touch targets and wraps instead of scrolling sideways (AC-9.1)', async () => {
+    localStorage.setItem('toktickit_auth_token', 'staff-token');
+    vi.spyOn(api, 'getMeApi').mockResolvedValue(staffUser);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /ticket queue/i })).toBeInTheDocument();
+    });
+
+    const toggler = screen.getByRole('button', { name: /toggle navigation/i });
+    expect(toggler).toHaveStyle({ minWidth: '44px', minHeight: '44px' });
+
+    const navRow = screen.getByRole('button', { name: /ticket queue/i }).parentElement as HTMLElement;
+    expect(navRow).toHaveClass('flex-wrap');
+    expect(navRow).toHaveStyle({ minWidth: '0' });
+
+    const navButtons = [
+      screen.getByRole('button', { name: /ticket queue/i }),
+      screen.getByRole('button', { name: /\+ create ticket/i }),
+      screen.getByRole('button', { name: /logout/i }),
+    ];
+    navButtons.forEach((button) => {
+      expect(button).toHaveStyle({ minHeight: '44px' });
+    });
+
+    const collapse = document.getElementById('toktickitNavbar') as HTMLElement;
+    const fixedWidthOverflow = Array.from(collapse.querySelectorAll<HTMLElement>('*')).filter((element) => {
+      const declared = element.style.minWidth;
+      return declared !== '' && Number.parseInt(declared, 10) >= 375;
+    });
+    expect(fixedWidthOverflow).toHaveLength(0);
   });
 });

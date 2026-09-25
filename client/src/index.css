@@ -94,3 +94,9 @@ textarea:focus-visible {
 .badge-priority-medium { background-color: #FEF3C7; color: #92400E; }
 .badge-priority-high { background-color: #FFEDD5; color: #C2410C; }
 .badge-priority-urgent { background-color: #FEE2E2; color: #991B1B; font-weight: 700; }
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}

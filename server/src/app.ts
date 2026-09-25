@@ -5,6 +5,7 @@ import requesterRoutes from "./routes/requester.routes.js";
 import ticketRoutes from "./routes/ticket.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import staffRoutes from "./routes/staff.routes.js";
+import adminUserRoutes from "./routes/adminUser.routes.js";
 import { authenticateSession, enforcePasswordChangePolicy } from "./middleware/auth.middleware.js";
 
 void getPrisma;
@@ -22,6 +23,7 @@ app.use("/api", requesterRoutes);
 app.use("/api", ticketRoutes);
 app.use("/api", authRoutes);
 app.use("/api", staffRoutes);
+app.use("/api", adminUserRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({

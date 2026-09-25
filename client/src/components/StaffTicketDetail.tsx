@@ -95,6 +95,8 @@ const ReadOnlyField: React.FC<{ label: string; value: React.ReactNode }> = ({ la
         minHeight: '38px',
         display: 'flex',
         alignItems: 'center',
+        minWidth: 0,
+        overflowWrap: 'anywhere',
       }}
     >
       {value}
@@ -330,7 +332,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '16px' }}>
           <ReadOnlyField label="Requester" value={ticket.requester.name} />
           <ReadOnlyField label="Email" value={ticket.requester.email} />
           <ReadOnlyField label="Category" value={ticket.category.name} />
@@ -345,7 +347,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
         <div style={{ fontSize: '16px', fontWeight: 600, color: '#1A2820', marginBottom: '12px' }}>
           {ticket.summary}
         </div>
-        <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.7, whiteSpace: 'pre-wrap', backgroundColor: '#F9FAFB', borderRadius: '8px', padding: '16px' }}>
+        <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.7, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', backgroundColor: '#F9FAFB', borderRadius: '8px', padding: '16px' }}>
           {ticket.description}
         </div>
       </SectionCard>
@@ -358,7 +360,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '18px' }}>
           {/* Ticket Owner */}
           <div>
             <div style={{ fontSize: '12px', fontWeight: 500, color: '#4B5563', marginBottom: '4px' }}>
@@ -510,7 +512,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
       {/* ── Dual Tabbed Communication (AC-6.4) ── */}
       <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
         {/* Tabs */}
-        <div role="tablist" aria-label="Ticket communication" style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #E5E7EB', marginBottom: '20px', paddingBottom: '0' }}>
+        <div role="tablist" aria-label="Ticket communication" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderBottom: '2px solid #E5E7EB', marginBottom: '20px', paddingBottom: '0' }}>
           <button
             data-testid="tab-public-comments"
             role="tab"
@@ -584,7 +586,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                       </div>
                       <span style={{ fontSize: '12px', color: '#4B5563' }}>{formatDate(comment.createdAt)}</span>
                     </div>
-                    <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    <div style={{ fontSize: '14px', color: '#1A2820', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                       {comment.content}
                     </div>
                   </div>
@@ -662,9 +664,8 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                 fontSize: '13px',
                 fontWeight: 600,
                 marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
+                display: 'block',
+                overflowWrap: 'anywhere',
               }}
             >
               🔒 Private Operational Notes — Strictly visible to IT Staff and Administrators
@@ -696,7 +697,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                       </div>
                       <span style={{ fontSize: '12px', color: '#92400E', opacity: 0.8 }}>{formatDate(note.createdAt)}</span>
                     </div>
-                    <div style={{ fontSize: '14px', color: '#1F2937', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    <div style={{ fontSize: '14px', color: '#1F2937', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                       {note.content}
                     </div>
                   </div>
