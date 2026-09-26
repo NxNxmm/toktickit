@@ -31,6 +31,16 @@ export async function checkSystem(): Promise<SystemStatus> {
   };
 }
 
+export type Role = 'REQUESTER' | 'IT_STAFF' | 'ADMIN';
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  requiresPasswordChange: boolean;
+}
+
 // Add a reusable apiFetch helper
 export async function apiFetch<T>(
   endpoint: string,
@@ -39,18 +49,25 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const headers = new Headers(options.headers || {});
 
-  // If no requesterId is passed, try retrieving from localStorage
+  // Auth Bearer token
+  const token = localStorage.getItem('toktickit_auth_token');
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // Backward compatibility with Lab 2 testing requester (only if not authenticated)
   const currentId = requesterId ?? (() => {
     const saved = localStorage.getItem('toktickit_selected_requester');
     return saved ? JSON.parse(saved).id : null;
   })();
 
-  if (currentId) {
+  if (!token && currentId && !headers.has('X-Requester-Id')) {
     headers.set('X-Requester-Id', String(currentId));
   }
 
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
+    credentials: 'include',
     headers,
   });
 
@@ -65,8 +82,39 @@ export async function apiFetch<T>(
   return res.json();
 }
 
+export async function loginApi(email: string, password: string): Promise<{ user: User; token: string }> {
+  return apiFetch<{ user: User; token: string }>('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function getMeApi(): Promise<User> {
+  return apiFetch<User>('/api/auth/me', {
+    method: 'GET',
+  });
+}
+
+export async function logoutApi(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/auth/logout', {
+    method: 'POST',
+  });
+}
+
+export async function changePasswordApi(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ message: string; requiresPasswordChange: boolean }> {
+  return apiFetch<{ message: string; requiresPasswordChange: boolean }>('/api/auth/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-export type TicketStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'CANCELLED';
+export type TicketStatus = 'NEW' | 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_REQUESTER' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'CANCELLED';
 
 export interface TicketListItem {
   id: number;
@@ -138,11 +186,25 @@ export interface Attachment {
   createdAt: string;
 }
 
+export interface PublicComment {
+  id: number;
+  ticketId: number;
+  author: {
+    id: number;
+    name: string;
+    role: string;
+  };
+  content: string;
+  createdAt: string;
+}
+
 export interface TicketDetail {
   id: number;
   ticketNo: string;
   requesterId: number;
   requester: { id: number; name: string; email: string };
+  ownerId?: number | null;
+  owner?: { id: number; name: string; email: string } | null;
   categoryId: number;
   category: { id: number; name: string };
   relatedSystemId: number;
@@ -152,9 +214,12 @@ export interface TicketDetail {
   requestedPriority: Priority;
   itPriority: Priority | null;
   currentStatus: TicketStatus;
+  resolvedIndicated?: boolean;
+  resolvedIndicatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   attachments: Attachment[];
+  publicComments?: PublicComment[];
 }
 
 export async function getTicketById(
@@ -164,11 +229,48 @@ export async function getTicketById(
   return apiFetch<TicketDetail>(`/api/tickets/${id}`, {}, requesterId);
 }
 
+export async function getPublicComments(
+  ticketId: number,
+  requesterId?: number | null
+): Promise<PublicComment[]> {
+  return apiFetch<PublicComment[]>(`/api/tickets/${ticketId}/comments`, {}, requesterId);
+}
+
+export async function postPublicComment(
+  ticketId: number,
+  content: string,
+  requesterId?: number | null
+): Promise<PublicComment> {
+  return apiFetch<PublicComment>(
+    `/api/tickets/${ticketId}/comments`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    },
+    requesterId
+  );
+}
+
+export async function postResolveIndication(
+  ticketId: number,
+  requesterId?: number | null
+): Promise<{ message: string; resolvedIndicated: boolean; resolvedIndicatedAt: string }> {
+  return apiFetch<{ message: string; resolvedIndicated: boolean; resolvedIndicatedAt: string }>(
+    `/api/tickets/${ticketId}/resolve-indication`,
+    {
+      method: 'POST',
+    },
+    requesterId
+  );
+}
+
 export async function uploadAttachment(
   ticketId: number,
   file: File,
   requesterId?: number | null
 ): Promise<Attachment & { ticketId: number }> {
+  const token = localStorage.getItem('toktickit_auth_token');
   const saved = localStorage.getItem('toktickit_selected_requester');
   const currentId = requesterId ?? (saved ? JSON.parse(saved).id : null);
 
@@ -176,10 +278,15 @@ export async function uploadAttachment(
   formData.append('file', file);
 
   const headers: Record<string, string> = {};
-  if (currentId) headers['X-Requester-Id'] = String(currentId);
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else if (currentId) {
+    headers['X-Requester-Id'] = String(currentId);
+  }
 
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
     method: 'POST',
+    credentials: 'include',
     headers,
     body: formData,
   });
@@ -198,13 +305,21 @@ export async function downloadAttachmentBlob(
   attachmentId: number,
   requesterId?: number | null
 ): Promise<{ blob: Blob; filename: string; mimeType: string }> {
+  const token = localStorage.getItem('toktickit_auth_token');
   const saved = localStorage.getItem('toktickit_selected_requester');
   const currentId = requesterId ?? (saved ? JSON.parse(saved).id : null);
 
   const headers: Record<string, string> = {};
-  if (currentId) headers['X-Requester-Id'] = String(currentId);
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else if (currentId) {
+    headers['X-Requester-Id'] = String(currentId);
+  }
 
-  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, { headers });
+  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, {
+    credentials: 'include',
+    headers,
+  });
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -234,3 +349,242 @@ export async function softRemoveAttachment(
     requesterId
   );
 }
+
+// ─── Issue 5: IT Staff Ticket Queue Types & API ───────────────────────────────
+
+export interface StaffTicketListItem {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  category: { id: number; name: string };
+  relatedSystem: { id: number; name: string };
+  requester: { id: number; name: string; email: string };
+  owner: { id: number; name: string; email: string } | null;
+  requestedPriority: Priority;
+  itPriority: Priority | null;
+  currentStatus: TicketStatus;
+  resolvedIndicated: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffTicketQueueResponse {
+  tickets: StaffTicketListItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    hasPrevious: boolean;
+    hasNext: boolean;
+  };
+}
+
+export interface GetStaffTicketsParams {
+  search?: string;
+  categoryId?: number | string;
+  status?: string;
+  requestedPriority?: string;
+  itPriority?: string;
+  ownerId?: number | string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getStaffTickets(
+  params: GetStaffTicketsParams = {}
+): Promise<StaffTicketQueueResponse> {
+  const query = new URLSearchParams();
+  if (params.search && params.search.trim()) query.set('search', params.search.trim());
+  if (params.categoryId) query.set('categoryId', String(params.categoryId));
+  if (params.status) query.set('status', params.status);
+  if (params.requestedPriority) query.set('requestedPriority', params.requestedPriority);
+  if (params.itPriority) query.set('itPriority', params.itPriority);
+  if (params.ownerId !== undefined && params.ownerId !== '') query.set('ownerId', String(params.ownerId));
+  if (params.sortBy) query.set('sortBy', params.sortBy);
+  if (params.sortOrder) query.set('sortOrder', params.sortOrder);
+  if (params.page) query.set('page', String(params.page));
+  if (params.pageSize) query.set('pageSize', String(params.pageSize));
+
+  const queryString = query.toString();
+  const endpoint = `/api/staff/tickets${queryString ? `?${queryString}` : ''}`;
+  return apiFetch<StaffTicketQueueResponse>(endpoint);
+}
+
+// ─── Issue 6: IT Staff Ticket Detail & Operational Controls ───────────────────
+
+/**
+ * Permitted status transitions per the Section 6 state matrix (BR-12, AC-6.2).
+ * Mirrors server/src/utils/statusTransitions.ts so the Staff Detail UI only
+ * offers transitions allowed by the backend.
+ */
+export const TICKET_STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  NEW: ['OPEN', 'CANCELLED'],
+  OPEN: ['IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'CANCELLED'],
+  IN_PROGRESS: ['WAITING_FOR_REQUESTER', 'RESOLVED', 'CANCELLED'],
+  WAITING_FOR_REQUESTER: ['IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+  RESOLVED: ['CLOSED', 'REOPENED'],
+  CLOSED: ['REOPENED'],
+  REOPENED: ['IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+  CANCELLED: [],
+};
+
+export interface InternalNote {
+  id: number;
+  ticketId: number;
+  author: {
+    id: number;
+    name: string;
+    role: string;
+  };
+  content: string;
+  createdAt: string;
+}
+
+export interface StaffAssignee {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+}
+
+export interface StaffTicketDetail {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  description: string;
+  requestedPriority: Priority;
+  itPriority: Priority;
+  currentStatus: TicketStatus;
+  resolvedIndicated: boolean;
+  resolvedIndicatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category: { id: number; name: string };
+  relatedSystem: { id: number; name: string };
+  requester: { id: number; name: string; email: string };
+  owner: { id: number; name: string; email: string } | null;
+  attachments: Attachment[];
+  publicComments: PublicComment[];
+  internalNotes: InternalNote[];
+}
+
+export async function getStaffTicketDetail(ticketId: number): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}`);
+}
+
+export async function updateTicketOwnership(
+  ticketId: number,
+  ownerId: number | null
+): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}/ownership`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ownerId }),
+  });
+}
+
+export async function updateTicketItPriority(
+  ticketId: number,
+  itPriority: Priority
+): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}/priority`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itPriority }),
+  });
+}
+
+export async function updateTicketStatus(
+  ticketId: number,
+  status: TicketStatus
+): Promise<StaffTicketDetail> {
+  return apiFetch<StaffTicketDetail>(`/api/staff/tickets/${ticketId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function getStaffAssignees(): Promise<StaffAssignee[]> {
+  return apiFetch<StaffAssignee[]>('/api/staff/assignees');
+}
+
+export async function getInternalNotes(ticketId: number): Promise<InternalNote[]> {
+  return apiFetch<InternalNote[]>(`/api/tickets/${ticketId}/notes`);
+}
+
+export async function postInternalNote(ticketId: number, content: string): Promise<InternalNote> {
+  return apiFetch<InternalNote>(`/api/tickets/${ticketId}/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+}
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  requiresPasswordChange: boolean;
+  createdAt: string;
+}
+
+export interface AdminUsersParams {
+  search?: string;
+  role?: Role;
+}
+
+export interface CreateAdminUserInput {
+  name: string;
+  email: string;
+  role: Role;
+  isActive?: boolean;
+  initialPassword: string;
+}
+
+export interface UpdateAdminUserInput {
+  name?: string;
+  email?: string;
+  role?: Role;
+  isActive?: boolean;
+}
+
+export async function getAdminUsers(params: AdminUsersParams = {}): Promise<AdminUser[]> {
+  const query = new URLSearchParams();
+  if (params.search && params.search.trim()) query.set('search', params.search.trim());
+  if (params.role) query.set('role', params.role);
+  const queryString = query.toString();
+  return apiFetch<AdminUser[]>(`/api/admin/users${queryString ? `?${queryString}` : ''}`);
+}
+
+export async function createAdminUser(input: CreateAdminUserInput): Promise<AdminUser> {
+  return apiFetch<AdminUser>('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateAdminUser(id: number, input: UpdateAdminUserInput): Promise<AdminUser> {
+  return apiFetch<AdminUser>(`/api/admin/users/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function resetAdminUserPassword(id: number, newInitialPassword: string): Promise<{ message: string; requiresPasswordChange: boolean }> {
+  return apiFetch<{ message: string; requiresPasswordChange: boolean }>(`/api/admin/users/${id}/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newInitialPassword }),
+  });
+}
+
+export const resetUserPassword = resetAdminUserPassword;
+

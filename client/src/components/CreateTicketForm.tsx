@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRequester } from '../context/RequesterContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ReferenceItem {
     id: number;
@@ -7,7 +7,7 @@ interface ReferenceItem {
 }
 
 export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
-    const { selectedRequester } = useRequester();
+    const { user } = useAuth();
 
     // Data Options
     const [categories, setCategories] = useState<ReferenceItem[]>([]);
@@ -106,11 +106,16 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
             formData.append('description', trimmedDesc);
             files.forEach((file) => formData.append('files', file));
 
+            const token = localStorage.getItem('toktickit_auth_token');
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const res = await fetch('/api/tickets', {
                 method: 'POST',
-                headers: {
-                    'X-Requester-Id': String(selectedRequester?.id),
-                },
+                credentials: 'include',
+                headers,
                 body: formData,
             });
 
@@ -147,16 +152,16 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
                     <h6 className="fw-bold mb-3 text-secondary">System Generated Information</h6>
                     <div className="row g-3">
                         <div className="col-md-4">
-                            <label className="form-label small text-muted mb-1">Ticket Number</label>
-                            <input type="text" className="form-control form-control-sm" value="Auto-generated after submit" disabled readOnly />
+                            <label htmlFor="create-ticket-number" className="form-label small text-muted mb-1">Ticket Number</label>
+                            <input id="create-ticket-number" type="text" className="form-control form-control-sm" value="Auto-generated after submit" disabled readOnly />
                         </div>
                         <div className="col-md-4">
-                            <label className="form-label small text-muted mb-1">Requester</label>
-                            <input type="text" className="form-control form-control-sm" value={selectedRequester?.name || ''} disabled readOnly />
+                            <label htmlFor="create-ticket-requester" className="form-label small text-muted mb-1">Requester</label>
+                            <input id="create-ticket-requester" type="text" className="form-control form-control-sm" value={user?.name || ''} disabled readOnly />
                         </div>
                         <div className="col-md-4">
-                            <label className="form-label small text-muted mb-1">Date & Status</label>
-                            <input type="text" className="form-control form-control-sm" value={`${todayStr} | Status: NEW`} disabled readOnly />
+                            <label htmlFor="create-ticket-date-status" className="form-label small text-muted mb-1">Date &amp; Status</label>
+                            <input id="create-ticket-date-status" type="text" className="form-control form-control-sm" value={`${todayStr} | Status: NEW`} disabled readOnly />
                         </div>
                     </div>
                 </div>
@@ -164,8 +169,8 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
                 {/* Classification Fields */}
                 <div className="row g-3 mb-3">
                     <div className="col-md-4">
-                        <label className="form-label fw-medium">Category <span className="text-danger">*</span></label>
-                        <select className="form-select" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                        <label htmlFor="create-ticket-category" className="form-label fw-medium">Category <span className="text-danger">*</span></label>
+                        <select id="create-ticket-category" className="form-select" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                             {categories.map((c) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
@@ -173,8 +178,8 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
                     </div>
 
                     <div className="col-md-4">
-                        <label className="form-label fw-medium">Related System <span className="text-danger">*</span></label>
-                        <select className="form-select" value={relatedSystemId} onChange={(e) => setRelatedSystemId(e.target.value)}>
+                        <label htmlFor="create-ticket-system" className="form-label fw-medium">Related System <span className="text-danger">*</span></label>
+                        <select id="create-ticket-system" className="form-select" value={relatedSystemId} onChange={(e) => setRelatedSystemId(e.target.value)}>
                             {relatedSystems.map((s) => (
                                 <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
@@ -182,8 +187,8 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
                     </div>
 
                     <div className="col-md-4">
-                        <label className="form-label fw-medium">Priority <span className="text-danger">*</span></label>
-                        <select className="form-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
+                        <label htmlFor="create-ticket-priority" className="form-label fw-medium">Priority <span className="text-danger">*</span></label>
+                        <select id="create-ticket-priority" className="form-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
                             <option value="LOW">Low</option>
                             <option value="MEDIUM">Medium</option>
                             <option value="HIGH">High</option>
@@ -195,12 +200,13 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
                 {/* Summary Input */}
                 <div className="mb-3">
                     <div className="d-flex justify-content-between">
-                        <label className="form-label fw-medium">Summary <span className="text-danger">*</span></label>
+                        <label htmlFor="create-ticket-summary" className="form-label fw-medium">Summary <span className="text-danger">*</span></label>
                         <span className={`small ${summary.length > 150 ? 'text-danger fw-bold' : 'text-muted'}`}>
                             {summary.length} / 150
                         </span>
                     </div>
                     <input
+                        id="create-ticket-summary"
                         type="text"
                         className={`form-control ${fieldErrors.summary ? 'is-invalid' : ''}`}
                         placeholder="Brief description of the problem..."
@@ -213,12 +219,13 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
                 {/* Description Input */}
                 <div className="mb-3">
                     <div className="d-flex justify-content-between">
-                        <label className="form-label fw-medium">Description <span className="text-danger">*</span></label>
+                        <label htmlFor="create-ticket-description" className="form-label fw-medium">Description <span className="text-danger">*</span></label>
                         <span className={`small ${description.length > 2000 ? 'text-danger fw-bold' : 'text-muted'}`}>
                             {description.length} / 2000
                         </span>
                     </div>
                     <textarea
+                        id="create-ticket-description"
                         className={`form-control ${fieldErrors.description ? 'is-invalid' : ''}`}
                         rows={4}
                         placeholder="Provide details about the problem, steps to reproduce, error messages..."
@@ -230,8 +237,9 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
 
                 {/* File Attachments Section */}
                 <div className="mb-4">
-                    <label className="form-label fw-medium">Attachments (Optional, max 5 files, &le; 5MB each)</label>
+                    <label htmlFor="create-ticket-attachments" className="form-label fw-medium">Attachments (Optional, max 5 files, &le; 5MB each)</label>
                     <input
+                        id="create-ticket-attachments"
                         type="file"
                         className="form-control"
                         multiple
