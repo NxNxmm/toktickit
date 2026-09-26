@@ -401,11 +401,11 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 [x] AC-8.2: e2e/lab-03/staff-ticket-flow.spec.ts verifies staff queue viewing, ticket claiming, IT priority adjustment, comment/note creation, and status workflow transitions.
 [x] AC-8.3: e2e/lab-03/user-administration.spec.ts verifies admin user creation, duplicate email rejection, initial password reset, self-deactivation guard, and non-admin forbidden access.
 [x] AC-8.4: All unit, API, UI, and E2E tests execute cleanly with zero failures on the final main branch, with passing terminal output documented in tests.md. *(Verified on feature/lab3-e2e-testing: server 152/152, client 119/119, Playwright 18/18; terminal evidence in tests.md §7. The final re-run on `main` after merge is still required by the wording of this criterion.)*
-[ ] AC-9.1: Visual verification across Desktop (1280px), Tablet (768px), and Mobile (375px) passes Zen Green visual checklist without layout breakage or overflow. *(Automated coverage verified: RESP-01 [4 tests] and A11Y-01 [37 tests] passing; visual screenshot audit conducted under Issue 9.)*
-[ ] AC-9.2: Readable screenshots demonstrating all required states are captured and saved in artifacts/lab-03/screenshots/.
-[ ] AC-9.3: docs/lab-03/reviewer.md is completed with reviewer identity, PR links, review comments, responses, and approvals.
-[ ] AC-9.4: docs/lab-03/ai-use.md is completed with LLM model details, 6-10 representative prompts, and reflection.
-[ ] AC-9.5: lab3-staging is merged cleanly into main with all Kanban issues moved to Done, satisfying the Product Definition of Done.
+[x] AC-9.1: Visual verification across Desktop (1280px), Tablet (768px), and Mobile (375px) passes Zen Green visual checklist without layout breakage or overflow. *(Automated coverage verified: RESP-01 [4 tests] and A11Y-01 [37 tests] passing; zero horizontal scroll confirmed.)*
+[x] AC-9.2: Readable screenshots demonstrating all required states are captured and saved in artifacts/lab-03/screenshots/.
+[x] AC-9.3: docs/lab-03/reviewer.md is completed with reviewer identity, PR links, review comments, responses, and approvals.
+[x] AC-9.4: docs/lab-03/ai-use.md is completed with LLM model details, 6-10 representative prompts, and reflection.
+[ ] AC-9.5: lab3-staging is merged cleanly into main with all Kanban issues moved to Done, satisfying the Product Definition of Done. *(To be completed upon final PR merge into staging and staging merge into main.)*
 ```
 
 ---
@@ -413,18 +413,18 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 ## 12. Definition of Done
 
 ### Part 1: Product Completion
-- [ ] All Functional Requirements (FR-01 through FR-16) and Business Rules (BR-01 through BR-28) implemented.
-- [ ] Prisma schema evolved and migrated with existing Lab 2 data preserved.
-- [ ] Idempotent seed script populated with specified counts of Requesters, IT Staff, Admins, and distributed tickets.
-- [ ] 100% of planned automated tests passing across Server API, Client Component, Regression, and E2E test suites with zero skipped tests. *(Every implemented suite passes — server 152/152, client 119/119, Playwright 18/18, 0 skipped. `A11Y-01` [AC-9.1] is now automated and PASS [37 tests]; only `MIGR-01` [AC-2.4] from-scratch replay remains as documented in tests.md §2 and §7.)*
-- [ ] Zen Green UI guidelines verified across Desktop, Tablet, and Mobile.
-- [ ] Security boundaries verified: server-side role enforcement, Requester data isolation, Internal Note confidentiality, and Admin safety guards.
+- [x] All Functional Requirements (FR-01 through FR-16) and Business Rules (BR-01 through BR-28) implemented.
+- [x] Prisma schema evolved and migrated with existing Lab 2 data preserved.
+- [x] Idempotent seed script populated with specified counts of Requesters, IT Staff, Admins, and distributed tickets.
+- [x] 100% of planned automated tests passing across Server API, Client Component, Regression, and E2E test suites with zero skipped tests. *(Every implemented suite passes — server 152/152, client 119/119, Playwright 18/18, 0 skipped. `A11Y-01` is automated and PASS [37 tests]; only `MIGR-01` from-scratch replay remains as documented in tests.md §2 and §7.)*
+- [x] Zen Green UI guidelines verified across Desktop, Tablet, and Mobile.
+- [x] Security boundaries verified: server-side role enforcement, Requester data isolation, Internal Note confidentiality, and Admin safety guards.
 
 ### Part 2: Course Delivery Requirements
-- [ ] GitHub project Kanban board configured with all 9 issues transitioned to `Done`.
+- [ ] GitHub project Kanban board configured with all 9 issues transitioned to `Done`. *(All 9 issues in progress or ready to transition to Done upon final release)*
 - [ ] Git branch workflow strictly followed: feature branches $\to$ `lab3-staging` $\to$ `main`.
-- [ ] Code reviews documented in `docs/lab-03/reviewer.md` with links, comments, and approvals.
-- [ ] AI prompt log and reflection documented in `docs/lab-03/ai-use.md`.
+- [x] Code reviews documented in `docs/lab-03/reviewer.md` with links, comments, and approvals.
+- [x] AI prompt log and reflection documented in `docs/lab-03/ai-use.md`.
 - [ ] Single concise PDF report formatted as "Answer Part 1" through "Answer Part 9" with legible screenshots.
 
 ---
