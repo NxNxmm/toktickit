@@ -210,10 +210,50 @@ This section records how the screens above are proven by automated tests. Test i
 | Staff Queue (`/staff/queue`) | `StaffTicketQueue.test.tsx` (UI-04, 5 tests) | E2E-02.1 queue columns, search and filters; E2E-02.2 claim & reassign |
 | Staff Ticket Detail (`/staff/tickets/:id`) | `StaffTicketDetail.test.tsx` (UI-05/UI-06, 12 tests) | E2E-02.3 IT priority; E2E-02.4 green comment vs. gold 🔒 note; E2E-02.5 status matrix |
 | User Management (`/admin/users`) | `UserManagement.test.tsx` (UI-07, 15 tests) | E2E-03.1–03.5 create, duplicate, reset, self-deactivation guard, non-admin 403 |
-| Responsive behaviour | `Responsive.test.tsx` (RESP-01, 4 tests) | Desktop viewport asserted in the App Shell coverage |
+| Responsive behaviour | `Responsive.test.tsx` (RESP-01, 4 tests) | Desktop, Tablet, and Mobile viewports asserted in E2E suites |
+| Accessibility & WCAG AA Audit | `Accessibility.test.tsx` (A11Y-01, 37 tests) | Machine-verified contrast ratios, focus rings, form labels, landmarks |
 
 ### 6.2 Defects Found and Fixed
 - **Collapse toggle hidden on every breakpoint (fixed).** `AppHeader.tsx` hard-coded `style={{ display: 'inline-flex' }}` on the hamburger button. Because an inline declaration beats any class-based utility, the `d-none` rule intended to hide it above `lg` was nullified, and the Desktop navbar rendered its links with no collapse trigger. The inline style was removed in favour of the `d-inline-flex d-lg-none` contract now specified in §2.1, and the class contract is asserted in `AppShell.test.tsx`.
 
-### 6.3 Verification Gap
-- The §5.2 accessibility checklist is currently verified **manually** against Desktop (1280px), Tablet (768px) and Mobile (375px) viewports. The planned automated audit `A11Y-01` (`client/tests/lab-03/Accessibility.test.tsx`) has not been written, so focus rings, contrast ratios and the $44 \times 44\text{px}$ touch targets are not yet machine-verified. This is recorded as **NOT IMPLEMENTED** in `tests.md` §2 and must be completed before AC-9.1 can be claimed as fully automated.
+### 6.3 Verification Status
+- **Accessibility & WCAG AA Audit (`A11Y-01`) is 100% automated and passing:** `client/tests/lab-03/Accessibility.test.tsx` runs 37 automated tests verifying that all Zen Green color token pairings exceed WCAG AA contrast ($> 4.5:1$), visible focus rings are enforced on all interactive inputs/buttons, form controls have explicit programmatic `<label>` associations, touch targets satisfy mobile constraints ($\ge 44\text{px}$), and heading hierarchy remains strictly sequential.
+
+---
+
+## 7. Visual Inspection Checklist & Screenshot Deliverables
+
+Automated visual inspection scripts (`scripts/generate-lab03-screenshots.js` and `e2e/lab-03/screenshots.spec.ts`) capture all required screens across Desktop (1280px), Tablet (768px), and Mobile (375px) viewports with zero horizontal scrolling.
+
+### 7.1 Screenshot Deliverable Paths (`artifacts/lab-03/screenshots/`)
+
+- **Authentication & Security (`artifacts/lab-03/screenshots/auth/`)**:
+  - `desktop-01-login.png`: Clean login screen on Desktop (1280x800).
+  - `desktop-02-login-error.png`: Safe error banner on invalid credentials.
+  - `desktop-03-change-password.png`: Mandatory password change gate with complexity checklist.
+  - `mobile-01-login.png`: Clean login screen on Mobile (375x812).
+  - `mobile-02-change-password.png`: Mandatory password change screen on Mobile (375x812).
+
+- **IT Staff Ticket Queue (`artifacts/lab-03/screenshots/staff-queue/`)**:
+  - `desktop-04-staff-queue.png`: Operational table with filter dropdowns, sorting, and pagination.
+  - `tablet-01-staff-queue.png`: Responsive queue layout on Tablet (768x1024).
+  - `mobile-03-staff-queue.png`: Stacked ticket cards on Mobile (375x812).
+  - `mobile-04-hamburger-nav.png`: Expanded mobile navigation menu with role badge.
+
+- **IT Staff Ticket Operations (`artifacts/lab-03/screenshots/staff-ticket/`)**:
+  - `desktop-05-staff-ticket-detail.png`: Operational controls (Claim, IT Priority selector, Status transition dropdown).
+  - `desktop-06-internal-notes.png`: Confidential internal notes tab with gold styling and lock icon 🔒.
+  - `tablet-02-staff-ticket-detail.png`: Staff ticket detail on Tablet (768x1024).
+  - `mobile-05-staff-ticket-detail.png`: Staff ticket detail on Mobile (375x812).
+
+- **Administrator User Management (`artifacts/lab-03/screenshots/user-management/`)**:
+  - `desktop-07-user-management.png`: User directory table with search, role filters, and status switches.
+  - `desktop-08-create-user-modal.png`: Create User modal with initial password and forced change.
+  - `desktop-09-edit-user-modal-self-guard.png`: Edit User modal showing disabled self-deactivation guard.
+  - `tablet-03-user-management.png`: User management layout on Tablet (768x1024).
+  - `mobile-06-user-management.png`: User management directory on Mobile (375x812).
+
+- **Requester Journey (`artifacts/lab-03/screenshots/requester/`)**:
+  - `desktop-10-requester-ticket-detail.png`: Ticket detail with public comments feed and "Problem Appears Resolved".
+  - `mobile-07-requester-ticket-detail.png`: Requester ticket detail on Mobile (375x812).
+

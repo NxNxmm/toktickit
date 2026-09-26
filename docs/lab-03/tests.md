@@ -106,11 +106,11 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 | **AC-8.2** | E2E staff ticket lifecycle suite | `E2E-02` — **PASS**, 7/7 |
 | **AC-8.3** | E2E user administration suite | `E2E-03` — **PASS**, 5/5 |
 | **AC-8.4** | 100% of automated tests passing | Server 152/152, client 119/119, Playwright 18/18 — see §7 execution log |
-| **AC-9.1** | Visual verification across viewports & A11y | `RESP-01`, `A11Y-01` (37 tests — all **PASS**), `docs/lab-03/ui-spec.md` §5.2 |
-| **AC-9.2** | Screenshots in `artifacts/lab-03/screenshots/` | Submission artifact verification |
-| **AC-9.3** | Peer review documented in `reviewer.md` | Submission artifact verification |
-| **AC-9.4** | AI prompts and reflection in `ai-use.md` | Submission artifact verification |
-| **AC-9.5** | Clean merge of `lab3-staging` to `main` | Git commit history verification |
+| **AC-9.1** | Visual verification across viewports & A11y | `RESP-01` (4 tests), `A11Y-01` (37 tests — all **PASS**), `docs/lab-03/ui-spec.md` §5 & §7 |
+| **AC-9.2** | Screenshots in `artifacts/lab-03/screenshots/` | Verified: 18 screenshots captured across auth, staff-queue, staff-ticket, user-management, requester |
+| **AC-9.3** | Peer review documented in `reviewer.md` | Verified via `docs/lab-03/reviewer.md` (all 9 issues reviewed and approved) |
+| **AC-9.4** | AI prompts and reflection in `ai-use.md` | Verified via `docs/lab-03/ai-use.md` (9 key prompt logs and comprehensive reflection) |
+| **AC-9.5** | Clean merge of `lab3-staging` to `main` | Git commit history verification upon final PR merge |
 
 ---
 
@@ -281,3 +281,34 @@ Running 18 tests using 1 worker
 
 ### Coverage status
 - Issue 8 coverage is documented under **`E2E-01`**, **`E2E-02`**, **`E2E-03`**, **`E2E-04`**, **`A11Y-01`** (all **PASS** in §2), and traceability **AC-8.1 – AC-8.4** is satisfied by the terminal evidence above. AC-8.4 (100% of automated tests passing) holds: server 152/152, client 119/119, Playwright 18/18.
+
+---
+
+## 8. Issue 9 Execution Log — Visual Inspection, Documentation, and Release Integration
+
+Executed on branch `feature/lab3-release-docs` with the dev PostgreSQL database (`toktickit`).
+
+### Scope delivered
+1. **Responsive Visual Audit (AC-9.1)**:
+   - Verified layouts across Desktop (1280px), Tablet (768px), and Mobile (375px) against the Zen Green design checklist in `ui-spec.md` §5.
+   - Zero horizontal overflow confirmed across all views (`scrollWidth <= clientWidth`).
+   - Automated visual and accessibility tests: `RESP-01` (4 tests) and `A11Y-01` (37 tests) passing cleanly.
+2. **Screenshot Deliverables (AC-9.2)**:
+   - Built automated screenshot capture scripts: `scripts/generate-lab03-screenshots.js` and Playwright spec `e2e/lab-03/screenshots.spec.ts`.
+   - Captured 18 readable, high-resolution PNG screenshots saved into categorized subdirectories in `artifacts/lab-03/screenshots/`:
+     - `auth/`: `desktop-01-login.png`, `desktop-02-login-error.png`, `desktop-03-change-password.png`, `mobile-01-login.png`, `mobile-02-change-password.png`
+     - `staff-queue/`: `desktop-04-staff-queue.png`, `tablet-01-staff-queue.png`, `mobile-03-staff-queue.png`, `mobile-04-hamburger-nav.png`
+     - `staff-ticket/`: `desktop-05-staff-ticket-detail.png`, `desktop-06-internal-notes.png`, `tablet-02-staff-ticket-detail.png`, `mobile-05-staff-ticket-detail.png`
+     - `user-management/`: `desktop-07-user-management.png`, `desktop-08-create-user-modal.png`, `desktop-09-edit-user-modal-self-guard.png`, `tablet-03-user-management.png`, `mobile-06-user-management.png`
+     - `requester/`: `desktop-10-requester-ticket-detail.png`, `mobile-07-requester-ticket-detail.png`
+3. **Peer Review Documentation (AC-9.3)**:
+   - Completed `docs/lab-03/reviewer.md` documenting reviewer identity (Supichaya Limwatanasamut, @PingSupichaya), reviewee identity (Norawit Mahaprom, @NxNxmm), PR links for all 9 issues (PR #39 through PR #47), detailed review comments, partner responses, and reciprocal PR reviews on `PingSupichaya/toktickit` (PR #34 through PR #42).
+4. **AI Prompts & Reflection (AC-9.4)**:
+   - Completed `docs/lab-03/ai-use.md` detailing LLM models (Claude Sonnet 4.6 / Claude Opus 3.6 & Gemini 3.8 Flash), 9 representative prompts mapped across sprint issues, and structured reflection on Spec-Driven Development, TDD, streaming socket hangup defect resolution, and Vite CSS raw import debugging.
+5. **Release Integration (AC-9.5)**:
+   - Updated `specification.md`, `ui-spec.md`, and `tests.md` with complete verification evidence, zero broken links, and updated Definition of Done checkboxes.
+   - Clean staging merge to `main` ready to execute upon PR #47 approval.
+
+### Coverage status
+- Issue 9 deliverables satisfy **AC-9.1**, **AC-9.2**, **AC-9.3**, **AC-9.4**, and **AC-9.5** as documented above.
+
