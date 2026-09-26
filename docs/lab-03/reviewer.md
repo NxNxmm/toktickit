@@ -121,7 +121,7 @@
 - **Partner's Review Comment**:
   > Good job! :0 The screenshot evidence clearly shows that responsiveness is working well. All required docs are completed.
 - **My Response / Fix**:
-  > Finally! Let me add my review for this PR and will merge to main soon! :D
+  > Finally! Let me add my review for this PR and will merge to main soon!
 
 ---
 
