@@ -17,5 +17,9 @@ export default defineConfig({
     globals: true,
     setupFiles: "./tests/setup.ts",
     include: ["tests/**/*.test.{ts,tsx}"],
+    // Enable real CSS processing so that ?raw imports return the actual file
+    // text rather than an empty stub.  The Accessibility test (A11Y-01) reads
+    // src/index.css?raw to audit colour tokens and :focus-visible rules.
+    css: true,
   },
 });

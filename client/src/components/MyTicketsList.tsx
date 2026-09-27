@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useRequester } from '../context/RequesterContext';
 import * as api from '../api';
 
@@ -8,7 +9,10 @@ interface MyTicketsListProps {
 }
 
 export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, onViewTicket }) => {
+  const { user } = useAuth();
   const { selectedRequester } = useRequester();
+  // Lab 3: use authenticated user; Lab 2 fallback: use selectedRequester from context/localStorage
+  const hasIdentity = Boolean(user) || Boolean(selectedRequester);
 
   // Reference data
   const [categories, setCategories] = useState<api.Category[]>([]);
@@ -58,10 +62,12 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
 
   // Fetch tickets function
   const fetchTickets = useCallback(async () => {
-    if (!selectedRequester) return;
+    if (!hasIdentity) return;
     setLoading(true);
     setError(null);
     try {
+      // Pass requesterId only when not authenticated (Lab 2 fallback)
+      const requesterId = user ? undefined : selectedRequester?.id;
       const data = await api.getTickets(
         {
           search: searchTerm,
@@ -73,7 +79,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
           page,
           pageSize,
         },
-        selectedRequester.id
+        requesterId
       );
       setTickets(data.items);
       setPagination(data.pagination);
@@ -84,6 +90,8 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
       setLoading(false);
     }
   }, [
+    hasIdentity,
+    user,
     selectedRequester,
     searchTerm,
     selectedCategory,
@@ -580,7 +588,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
                 </div>
 
                 {/* Card Body: Summary and Tags */}
-                <div className="fw-semibold mb-2" style={{ color: '#1A2820' }}>
+                <div className="fw-semibold mb-2" style={{ color: '#1A2820', overflowWrap: 'anywhere' }}>
                   {t.summary}
                 </div>
 
@@ -634,10 +642,10 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
             </div>
 
             {/* Page navigation buttons */}
-            <div className="d-flex align-items-center gap-1">
+            <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-md-end gap-1">
               <button
                 className="btn btn-sm btn-outline-secondary"
-                style={{ minHeight: '36px', minWidth: '40px' }}
+                style={{ minHeight: '44px', minWidth: '40px' }}
                 onClick={() => setPage(page - 1)}
                 disabled={!pagination.hasPrevious}
                 aria-label="Previous page"
@@ -658,7 +666,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
                       className={`btn btn-sm ${p === page ? 'btn-success text-white fw-bold' : 'btn-outline-secondary'
                         }`}
                       style={{
-                        minHeight: '36px',
+                        minHeight: '44px',
                         minWidth: '36px',
                         backgroundColor: p === page ? '#006B3C' : undefined,
                         borderColor: p === page ? '#006B3C' : undefined,
@@ -680,7 +688,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
 
               <button
                 className="btn btn-sm btn-outline-secondary"
-                style={{ minHeight: '36px', minWidth: '40px' }}
+                style={{ minHeight: '44px', minWidth: '40px' }}
                 onClick={() => setPage(page + 1)}
                 disabled={!pagination.hasNext}
                 aria-label="Next page"
@@ -690,12 +698,12 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
             </div>
 
             {/* Page Size Selector */}
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex flex-wrap align-items-center gap-2">
               <span className="text-secondary small">Per page:</span>
               <select
                 id="page-size-select"
                 className="form-select form-select-sm"
-                style={{ width: '80px', borderColor: '#D1D5DB' }}
+                style={{ width: '80px', minHeight: '44px', borderColor: '#D1D5DB' }}
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));

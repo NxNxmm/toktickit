@@ -7,80 +7,157 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model RequesterUser {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  department String
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  tickets    Ticket[]
+model attachment {
+  id               Int       @id @default(autoincrement())
+  ticketId         Int
+  originalFilename String
+  storedFilename   String
+  fileSizeBytes    Int
+  contentType      String
+  uploadedAt       DateTime  @default(now())
+  isRemoved        Boolean   @default(false)
+  removedAt        DateTime?
+  removalReason    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  ticket           ticket    @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@index([ticketId, isRemoved])
 }
 
-model Category {
+model category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   createdAt DateTime @default(now())
-  tickets   Ticket[]
+  isActive  Boolean  @default(true)
+  ticket    ticket[]
 }
 
-model RelatedSystem {
+model internal_note {
   id        Int      @id @default(autoincrement())
-  name      String   @unique
+  ticketId  Int
+  authorId  Int
+  content   String
   createdAt DateTime @default(now())
-  tickets   Ticket[]
+  user      user     @relation(fields: [authorId], references: [id])
+  ticket    ticket   @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@index([ticketId])
 }
 
-enum Priority {
+model public_comment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  content   String
+  createdAt DateTime @default(now())
+  user      user     @relation(fields: [authorId], references: [id])
+  ticket    ticket   @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@index([ticketId])
+}
+
+model related_system {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  isActive Boolean  @default(true)
+  ticket   ticket[]
+}
+
+model session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      user     @relation(fields: [userId], references: [id])
+
+  @@index([expiresAt])
+  @@index([userId])
+}
+
+model ticket {
+  id                              Int               @id @default(autoincrement())
+  ticketNumber                    String            @unique
+  submittedById                   Int
+  categoryId                      Int
+  relatedSystemId                 Int
+  summary                         String
+  description                     String
+  requestedPriority               RequestedPriority
+  currentStatus                   TicketStatus      @default(NEW)
+  ticketDate                      DateTime          @default(now())
+  createdAt                       DateTime          @default(now())
+  updatedAt                       DateTime
+  ownerId                         Int?
+  itPriority                      RequestedPriority
+  resolvedIndicated               Boolean           @default(false)
+  resolvedIndicatedAt             DateTime?
+  attachment                      attachment[]
+  internal_note                   internal_note[]
+  public_comment                  public_comment[]
+  category                        category          @relation(fields: [categoryId], references: [id])
+  user_ticket_ownerIdTouser       user?             @relation("ticket_ownerIdTouser", fields: [ownerId], references: [id])
+  related_system                  related_system    @relation(fields: [relatedSystemId], references: [id])
+  user_ticket_submittedByIdTouser user              @relation("ticket_submittedByIdTouser", fields: [submittedById], references: [id])
+
+  @@index([categoryId])
+  @@index([currentStatus])
+  @@index([currentStatus, ticketDate])
+  @@index([itPriority])
+  @@index([itPriority, ticketDate])
+  @@index([ownerId])
+  @@index([relatedSystemId])
+  @@index([submittedById])
+  @@index([submittedById, ticketDate])
+  @@index([ticketDate])
+}
+
+model user {
+  id                                Int              @id @default(autoincrement())
+  name                              String
+  email                             String           @unique
+  isActive                          Boolean          @default(true)
+  createdAt                         DateTime         @default(now())
+  updatedAt                         DateTime
+  role                              UserRole
+  passwordHash                      String
+  requiresPasswordChange            Boolean          @default(false)
+  failedLoginAttempts               Int              @default(0)
+  lastFailedLoginAt                 DateTime?
+  internal_note                     internal_note[]
+  public_comment                    public_comment[]
+  session                           session[]
+  ticket_ticket_ownerIdTouser       ticket[]         @relation("ticket_ownerIdTouser")
+  ticket_ticket_submittedByIdTouser ticket[]         @relation("ticket_submittedByIdTouser")
+
+  @@index([isActive])
+  @@index([role])
+}
+
+enum TicketStatus {
+  NEW
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_REQUESTER
+  RESOLVED
+  CLOSED
+  REOPENED
+  CANCELLED
+}
+
+enum RequestedPriority {
   LOW
   MEDIUM
   HIGH
   URGENT
 }
 
-enum TicketStatus {
-  NEW
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-  CANCELLED
-}
-
-model Ticket {
-  id                Int           @id @default(autoincrement())
-  ticketNo          String        @unique
-  requesterId       Int
-  requester         RequesterUser @relation(fields: [requesterId], references: [id])
-  categoryId        Int
-  category          Category      @relation(fields: [categoryId], references: [id])
-  relatedSystemId   Int
-  relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id])
-  summary           String
-  description       String
-  requestedPriority Priority      @default(MEDIUM)
-  itPriority        Priority?
-  currentStatus     TicketStatus  @default(NEW)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  attachments       Attachment[]
-
-  @@index([requesterId, createdAt])
-  @@index([categoryId, currentStatus])
-}
-
-model Attachment {
-  id             Int       @id @default(autoincrement())
-  ticketId       Int
-  ticket         Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  originalName   String
-  storedFileName String
-  fileSize       Int
-  mimeType       String
-  isRemoved      Boolean   @default(false)
-  removedAt      DateTime?
-  removalReason  String?
-  createdAt      DateTime  @default(now())
-
-  @@index([ticketId, isRemoved])
+enum UserRole {
+  REQUESTER
+  IT_STAFF
+  ADMIN
 }

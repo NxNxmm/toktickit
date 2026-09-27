@@ -15,9 +15,9 @@ describe("GET /api/requesters/active (Issue 3 - AC 1)", () => {
       expect(requester).toHaveProperty("id");
       expect(requester).toHaveProperty("name");
       expect(requester).toHaveProperty("email");
-      expect(requester).toHaveProperty("department");
-      // Ensure internal fields are not exposed or inactive requesters are excluded
+      // Ensure internal fields are not exposed
       expect(requester).not.toHaveProperty("isActive");
+      expect(requester).not.toHaveProperty("passwordHash");
     }
 
     // Robert Taylor is seeded with isActive = false, so he must NOT be present
