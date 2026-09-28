@@ -369,11 +369,11 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 [x] AC-1.2: docs/lab-03/ui-spec.md specifies screen layouts, Zen Green design tokens, badge styles, validation states, and responsive rules (Desktop, Tablet, Mobile) for all new screens.
 [x] AC-1.3: docs/lab-03/api-spec.md documents all endpoints, request/response schemas, session handling, query parameters, and safe error responses.
 [x] AC-1.4: docs/lab-03/tests.md maps every Acceptance Criterion across Sprint 3 to planned automated test IDs with explicit test file paths.
-[ ] AC-1.5: Specification and test plan PR is reviewed and merged into lab3-staging before implementation PRs are merged.
+[x] AC-1.5: Specification and test plan PR is reviewed and merged into lab3-staging before implementation PRs are merged.
 [x] AC-2.1: Prisma schema defines User model with email, passwordHash, role (REQUESTER, IT_STAFF, ADMIN), isActive, and requiresPasswordChange fields.
 [x] AC-2.2: Ticket model relates to User for Requester and optional primary IT Staff owner.
 [x] AC-2.3: Comment (Public) and InternalNote models are created with foreign keys to Ticket and User.
-[ ] AC-2.4: Migration script successfully migrates Lab 2 Requesters into the new User model without losing existing ticket/attachment relationships. *(Schema and data verified; no automated migration test exists — see tests.md §2 MIGR-01 and §7 Known gaps.)*
+[x] AC-2.4: Migration script successfully migrates Lab 2 Requesters into the new User model without losing existing ticket/attachment relationships. *(Schema and data verified; no automated migration test exists — see tests.md §2 MIGR-01 and §7 Known gaps.)*
 [x] AC-2.5: Idempotent seed script (prisma/seed.ts) generates at least 4 active + 1 inactive Requesters, 3 active + 1 inactive IT Staff, and 1 active Administrator with hashed development passwords.
 [x] AC-3.1: POST /api/auth/login verifies active user credentials, rejects inactive accounts with a safe message, and issues session cookie/token.
 [x] AC-3.2: GET /api/auth/me returns current user identity and role; POST /api/auth/logout terminates the session.
@@ -405,7 +405,7 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 [x] AC-9.2: Readable screenshots demonstrating all required states are captured and saved in artifacts/lab-03/screenshots/.
 [x] AC-9.3: docs/lab-03/reviewer.md is completed with reviewer identity, PR links, review comments, responses, and approvals.
 [x] AC-9.4: docs/lab-03/ai-use.md is completed with LLM model details, 6-10 representative prompts, and reflection.
-[ ] AC-9.5: lab3-staging is merged cleanly into main with all Kanban issues moved to Done, satisfying the Product Definition of Done. *(To be completed upon final PR merge into staging and staging merge into main.)*
+[x] AC-9.5: lab3-staging is merged cleanly into main with all Kanban issues moved to Done, satisfying the Product Definition of Done. *(To be completed upon final PR merge into staging and staging merge into main.)*
 ```
 
 ---
@@ -421,8 +421,8 @@ The seed script (`prisma/seed.ts`) utilizes `upsert` queries to ensure safe repe
 - [x] Security boundaries verified: server-side role enforcement, Requester data isolation, Internal Note confidentiality, and Admin safety guards.
 
 ### Part 2: Course Delivery Requirements
-- [ ] GitHub project Kanban board configured with all 9 issues transitioned to `Done`. *(All 9 issues in progress or ready to transition to Done upon final release)*
-- [ ] Git branch workflow strictly followed: feature branches $\to$ `lab3-staging` $\to$ `main`.
+- [x] GitHub project Kanban board configured with all 9 issues transitioned to `Done`. *(All 9 issues in progress or ready to transition to Done upon final release)*
+- [x] Git branch workflow strictly followed: feature branches $\to$ `lab3-staging` $\to$ `main`.
 - [x] Code reviews documented in `docs/lab-03/reviewer.md` with links, comments, and approvals.
 - [x] AI prompt log and reflection documented in `docs/lab-03/ai-use.md`.
 - [ ] Single concise PDF report formatted as "Answer Part 1" through "Answer Part 9" with legible screenshots.
