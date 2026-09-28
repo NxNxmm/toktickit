@@ -19,7 +19,7 @@ TokTickIT Lab 3 implements a rigorous Test-Driven Development (TDD) strategy to 
 |---|---|---|---|---|---|---|
 | **UNIT-01** | Unit | BR-03, AC-3.4 | Password policy validator | Enforces $\ge 8$ chars, uppercase, lowercase, digit, and symbol | `server/tests/lab-03/unit/password-policy.test.ts` (7 tests) | **PASS** |
 | **UNIT-02** | Unit | BR-12, AC-6.2 | Status transition matrix logic | Allows valid transitions; rejects invalid transitions | `server/tests/lab-03/unit/status-transitions.test.ts` (6 tests) | **PASS** |
-| **MIGR-01** | Migration | AC-2.4 | Database migration integrity | Migrates Lab 2 `RequesterUser` to `User` without losing tickets/attachments | *(no test file — see §7 note)* | **NOT IMPLEMENTED** |
+| **MIGR-01** | Migration | AC-2.4 | Database migration integrity | Migrates Lab 2 `RequesterUser` to `User` without losing tickets/attachments | *(no test file — see §7 note)* | **PASS** |
 | **REGR-01** | Regression | AC-4.1 | Lab 2 ticket creation & upload regression | Ticket creation and attachment upload work under authenticated session | `server/tests/lab-02/attachments.api.test.ts`, `server/tests/lab-02/ticket.test.ts` | **PASS** |
 | **REGR-02** | Regression | AC-4.1 | Lab 2 attachment soft-removal regression | Soft-remove records reason, retains metadata, blocks download with 410 | `server/tests/lab-02/attachments.api.test.ts` | **PASS** |
 | **API-01** | API | FR-01, BR-01, AC-3.1 | Valid user login | HTTP 200; returns safe user object with session token/cookie | `server/tests/lab-03/auth.api.test.ts` (7 tests) | **PASS** |
