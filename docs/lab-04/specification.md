@@ -13,9 +13,11 @@ Deliver the complete, production-ready TokTickIT service-desk increment by imple
 
 The IT Department and stakeholders require TokTickIT to mature from basic ticket intake and communication into an active operational work management platform. 
 
-While primary ticket ownership remains assigned to a coordinating IT Staff member, actual technical investigation, repair, configuration, and follow-ups are performed across different team members over time. Therefore, each Ticket must record multiple **Actions Taken** entries capturing when the action occurred, what was done, the result, an automatically captured record of who performed it, follow-up flags with mandatory notes when required, and cross-references to external attachments or artifacts. Requesters must be able to view these actions transparently to track progress on their issues, but cannot create or modify them. 
+The IT Department and stakeholders require TokTickIT to mature from basic ticket intake and communication into an active operational work management platform. 
 
-Furthermore, the stakeholder requires the ticket status workflow to be formal and authoritative: while Requesters may indicate that their issue appears resolved, this signal is strictly advisory and only IT Staff can formally transition a ticket to `Resolved`. 
+While primary ticket ownership remains assigned to a coordinating IT Staff member, actual technical investigation, repair, configuration, and follow-ups are performed across different team members over time. Therefore, each Ticket must record multiple **Actions Taken** entries. Each action should contain Action Date/Time, Action Description, Result, Performed by (auto), Follow-Up Required?, Follow-up Note (required when follow-up is needed), and Attachment Notes (what file to look for images etc.). Requesters must be able to view these actions transparently to track progress on their issues, but cannot create or modify them. 
+
+Furthermore, the stakeholder requires the ticket status workflow to be formal and authoritative: while Requesters may continue to indicate that the problem appears resolved, this signal is strictly advisory and IT Staff must review the work and formally update the Ticket.
 
 Finally, stakeholders and end users require concise, role-appropriate **Dashboards** that summarize operational queues and personal workloads without duplicating existing list views, supported by end-to-end polish, responsive behavior across mobile, tablet, and desktop devices, and zero regression of any previously delivered capabilities.
 
@@ -26,7 +28,7 @@ Finally, stakeholders and end users require concise, role-appropriate **Dashboar
 ### 3.1 Included Scope
 - **Actions Taken Aggregate**:
   - `ActionTaken` child model linked 1:N under `Ticket`.
-  - Fields: Action Date/Time, Action Description, Result, Performed by (auto-captured from session), Follow-Up Required? (boolean), Follow-up Note (mandatory when Follow-Up is true), Attachment Notes.
+  - Fields: Action Date/Time, Action Description, Result, Performed by (auto-captured from session), Follow-Up Required? (boolean), Follow-up Note (mandatory when Follow-Up is true), and Attachment Notes (what file to look for images, logs, etc.).
   - Multi-staff collaboration: Actions can be recorded by any active IT Staff or Administrator, independent of primary ticket ownership.
   - Role-based permissions: IT Staff and Admins can create and edit actions; Requesters have read-only visibility for owned tickets; unowned ticket actions are forbidden.
   - Inactive staff protection: Rejection of inactive users as performers or assignees.
@@ -107,16 +109,18 @@ Finally, stakeholders and end users require concise, role-appropriate **Dashboar
 - **BR-07**: **Immutable History Ordering**: Actions Taken must be returned in deterministic chronological order (defaulting to descending by `actionDateTime` with secondary sort `createdAt` desc).
 
 ### Ticket Status & Resolution Gate Rules
-- **BR-08**: **Authorized Status Lifecycle**: Ticket status transitions must strictly conform to the permitted transition matrix:
+- **BR-08**: **Authorized Status Lifecycle & Reopening Matrix**: Ticket status transitions must strictly conform to the permitted transition matrix:
   - `NEW` $\rightarrow$ `OPEN`, `CANCELLED`
-  - `OPEN` $\rightarrow$ `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED`
-  - `IN_PROGRESS` $\rightarrow$ `WAITING_FOR_REQUESTER`, `RESOLVED`, `OPEN`, `CANCELLED`
+  - `OPEN` $\rightarrow$ `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `CANCELLED`
+  - `IN_PROGRESS` $\rightarrow$ `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED`
   - `WAITING_FOR_REQUESTER` $\rightarrow$ `IN_PROGRESS`, `RESOLVED`, `CANCELLED`
   - `RESOLVED` $\rightarrow$ `CLOSED`, `REOPENED`
-  - `CLOSED` $\rightarrow$ `REOPENED` (Admin or IT Staff only)
-  - `REOPENED` $\rightarrow$ `IN_PROGRESS`, `OPEN`, `RESOLVED`, `CANCELLED`
-  - `CANCELLED` $\rightarrow$ Terminal state (no further transitions permitted except by Administrator override).
-- **BR-09**: **Resolution Authority Gate**: Only authenticated IT Staff and Administrators may transition a ticket to `RESOLVED` or `CLOSED`. Any Requester attempt to set status to `RESOLVED` must be rejected with HTTP 403 Forbidden.
+  - `CLOSED` $\rightarrow$ `REOPENED`
+  - `REOPENED` $\rightarrow$ `IN_PROGRESS`, `RESOLVED`, `CANCELLED`
+  - `CANCELLED` $\rightarrow$ Terminal state (no further transitions permitted).
+  *Reopening Permissions*: IT Staff and Administrators may formally transition `RESOLVED` or `CLOSED` tickets to `REOPENED`. Requesters who observe recurring issues on `RESOLVED` tickets may indicate continued need by posting a public comment or submitting an advisory reopen signal; formal status transition to `REOPENED` remains executed by IT Staff/Admin, preserving the rule that Requesters never bypass IT Staff workflow gates.
+- **BR-09**: **Resolution Authority Gate**: Only authenticated IT Staff and Administrators may transition a ticket to `RESOLVED` or `CLOSED`. Any Requester attempt to set status to `RESOLVED` or `CLOSED` must be rejected with HTTP 403 Forbidden.
+- **BR-09.1**: **Actions Taken Prerequisite for Resolution**: A ticket cannot transition to `RESOLVED` or `CLOSED` unless there is at least one (`>= 1`) Action Taken record associated with that ticket. Any attempt by IT Staff or Administrator to resolve or close a ticket with zero Actions Taken must be rejected by the backend with HTTP 422 Unprocessable Entity (or 400 Bad Request) and error code `RESOLUTION_REQUIRES_ACTION_TAKEN` (`'A ticket cannot be resolved or closed without at least one recorded Action Taken documenting the work performed.'`).
 - **BR-10**: **Requester Advisory Resolution**: A Requester's "Problem Appears Resolved" action appends an audit trail entry / system comment indicating requester satisfaction, but leaves the operational status unchanged for staff review.
 - **BR-11**: **Concurrency Conflict Detection**: When updating a ticket's status, priority, or ownership, the client must supply the known `updatedAt` timestamp or `version` integer. If the record in the database has changed, the server must reject the mutation with HTTP 409 Conflict without applying updates.
 
@@ -253,12 +257,14 @@ model Ticket {
 ## 9. Acceptance Criteria (AC)
 
 - **AC-01**: Given an authenticated IT Staff or Admin and valid payload, when creating an Action Taken on an accessible ticket, then the record is created with `performedById` bound to the authenticated user and HTTP 201 is returned.
-- **AC-02**: Given an Action Taken creation request with `followUpRequired = true` but an empty `followUpNote`, then the backend rejects the request with HTTP 400 and an informative error message.
+- **AC-02**: Given an Action Taken creation request with `followUpRequired = true` but an empty `followUpNote`, then the backend rejects the request with HTTP 400 and an informative error message (`code: "VALIDATION_ERROR"`).
+- **AC-02b**: Given an Action Taken creation or update request with `followUpRequired = false`, if a `followUpNote` is supplied, the backend safely sanitizes/clears it to null (or preserves it without triggering validation errors), and when omitted, persists null.
 - **AC-03**: Given an Action Taken creation or update request with `actionDateTime` set in the future (> 5 minutes ahead), then the backend rejects the request with HTTP 400.
 - **AC-04**: Given an authenticated Requester viewing a ticket they own, when requesting `GET /api/tickets/:id/actions-taken`, then all actions taken are returned with full details in read-only format.
 - **AC-05**: Given an authenticated Requester, when attempting to `POST` or `PATCH` on `/api/tickets/:id/actions-taken`, then the backend rejects the request with HTTP 403 Forbidden.
 - **AC-06**: Given an authenticated Requester attempting to view actions taken on a ticket owned by another user, then the backend returns HTTP 403 Forbidden or 404 Not Found.
-- **AC-07**: Given a ticket in `OPEN` status, when an IT Staff user transitions the status to `RESOLVED` with the current ticket version, then the status updates to `RESOLVED` and HTTP 200 is returned.
+- **AC-07**: Given a ticket in `OPEN` or `IN_PROGRESS` status having $\ge 1$ Action Taken, when an IT Staff user transitions the status to `RESOLVED` with the current ticket version, then the status updates to `RESOLVED` and HTTP 200 is returned.
+- **AC-07b**: Given a ticket with zero (`0`) Actions Taken records, when an IT Staff or Admin user attempts to transition the status to `RESOLVED` or `CLOSED`, then the backend rejects the request with HTTP 422 Unprocessable Entity (or 400 Bad Request) and code `RESOLUTION_REQUIRES_ACTION_TAKEN`.
 - **AC-08**: Given an authenticated Requester, when submitting an advisory "Problem Appears Resolved" indication, then a resolution audit comment is recorded, but the ticket status remains unchanged.
 - **AC-09**: Given an authenticated Requester attempting to submit a status transition to `RESOLVED`, then the backend rejects the operation with HTTP 403 Forbidden.
 - **AC-10**: Given a status update request with a mismatched or stale `version` (optimistic concurrency failure), then the backend rejects the update with HTTP 409 Conflict without modifying the ticket.

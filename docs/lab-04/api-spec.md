@@ -229,7 +229,18 @@ Creates a new work entry under a Ticket.
 Returns the created `ActionTaken` object including the populated `performedBy` user object.
 
 #### Error Responses
-- `400 Bad Request`: Validation failure (e.g. missing follow-up note when required, future date).
+- `400 Bad Request`: Validation failure (e.g. missing follow-up note when `followUpRequired=true`, future date).
+  ```json
+  {
+    "statusCode": 400,
+    "error": "Bad Request",
+    "code": "VALIDATION_ERROR",
+    "message": "Follow-up note is required when follow-up is requested.",
+    "details": [
+      { "field": "followUpNote", "message": "Follow-up note cannot be blank when follow-up is required." }
+    ]
+  }
+  ```
 - `401 Unauthorized`: Not logged in.
 - `403 Forbidden`: Caller has `REQUESTER` role or is deactivated.
 - `404 Not Found`: Ticket not found.
@@ -302,6 +313,9 @@ Transitions ticket status, calibrates priority, or records advisory resolution w
      - Increment `version` and return `200 OK`.
 4. **Permitted Status Transition Matrix**:
    - Check `currentStatus -> targetStatus` validity against BR-08. If invalid, return `400 Bad Request`.
+5. **Actions Taken Prerequisite for Resolution (BR-09.1)**:
+   - If `status == "RESOLVED"` or `"CLOSED"`, the ticket MUST possess at least one (`>= 1`) associated `ActionTaken` record.
+   - If the ticket has zero Actions Taken, the mutation must be rejected with `422 Unprocessable Entity`.
 
 #### Success Response: `200 OK`
 ```json
@@ -317,7 +331,7 @@ Transitions ticket status, calibrates priority, or records advisory resolution w
 #### Error Responses
 - `400 Bad Request`: Invalid transition (e.g. `NEW -> CLOSED`).
 - `401 Unauthorized`: Not logged in.
-- `403 Forbidden`: Unauthorized role transition attempt.
+- `403 Forbidden`: Unauthorized role transition attempt (e.g. Requester attempting to set status to `RESOLVED`).
 - `404 Not Found`: Ticket not found.
 - `409 Conflict`: Concurrency conflict:
   ```json
@@ -328,5 +342,14 @@ Transitions ticket status, calibrates priority, or records advisory resolution w
       "currentVersion": 4,
       "submittedVersion": 3
     }
+  }
+  ```
+- `422 Unprocessable Entity`: Actions Taken prerequisite not met:
+  ```json
+  {
+    "statusCode": 422,
+    "error": "Unprocessable Entity",
+    "code": "RESOLUTION_REQUIRES_ACTION_TAKEN",
+    "message": "A ticket cannot be resolved or closed without at least one recorded Action Taken documenting the work performed."
   }
   ```
