@@ -11,7 +11,7 @@ TokTickIT preserves and extends the **Zen Green** design language established in
 
 | Token Name | Hex Code | Role & Usage |
 |---|---|---|
-| `--color-primary-green` | `#006B3C` | Top navigation header, primary action buttons, active brand emphasis |
+| `--color-primary-green` | `#006B3C` | Top navigation header, primary action buttons, brand emphasis |
 | `--color-secondary-green` | `#0B7A46` | Active tabs, hover states on primary actions, interactive links |
 | `--color-pale-green` | `#EAF6EF` | Selected card outlines, table row hover highlights, metric card backgrounds |
 | `--color-page-bg` | `#F5F7F6` | Off-white, soft background across all views to prevent eye strain |
@@ -52,36 +52,32 @@ Every status badge combines distinct background/border tokens with an explicit t
 
 ## 2. IT Staff Dashboard UI Specification (`/dashboard`)
 
-The IT Staff Dashboard serves as the operational starting point for service-desk engineers and administrators.
+The IT Staff Dashboard serves as the operational triage starting point for service-desk engineers and administrators.
 
 ### 2.1 Screen Structure & Layout
 1. **Header Area**:
    - Title: `Welcome back, {Staff Name}!`
    - Subtitle: `Here's what's happening with your queue today.`
    - Top-right Action: `Refresh` button with sync icon.
-2. **Operational Metric Cards (5 Cards in Horizontal Grid)**:
-   - **New**: System-wide count of tickets with status `NEW`.
-   - **Open**: System-wide count of tickets with status `OPEN`.
-   - **In Progress**: System-wide count of tickets with status `IN_PROGRESS`.
-   - **Waiting for Requester**: Count of tickets awaiting user feedback.
-   - **My Assigned**: Count of open tickets assigned to the logged-in staff member.
+2. **Operational Metric Cards (5 Cards)**:
+   - **New**: System-wide count of tickets with status `NEW`. Drill-down: `/staff/queue?status=NEW`.
+   - **Open**: System-wide count of tickets with status `OPEN`. Drill-down: `/staff/queue?status=OPEN`.
+   - **In Progress**: System-wide count of tickets with status `IN_PROGRESS`. Drill-down: `/staff/queue?status=IN_PROGRESS`.
+   - **Waiting for Requester**: Count of tickets awaiting user feedback. Drill-down: `/staff/queue?status=WAITING_FOR_REQUESTER`.
+   - **My Assigned**: Count of open/active tickets assigned to current user. Drill-down: `/staff/queue?assigned=me`.
    - *Card Behavior*:
      - Large numerical display (`text-3xl font-bold text-primary-green`).
      - Clear metric title (`text-sm font-semibold text-text-secondary`).
-     - Subtext indication (e.g. `Click to view queue`).
-     - Entire card is an accessible button (`role="button"`, `tabindex="0"`) that navigates to `/staff/queue` with the corresponding filter pre-selected.
-3. **Operational Work Area (2-Column Grid on Desktop)**:
-   - **Left Column (65% width) - My Recent Tickets**:
-     - Card container with title `My Recent Tickets` and `View all` link.
-     - Table listing the 5 most recent tickets assigned to the user (or urgent open tickets if none assigned).
-     - Columns: `Ticket #`, `Title`, `Status`, `Updated`.
-     - Clicking a row opens the Ticket Detail view (`/staff/tickets/:id`).
-   - **Right Column (35% width) - Quick Actions**:
-     - Action Card 1: `Create Ticket` (opens `/tickets/new`).
-     - Action Card 2: `Search Tickets` (opens `/staff/queue` with search focus).
-     - Action Card 3: `My Queue` (opens `/staff/queue?assigned=me`).
-4. **Empty State**:
-   - If no tickets match recent lists, render a clean card with an empty inbox icon: `No active tickets in your queue. Great job!`
+     - Subtext indication: `Click to view queue`.
+     - Entire card is an accessible button (`role="button"`, `tabindex="0"`).
+3. **Operational Work Area**:
+   - **My Recent Tickets (Table)**: 5 most recent tickets assigned or urgent. Columns: `Ticket #`, `Title`, `Status`, `Updated`.
+   - **Quick Actions Panel**: `Create Ticket` (`/tickets/new`), `Search Tickets` (`/staff/queue`), `My Queue` (`/staff/queue?assigned=me`).
+
+### 2.2 Responsive Breakpoints for Staff Dashboard
+- **Desktop ($\ge 1024$px)**: Exactly 5 columns in a single row for metric cards. Split layout below (65% Recent Tickets, 35% Quick Actions).
+- **Tablet ($768$px–$1023$px)**: Exactly 2 columns for metric cards (with the 5th card spanning full-width). Vertical stack below.
+- **Mobile ($< 768$px)**: Exactly 1 column for metric cards (full-width stacked cards). Recent tickets table transforms into vertical card stack.
 
 ---
 
@@ -93,128 +89,122 @@ The Requester Dashboard provides end users with a transparent summary of their p
 1. **Header Area**:
    - Title: `Welcome, {Requester Name}!`
    - Subtitle: `Here's the latest on your requests.`
-2. **Personal Metric Cards (4 Cards in Horizontal Grid)**:
-   - **My Open Tickets**: Total tickets owned by user with status `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`.
-   - **In Progress**: Count of owned tickets currently being worked on.
-   - **Resolved**: Count of owned tickets resolved within the last 30 days.
-   - **Closed**: Count of owned tickets historically closed.
-   - *Card Behavior*: Clicking "View all" links under each card filters `/tickets` by the respective status.
-3. **Personal Work Area (2-Column Grid on Desktop)**:
-   - **Left Column (65% width) - My Recent Tickets**:
-     - Card container with title `My Recent Tickets` and `View all` link.
-     - Table listing the user's 5 most recently active tickets.
-     - Columns: `Ticket #`, `Subject`, `Status`, `Last Update`.
-     - Clicking any row navigates directly to `/tickets/:id`.
-   - **Right Column (35% width) - Quick Actions**:
-     - Action Card 1: `+ Create Ticket` (`Submit a new request`).
-     - Action Card 2: `📂 View My Tickets` (`Track existing requests`).
-4. **Empty State**:
-   - If the requester has 0 tickets, display a friendly welcome card: `You haven't submitted any tickets yet. Need help? Click 'Create Ticket' above to get started.`
+2. **Personal Metric Cards (4 Cards)**:
+   - **My Open Tickets**: Total tickets owned by user with status `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`. Drill-down: `/tickets?filter=open`.
+   - **Waiting for Me**: Count of owned tickets with status `WAITING_FOR_REQUESTER`. Drill-down: `/tickets?status=WAITING_FOR_REQUESTER`.
+   - **Recently Updated**: Count of owned tickets updated in last 7 rolling days. Drill-down: `/tickets?filter=recent`.
+   - **Recently Resolved**: Count of owned tickets where status == `RESOLVED` in last 30 rolling days (excluding `CLOSED`). Drill-down: `/tickets?status=RESOLVED`.
+   - *Card Behavior*: Clicking any card navigates to `/tickets` with corresponding filter applied.
+3. **Personal Work Area**:
+   - **My Recent Tickets**: 5 most recently active tickets owned by user.
+   - **Quick Actions**: `+ Create Ticket` and `📂 View My Tickets`.
+
+### 3.2 Responsive Breakpoints for Requester Dashboard
+- **Desktop ($\ge 1024$px)**: Exactly 4 columns in a single row for metric cards.
+- **Tablet ($768$px–$1023$px)**: Exactly 2 columns for metric cards (2x2 grid).
+- **Mobile ($< 768$px)**: Exactly 1 column for metric cards (full-width stack).
 
 ---
 
 ## 4. Administrator Dashboard UI Specification
 
 Administrators accessing `/dashboard` receive the full IT Staff operational dashboard plus an additional **User Directory Summary** panel:
-- Card 1: `Active Requesters` (Count of active requester accounts).
-- Card 2: `Active IT Staff` (Count of active support engineers).
-- Card 3: `Active Admins` (Count of active system administrators).
+- Card 1: `Active Requesters`
+- Card 2: `Active IT Staff`
+- Card 3: `Active Admins`
+- Card 4: `Total Users`
 - Quick Action: `Manage Users` button navigating directly to `/admin/users`.
+- Responsive Grid: 4 columns on desktop, 2 columns on tablet, 1 column on mobile.
 
 ---
 
-## 5. Actions Taken UI on Ticket Detail
+## 5. Dashboard States & Safe Failure Feedback
+
+1. **Loading State**:
+   - Displays gentle Zen Green pulsing skeleton cards (`animate-pulse bg-gray-200 rounded-lg h-28`) for metric cards and skeleton rows for tables.
+2. **Empty State**:
+   - When metric counts or recent lists are 0:
+     - Requester: Clean card with an empty-inbox icon: *"You have no open tickets. Need help? Click 'Create Ticket' to get started."*
+     - IT Staff: *"No active tickets in your queue. Great job!"*
+3. **Forbidden State (403)**:
+   - If an unauthorized user navigates to an admin or staff dashboard, renders a clean Zen Green notice: *"Access Restricted: You do not have permission to view this operational dashboard. [Return to Dashboard]"*.
+4. **Safe-Failure State**:
+   - If a backend API error occurs during dashboard loading, a non-crashing banner displays: *"⚠️ Unable to load dashboard metrics. [🔄 Retry]"* without white-screening.
+
+---
+
+## 6. Actions Taken UI on Ticket Detail
 
 The Actions Taken work log is embedded within the Ticket Detail screen (`/staff/tickets/:id` and `/tickets/:id`).
 
-### 5.1 Presentation Layout
+### 6.1 Presentation Layout
 - Located directly below the core Ticket Metadata card and above/alongside the Comments panel.
 - Header: `Actions Taken` with counter badge (e.g. `Actions Taken (3)`).
 - Action Button: `+ Add Action Taken` (rendered **only** for IT Staff and Administrators).
 
-### 5.2 Actions Taken List / Table
-Displays chronological work history entries with the following fields:
-1. **Action Date/Time**: Formatted as `MMM DD, YYYY hh:mm A` (e.g. `May 12, 2026 10:15 AM`).
-2. **Performed By**: Name and role badge of the staff member who executed the work.
-3. **Action Description**: Complete text description of work performed.
-4. **Result**: Outcome badge or text (e.g. `Success`, `Partial`, `Diagnostic Complete`).
-5. **Follow-Up Flag & Note**:
-   - If `followUpRequired == true`: Displays an amber warning badge `⚠️ Follow-up Required` accompanied by the indented follow-up note text.
-   - If `followUpRequired == false`: Displays a muted gray badge `No follow-up needed`.
-6. **Attachment Notes**: Displays a paperclip icon with note text referencing file evidence (e.g. `See network_trace.pcap in lab shared drive`).
-7. **Action Controls**: An `Edit` button (pencil icon) visible only to IT Staff and Admins.
+### 6.2 Desktop Table vs. Mobile Card Transformation
+- **Desktop ($\ge 768$px)**: HTML table with clean dividers:
+  - Columns: `Date/Time`, `Performed By`, `Action Description`, `Result`, `Follow-Up`, `Attachment Notes`, `Actions`.
+- **Mobile (< 768px)**: Stacked responsive cards. Each card explicitly displays:
+  - Header: Action Date/Time and Performer badge.
+  - Body: Description and Result.
+  - Follow-up: Amber badge `⚠️ Follow-up Required: [note]` or muted badge `No follow-up needed`.
+  - Attachment Notes: Paperclip icon with note text.
+  - Footer: `Edit` button (for IT Staff/Admin).
 
-### 5.3 Create / Edit Action Taken Form (Modal or Inline Panel)
-The form contains:
-- **Action Date/Time** (Input: datetime-local, defaults to current time; cannot be in the future).
-- **Performed By** (Read-only input pre-filled with logged-in user's name: `System-generated from your active session`).
-- **Action Description** (Textarea, required, minimum 5 characters).
-- **Result** (Input/Select, required, e.g. `Success`, `Pending Vendor`, `Resolved Issue`).
-- **Follow-Up Required?** (Checkbox toggle, default `false`).
-- **Follow-Up Note** (Textarea):
-  - *Dynamic State*: If "Follow-Up Required?" is checked, this field becomes mandatory with a red asterisk and helper text `* Please specify the required follow-up action`.
-  - If unchecked, the field is disabled or hidden and cleared.
-- **Attachment Notes** (Text input, optional, placeholder: `e.g. Log file attached or screenshot reference`).
-- **Form Actions**:
-  - `Cancel` button (resets form and closes modal).
-  - `Save Action Taken` primary button (Zen Green background).
-  - *Double-Submit Protection*: Button shows a loading spinner and is disabled while the mutation is in flight.
-  - *Recoverable Failure Handling*: If submission returns a validation error (HTTP 400), an inline alert banner displays the error and form inputs remain populated.
+### 6.3 Create / Edit Action Taken Modal Behavior
+- **Desktop/Tablet**: Centered modal with semi-transparent backdrop.
+- **Mobile (< 768px)**: Full-screen bottom-sheet modal:
+  - Sticky header with modal title and `✕` close button.
+  - Scrollable body with full touch targets ($\ge 44$px input height).
+  - Sticky bottom action bar with `Cancel` and `Save Action Taken` buttons.
+- **Form Controls & Validation**:
+  - `Action Date/Time` (datetime-local, defaults to now; future dates blocked).
+  - `Performed By` (Read-only; prefilled with active user session).
+  - `Action Description` (Textarea, required, min 5 chars).
+  - `Result` (Text input, required, min 3 chars).
+  - `Follow-Up Required?` (Checkbox toggle).
+  - `Follow-Up Note` (Textarea: **Mandatory** when toggle is checked; cleared and disabled when unchecked).
+  - `Attachment Notes` (Text input, optional).
+- **Double-Submit Prevention**: Submit button displays loading spinner and is disabled while the mutation request is in flight.
+- **Error Preservation**: If a 400 validation error returns, the modal remains open with an inline alert and form values intact.
 
-### 5.4 Requester View (Read-Only Mode)
+### 6.4 Requester View (Read-Only Mode)
 - Requesters viewing their ticket detail see all Actions Taken cards/table entries.
 - The `+ Add Action Taken` button and row `Edit` buttons are completely hidden.
-- Tooltip/Header helper text clarifies: `Work log recorded by IT Staff for your request.`
 
 ---
 
-## 6. Ticket Workflow & Resolution Gate UI
+## 7. Ticket Workflow & Resolution Feedback UI
 
-### 6.1 Status Controls on Ticket Detail
-- **Header Status Badge**: Clearly displays the current status with the assigned color and icon token.
+### 7.1 Status Controls on Ticket Detail
+- **Header Status Badge**: Clearly displays current status with assigned color and icon token.
 - **IT Staff / Admin Status Transition Dropdown**:
-  - A stylized select control or button group displaying **only permitted next statuses** according to the transition matrix.
+  - Displays **only permitted next statuses** according to the transition matrix.
   - Selecting a target status enables the `Update Status` button.
-  - If transitioning to `RESOLVED`, an optional prompt for resolution summary is displayed.
 - **Requester "Problem Appears Resolved" Button**:
   - Visible only to the Ticket Owner when the ticket is `OPEN`, `IN_PROGRESS`, or `WAITING_FOR_REQUESTER`.
-  - Clicking opens a confirmation dialog:
-    > *"Let the IT team know your problem is resolved? This will add an advisory confirmation to the ticket. IT Staff will verify and complete the formal ticket resolution."*
-  - Confirming appends an advisory public note to the ticket history without changing the status dropdown or badge.
+  - Confirmation dialog explains that an advisory confirmation will be posted for IT Staff review. Does not change formal status.
 
-### 6.2 Concurrency Conflict Alert (HTTP 409)
-- If another user modifies the ticket status while the current user has the page open, saving triggers a prominent warning banner:
-  > **⚠️ Conflict Detected**: This ticket has been updated by another team member since you loaded it. Please refresh the page to view the latest status before making changes.
-- Contains a single primary action: `🔄 Refresh Ticket`.
+### 7.2 Resolution Gate Warning (`422 RESOLUTION_REQUIRES_ACTION_TAKEN`)
+- If an IT Staff member attempts to transition a ticket to `RESOLVED` or `CLOSED` when zero Actions Taken are logged:
+  - The UI catches the 422 response and displays a prominent amber/red alert banner above the status controls:
+    > **⚠️ Work Verification Required**: This ticket cannot be resolved or closed until at least one Action Taken has been recorded. Please log your work in the Actions Taken section below before updating status.
 
----
-
-## 7. Responsive Design Breakpoints
-
-### 7.1 Desktop ($\ge 1024$px)
-- Top Navigation: Full horizontal links (`Dashboard`, `My Tickets` / `Ticket Queue`, `Create Ticket`, User Profile dropdown).
-- Dashboards: 5 metric cards in a single row; 2-column split (65% recent tickets table, 35% quick actions).
-- Actions Taken: Full-width data table with all columns aligned and clear dividers.
-
-### 7.2 Tablet ($768$px to $1023$px)
-- Metric Cards: 2-column or 3-column auto-wrapping grid with 16px gap.
-- Dashboard Work Area: Stacks vertically (Recent Tickets on top, Quick Actions below).
-- Actions Taken: Condensed table format with word-wrapping on descriptions.
-
-### 7.3 Mobile ($< 768$px, down to $375$px)
-- Top Navigation: Collapsible hamburger menu with accessible expand/collapse toggle.
-- Metric Cards: 2-column compact grid with bold count and stacked title.
-- Tables $\rightarrow$ Card Transformation: Recent Tickets and Actions Taken switch from HTML `<table>` to responsive card stacks. Each card contains key-value pairs (`Date`, `Performer`, `Result`, `Description`).
-- Zero horizontal overflow: `overflow-x: hidden` enforced on page wrapper; form inputs use `width: 100%`.
+### 7.3 Concurrency Conflict Alert (`409 Conflict`)
+- If another user modifies the ticket status while open:
+  - Warning banner displays:
+    > **⚠️ Conflict Detected**: This ticket has been updated by another team member since you loaded it. Please refresh the page to view the latest status before making changes.
+  - Primary button: `🔄 Refresh Ticket`.
 
 ---
 
 ## 8. Accessibility & Visual Polish Checklist (WCAG 2.1 AA)
 
-- [ ] **Contrast Ratio**: All body copy and headings maintain $\ge 4.5:1$ contrast against `--color-surface` and `--color-page-bg`.
-- [ ] **Visible Focus Rings**: Every button, input, link, and interactive card displays an unambiguous 2px focus ring (`--color-focus-ring`) when navigated via keyboard.
-- [ ] **Keyboard Navigability**: Modals trap focus during open state and close on `Escape`; all forms submit on `Enter` from appropriate inputs.
+- [ ] **Contrast Ratio**: All body copy and headings maintain $\ge 4.5:1$ contrast against backgrounds.
+- [ ] **Visible Focus Rings**: Every button, input, link, and interactive card displays an unambiguous 2px focus ring (`--color-focus-ring`) during keyboard navigation.
+- [ ] **Keyboard Navigability**: Modals trap focus during open state and close on `Escape`; forms submit on `Enter`.
 - [ ] **Non-Color Cues**: Statuses and roles include explicit icons or textual badges alongside color shading.
-- [ ] **Semantic Headings**: Strict hierarchy with a single `<h1>` per page, followed by logical `<h2>` and `<h3>` tags.
-- [ ] **No Content Clipping**: Labels, badges, and long descriptions wrap cleanly without horizontal scrollbars or truncated text without tooltips.
+- [ ] **Semantic Headings**: Strict hierarchy (`<h1>` followed by `<h2>`, `<h3>`).
+- [ ] **Zero Horizontal Overflow**: `overflow-x: hidden` enforced on page wrapper at 375px mobile breakpoint.
 - [ ] **Clean Developer Console**: Zero React hydration warnings, zero missing `key` prop warnings, zero unhandled promise rejections.

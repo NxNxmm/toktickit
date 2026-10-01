@@ -6,7 +6,7 @@
 - **GitHub Username**: Finyakginshabu
 
 ## Reviewed Pull Requests (Partner -> Me: NxNxmm/toktickit)
-1. **Issue 1 (Sprint 4 Spec DD)**: PR #[TBD] — *Pending Review*
+1. **Issue 1 (Sprint 4 Spec DD)**: PR #[TBD] — *Pending*
 2. **Issue 2 (Actions Taken Foundation & DB)**: PR #[TBD] — *Pending*
 3. **Issue 3 (Actions Taken UI)**: PR #[TBD] — *Pending*
 4. **Issue 4 (Ticket Workflow & Resolution Gate)**: PR #[TBD] — *Pending*
@@ -20,6 +20,7 @@
 
 ### 1. Issue 1 (Sprint 4 Spec DD)
 - **Partner's Review Comment**:
-  > *[To be populated upon PR review]*
+  > [To be populated upon PR review]
+  
 - **My Response & Action**:
-  > *[To be populated upon review changes]*
+  > [To be populated upon PR review]

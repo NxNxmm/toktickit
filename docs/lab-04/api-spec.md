@@ -5,22 +5,24 @@
 
 ## 1. Overview & General Conventions
 
-This document specifies the REST API contract for TokTickIT Sprint 4. All endpoints adhere to standard HTTP semantics, use JSON payloads, and enforce session authentication and strict role-based access control.
+This document specifies the authoritative REST API contract for TokTickIT Sprint 4. All endpoints adhere to standard HTTP semantics, consume and produce JSON payloads, enforce session authentication, and apply strict role-based authorization.
 
 ### 1.1 Authentication & Authorization
-- **Session Identification**: Authenticated requests must include the HTTP-only session cookie (or `Bearer <token>` header).
+- **Session Identification**: Authenticated requests must include an HTTP-only session cookie (or `Bearer <token>` authorization header).
 - **Roles**:
   - `REQUESTER`: Standard service consumer.
   - `IT_STAFF`: Service desk support engineer.
-  - `ADMIN`: System administrator (inherits all `IT_STAFF` privileges).
-- **Error Codes**:
+  - `ADMIN`: System administrator (inherits all `IT_STAFF` privileges plus user management & admin dashboard).
+- **Strict Role Enforcement**:
   - `401 Unauthorized`: Unauthenticated request or expired session.
   - `403 Forbidden`: Authenticated user lacks required role or ownership.
   - `404 Not Found`: Ticket or action record does not exist.
-  - `409 Conflict`: Concurrency conflict (stale ticket update).
-  - `400 Bad Request`: Payload validation failure with detailed field messages.
+  - `409 Conflict`: Concurrency conflict (stale ticket update version).
+  - `422 Unprocessable Entity`: Semantic domain rule violation (e.g. invalid status jump, or resolution without Actions Taken).
+  - `400 Bad Request`: Payload validation failure (missing version, malformed date, empty required string).
 
 ### 1.2 Standard Error Response Shape
+All error responses throughout the system adhere to a single standardized JSON shape:
 ```json
 {
   "error": {
@@ -32,6 +34,9 @@ This document specifies the REST API contract for TokTickIT Sprint 4. All endpoi
   }
 }
 ```
+
+### 1.3 Absence of DELETE Endpoints
+In accordance with service-desk auditability and business rules, **no DELETE endpoints exist** in TokTickIT (`DELETE /api/tickets/:id` and `DELETE /api/tickets/:id/actions-taken/:actionId` are not implemented). Tickets transition through lifecycle statuses (including `CANCELLED`), and Action Taken records are immutable work history entries with technical edit capabilities.
 
 ---
 
@@ -46,17 +51,22 @@ Retrieves authoritative summary metrics and recent tickets for the authenticated
 - **Headers**: `Cookie: session_token=...`
 
 #### Request Parameters
-*None.* Scoped automatically to `req.session.userId`.
+*None.* Scoped automatically and strictly to `req.session.userId`.
+
+#### Calculation Rules (UTC Rolling Windows):
+- `totalOpen`: Count of owned tickets with `status IN ('NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER')`.
+- `waitingForRequester`: Count of owned tickets with `status == 'WAITING_FOR_REQUESTER'`.
+- `recentlyUpdated`: Count of owned tickets where `updatedAt >= NOW() - 7 days` (rolling 7 days: `Date.now() - 7 * 86,400,000` ms).
+- `recentlyResolved`: Count of owned tickets where `status == 'RESOLVED'` and `updatedAt >= NOW() - 30 days` (rolling 30 days: `Date.now() - 30 * 86,400,000` ms). **Strictly excludes `CLOSED`** to eliminate overlap.
 
 #### Success Response: `200 OK`
 ```json
 {
   "metrics": {
     "totalOpen": 3,
-    "inProgress": 1,
     "waitingForRequester": 1,
-    "recentlyResolved": 5,
-    "closed": 12
+    "recentlyUpdated": 2,
+    "recentlyResolved": 5
   },
   "recentTickets": [
     {
@@ -72,18 +82,31 @@ Retrieves authoritative summary metrics and recent tickets for the authenticated
 ```
 
 #### Error Responses
-- `401 Unauthorized`: User is not authenticated.
-- `403 Forbidden`: User role is not `REQUESTER`.
+- `401 Unauthorized`:
+  ```json
+  { "error": { "code": "UNAUTHORIZED", "message": "Authentication required." } }
+  ```
+- `403 Forbidden`:
+  ```json
+  { "error": { "code": "FORBIDDEN", "message": "Access restricted to Requester accounts." } }
+  ```
 
 ---
 
 ### 2.2 IT Staff Dashboard Data
-Retrieves operational triage counts and recent queue activity across all tickets.
+Retrieves operational triage counts and recent queue activity across all system tickets.
 
 - **Method**: `GET`
 - **Path**: `/api/dashboard/staff`
 - **Allowed Roles**: `IT_STAFF`, `ADMIN`
 - **Headers**: `Cookie: session_token=...`
+
+#### Calculation Rules:
+- `newTickets`: Count of all tickets where `status == 'NEW'`.
+- `openTickets`: Count of all tickets where `status == 'OPEN'`.
+- `inProgressTickets`: Count of all tickets where `status == 'IN_PROGRESS'`.
+- `waitingForRequesterTickets`: Count of all tickets where `status == 'WAITING_FOR_REQUESTER'`.
+- `myAssignedTickets`: Count of tickets where `assignedStaffId == req.session.userId` and `status IN ('OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED')`. **Explicitly excludes `RESOLVED`, `CLOSED`, and `CANCELLED`**.
 
 #### Success Response: `200 OK`
 ```json
@@ -118,12 +141,12 @@ Retrieves operational triage counts and recent queue activity across all tickets
 
 #### Error Responses
 - `401 Unauthorized`: User is not authenticated.
-- `403 Forbidden`: Authenticated user is `REQUESTER`.
+- `403 Forbidden`: User is a Requester or inactive account.
 
 ---
 
 ### 2.3 Administrator Dashboard Data
-Retrieves operational triage counts plus high-level user account statistics.
+Retrieves operational triage counts plus user account summary statistics.
 
 - **Method**: `GET`
 - **Path**: `/api/dashboard/admin`
@@ -148,12 +171,16 @@ Retrieves operational triage counts plus high-level user account statistics.
 }
 ```
 
+#### Error Responses
+- `401 Unauthorized`: Unauthenticated.
+- `403 Forbidden`: User lacks Administrator role.
+
 ---
 
 ## 3. Actions Taken Endpoints
 
 ### 3.1 List Actions Taken for Ticket
-Lists all Action Taken work items recorded under a ticket, sorted chronologically.
+Lists all Action Taken work items recorded under a ticket, sorted chronologically descending (`actionDateTime` DESC, secondary `createdAt` DESC).
 
 - **Method**: `GET`
 - **Path**: `/api/tickets/:id/actions-taken`
@@ -218,37 +245,37 @@ Creates a new work entry under a Ticket.
 - `actionDateTime`: Required ISO 8601 string. Cannot be in the future (> 5 min allowance). Defaults to `now()` if omitted.
 - `description`: Required string, 5–2000 characters.
 - `result`: Required string, 3–1000 characters.
-- `performedById`: **Derived automatically** from session. Any client-sent `performedById` is ignored.
+- `performedById`: **Derived automatically** from session. Any client-sent `performedById` is ignored. Inactive accounts are rejected with 403 (**BR-04**).
 - `followUpRequired`: Required boolean.
 - `followUpNote`:
   - If `followUpRequired == true`: Required non-empty string (3–1000 characters).
-  - If `followUpRequired == false`: Optional string or null.
+  - If `followUpRequired == false`: **Strictly set to `null`** in database (client input cleared).
 - `attachmentNotes`: Optional string (up to 500 characters).
 
 #### Success Response: `201 Created`
-Returns the created `ActionTaken` object including the populated `performedBy` user object.
+Returns the created `ActionTaken` entity including the populated `performedBy` user object.
 
 #### Error Responses
-- `400 Bad Request`: Validation failure (e.g. missing follow-up note when `followUpRequired=true`, future date).
+- `400 Bad Request`: Validation failure:
   ```json
   {
-    "statusCode": 400,
-    "error": "Bad Request",
-    "code": "VALIDATION_ERROR",
-    "message": "Follow-up note is required when follow-up is requested.",
-    "details": [
-      { "field": "followUpNote", "message": "Follow-up note cannot be blank when follow-up is required." }
-    ]
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "Validation failed on one or more fields.",
+      "details": [
+        { "field": "followUpNote", "message": "Follow-up note cannot be blank when follow-up is required." }
+      ]
+    }
   }
   ```
 - `401 Unauthorized`: Not logged in.
-- `403 Forbidden`: Caller has `REQUESTER` role or is deactivated.
+- `403 Forbidden`: Caller has `REQUESTER` role or is an inactive account.
 - `404 Not Found`: Ticket not found.
 
 ---
 
 ### 3.3 Update Action Taken Record
-Updates an existing Action Taken record.
+Updates an existing Action Taken record following **Last-Write-Wins (LWW)** semantics.
 
 - **Method**: `PATCH`
 - **Path**: `/api/tickets/:id/actions-taken/:actionId`
@@ -272,7 +299,7 @@ Returns the updated `ActionTaken` entity.
 #### Error Responses
 - `400 Bad Request`: Validation failed.
 - `401 Unauthorized`: Not logged in.
-- `403 Forbidden`: Requester role or deactivated staff.
+- `403 Forbidden`: Requester role or deactivated account.
 - `404 Not Found`: Ticket or Action Taken record not found.
 
 ---
@@ -285,7 +312,7 @@ Transitions ticket status, calibrates priority, or records advisory resolution w
 - **Method**: `PATCH`
 - **Path**: `/api/tickets/:id/workflow`
 - **Allowed Roles**: 
-  - `REQUESTER` (Only for advisory resolution note; cannot transition status to `RESOLVED`)
+  - `REQUESTER` (Only for advisory resolution note `isRequesterAdvisory: true`; cannot transition status to `RESOLVED` or `CLOSED`)
   - `IT_STAFF`, `ADMIN` (Full status transition matrix)
 
 #### Request Body Schema
@@ -299,23 +326,20 @@ Transitions ticket status, calibrates priority, or records advisory resolution w
 }
 ```
 
-#### Validation & Business Rules:
-1. **Optimistic Locking**:
-   - `version` is **mandatory**.
-   - If `version` does not match the database `version`, reject immediately with `409 Conflict`.
-2. **Resolution Authority Gate**:
-   - If `status == "RESOLVED"` or `"CLOSED"` and caller role is `REQUESTER`:
-     - Reject with `403 Forbidden` (`message: "Requesters cannot set ticket status to Resolved."`).
-3. **Requester Advisory Resolution**:
-   - If `isRequesterAdvisory == true` and caller is `REQUESTER`:
-     - Do NOT mutate `Ticket.status`.
-     - Append an advisory comment: `[Requester Feedback: Problem Appears Resolved]`.
-     - Increment `version` and return `200 OK`.
-4. **Permitted Status Transition Matrix**:
-   - Check `currentStatus -> targetStatus` validity against BR-08. If invalid, return `400 Bad Request`.
-5. **Actions Taken Prerequisite for Resolution (BR-09.1)**:
-   - If `status == "RESOLVED"` or `"CLOSED"`, the ticket MUST possess at least one (`>= 1`) associated `ActionTaken` record.
-   - If the ticket has zero Actions Taken, the mutation must be rejected with `422 Unprocessable Entity`.
+#### Business Rules & Strict Evaluation Order:
+The backend evaluates workflow mutations in the following exact sequence:
+1. **Step 1: `401 Unauthorized`** (User authentication check).
+2. **Step 2: `403 Forbidden`** (Role check):
+   - If caller is `REQUESTER` and attempts any status transition (e.g. `status === "RESOLVED"` or `"CLOSED"`), return 403.
+   - If caller is `REQUESTER` attempting advisory resolution on a ticket they do NOT own, return 403.
+3. **Step 3: `400 Bad Request`** (Syntactic / Schema validation):
+   - Missing `version` parameter.
+   - Invalid status string not recognized in `TicketStatus` enum.
+4. **Step 4: `409 Conflict`** (Optimistic Concurrency check):
+   - If `submittedVersion !== ticket.version`, reject immediately without database mutation.
+5. **Step 5: `422 Unprocessable Entity`** (Semantic Domain Rules):
+   - If status transition is not permitted by BR-08 transition matrix, return 422 (`code: "INVALID_STATUS_TRANSITION"`).
+   - If target status is `RESOLVED` or `CLOSED` and ticket has zero Actions Taken records, return 422 (`code: "RESOLUTION_REQUIRES_ACTION_TAKEN"`).
 
 #### Success Response: `200 OK`
 ```json
@@ -329,11 +353,43 @@ Transitions ticket status, calibrates priority, or records advisory resolution w
 ```
 
 #### Error Responses
-- `400 Bad Request`: Invalid transition (e.g. `NEW -> CLOSED`).
-- `401 Unauthorized`: Not logged in.
-- `403 Forbidden`: Unauthorized role transition attempt (e.g. Requester attempting to set status to `RESOLVED`).
-- `404 Not Found`: Ticket not found.
-- `409 Conflict`: Concurrency conflict:
+- `400 Bad Request`:
+  ```json
+  {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "Version number is required for optimistic concurrency control."
+    }
+  }
+  ```
+- `401 Unauthorized`:
+  ```json
+  {
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Authentication required."
+    }
+  }
+  ```
+- `403 Forbidden`:
+  ```json
+  {
+    "error": {
+      "code": "FORBIDDEN",
+      "message": "Requesters cannot set ticket status to Resolved or Closed."
+    }
+  }
+  ```
+- `404 Not Found`:
+  ```json
+  {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Ticket not found."
+    }
+  }
+  ```
+- `409 Conflict`:
   ```json
   {
     "error": {
@@ -344,12 +400,21 @@ Transitions ticket status, calibrates priority, or records advisory resolution w
     }
   }
   ```
-- `422 Unprocessable Entity`: Actions Taken prerequisite not met:
+- `422 Unprocessable Entity` (Actions Taken Prerequisite):
   ```json
   {
-    "statusCode": 422,
-    "error": "Unprocessable Entity",
-    "code": "RESOLUTION_REQUIRES_ACTION_TAKEN",
-    "message": "A ticket cannot be resolved or closed without at least one recorded Action Taken documenting the work performed."
+    "error": {
+      "code": "RESOLUTION_REQUIRES_ACTION_TAKEN",
+      "message": "A ticket cannot be resolved or closed without at least one recorded Action Taken documenting the work performed."
+    }
+  }
+  ```
+- `422 Unprocessable Entity` (Invalid Matrix Transition):
+  ```json
+  {
+    "error": {
+      "code": "INVALID_STATUS_TRANSITION",
+      "message": "Status transition from NEW to CLOSED is not permitted by the status transition matrix."
+    }
   }
   ```
