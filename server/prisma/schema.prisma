@@ -96,9 +96,11 @@ model ticket {
   itPriority                      RequestedPriority
   resolvedIndicated               Boolean           @default(false)
   resolvedIndicatedAt             DateTime?
+  version                         Int               @default(1)
   attachment                      attachment[]
   internal_note                   internal_note[]
   public_comment                  public_comment[]
+  action_taken                    action_taken[]
   category                        category          @relation(fields: [categoryId], references: [id])
   user_ticket_ownerIdTouser       user?             @relation("ticket_ownerIdTouser", fields: [ownerId], references: [id])
   related_system                  related_system    @relation(fields: [relatedSystemId], references: [id])
@@ -114,6 +116,27 @@ model ticket {
   @@index([submittedById])
   @@index([submittedById, ticketDate])
   @@index([ticketDate])
+  @@index([updatedAt])
+}
+
+model action_taken {
+  id               Int      @id @default(autoincrement())
+  ticketId         Int
+  performedById    Int
+  actionDateTime   DateTime
+  description      String
+  result           String
+  followUpRequired Boolean  @default(false)
+  followUpNote     String?
+  attachmentNotes  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  ticket           ticket   @relation(fields: [ticketId], references: [id])
+  user             user     @relation(fields: [performedById], references: [id])
+
+  @@index([ticketId])
+  @@index([ticketId, actionDateTime])
+  @@index([performedById])
 }
 
 model user {
@@ -128,6 +151,7 @@ model user {
   requiresPasswordChange            Boolean          @default(false)
   failedLoginAttempts               Int              @default(0)
   lastFailedLoginAt                 DateTime?
+  action_taken                      action_taken[]
   internal_note                     internal_note[]
   public_comment                    public_comment[]
   session                           session[]

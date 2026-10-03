@@ -15,6 +15,12 @@ import {
     getInternalNotes,
     postInternalNote,
 } from '../controllers/comment.controller.js';
+import {
+    listActionsTaken,
+    createActionTaken,
+    updateActionTaken,
+} from '../controllers/actionsTaken.controller.js';
+import { updateTicketWorkflow } from '../controllers/workflow.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../utils/upload.js';
 
@@ -44,4 +50,16 @@ router.post('/tickets/:id/resolve-indication', requireAuth, postResolveIndicatio
 router.get('/tickets/:id/notes', requireAuth, getInternalNotes);
 router.post('/tickets/:id/notes', requireAuth, postInternalNote);
 
+// ─── Lab 4 Issue #2: Actions Taken CRUD ──────────────────────────────────────
+// GET  — REQUESTER (own ticket only), IT_STAFF, ADMIN
+// POST — IT_STAFF, ADMIN only (actor derived from session)
+router.get('/tickets/:id/actions-taken', requireAuth, listActionsTaken);
+router.post('/tickets/:id/actions-taken', requireAuth, createActionTaken);
+router.patch('/tickets/:id/actions-taken/:actionId', requireAuth, updateActionTaken);
+
+// ─── Lab 4 Issue #2: Ticket Workflow with Optimistic Concurrency ─────────────
+// PATCH — IT_STAFF/ADMIN for transitions; REQUESTER for advisory indication only
+router.patch('/tickets/:id/workflow', requireAuth, updateTicketWorkflow);
+
 export default router;
+
