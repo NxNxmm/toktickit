@@ -73,7 +73,8 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    const err: any = new Error(errorData.message || `API error: ${res.statusText}`);
+    const message = errorData.error?.message || errorData.message || (typeof errorData === 'string' ? errorData : `API error: ${res.statusText}`);
+    const err: any = new Error(message);
     err.statusCode = res.status;
     err.errorData = errorData;
     throw err;
@@ -587,4 +588,81 @@ export async function resetAdminUserPassword(id: number, newInitialPassword: str
 }
 
 export const resetUserPassword = resetAdminUserPassword;
+
+// ─── Lab 4 Issue #3: Actions Taken ───────────────────────────────────────────
+
+export interface ActionTakenPerformer {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+}
+
+export interface ActionTaken {
+  id: number;
+  ticketId: number;
+  actionDateTime: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  performedBy: ActionTakenPerformer | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListActionsTakenResponse {
+  ticketId: number;
+  actionsTaken: ActionTaken[];
+}
+
+export interface CreateActionTakenInput {
+  actionDateTime?: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionTakenInput {
+  actionDateTime?: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export async function getActionsTaken(
+  ticketId: number,
+  requesterId?: number | null
+): Promise<ListActionsTakenResponse> {
+  return apiFetch<ListActionsTakenResponse>(`/api/tickets/${ticketId}/actions-taken`, {}, requesterId);
+}
+
+export async function createActionTaken(
+  ticketId: number,
+  input: CreateActionTakenInput
+): Promise<ActionTaken> {
+  return apiFetch<ActionTaken>(`/api/tickets/${ticketId}/actions-taken`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateActionTaken(
+  ticketId: number,
+  actionId: number,
+  input: UpdateActionTakenInput
+): Promise<ActionTaken> {
+  return apiFetch<ActionTaken>(`/api/tickets/${ticketId}/actions-taken/${actionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
 

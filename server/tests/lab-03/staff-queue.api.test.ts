@@ -106,6 +106,7 @@ describe('GET /api/staff/tickets (Issue 5 — AC-5.1, AC-5.2, AC-5.3)', () => {
 
     afterAll(async () => {
         // Remove only the tickets created by this suite (and their dependents).
+        await getPrisma().action_taken.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });
         await getPrisma().internal_note.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });
         await getPrisma().public_comment.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });
         await getPrisma().attachment.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });

@@ -12,6 +12,7 @@ import {
   Attachment,
   PublicComment,
 } from '../api';
+import { ActionsTaken } from './ActionsTaken';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -905,6 +906,9 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
           </div>
         )}
       </div>
+
+      {/* ── Actions Taken Work Log (Lab 4 Issue #3 - Read-Only for Requester) ── */}
+      <ActionsTaken ticketId={ticket.id} isStaff={false} requesterId={requesterId} />
 
       {/* ── Public Comments Card ── */}
       <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', marginTop: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>

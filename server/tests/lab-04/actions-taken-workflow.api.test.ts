@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/app.js';
 import { getPrisma } from '../../src/prisma.js';
+import { ensureSeedData } from '../seed-helper.js';
 
 // ─── Staff accounts have requiresPasswordChange = true (BR-02 seed constraint).
 // Clear the flag before login so operational endpoints are reachable in tests.
@@ -49,6 +50,7 @@ describe('Lab 4 — Actions Taken API (Issue #2)', () => {
   beforeAll(async () => {
     // Clear requiresPasswordChange so staff can access operational endpoints
     await clearPasswordChangeFlag();
+    await ensureSeedData();
 
     [staffToken, adminToken, requesterToken, otherRequesterToken] = await Promise.all([
       loginAs('alex.turner@toktickit.kmutt.ac.th'),
@@ -513,6 +515,7 @@ describe('Lab 4 — Ticket Workflow API (Issue #2)', () => {
 
   beforeAll(async () => {
     await clearPasswordChangeFlag();
+    await ensureSeedData();
 
     [staffToken, adminToken, requesterToken] = await Promise.all([
       loginAs('alex.turner@toktickit.kmutt.ac.th'),
@@ -543,18 +546,24 @@ describe('Lab 4 — Ticket Workflow API (Issue #2)', () => {
 
   afterAll(async () => {
     // Restore tickets to their seed states
-    await getPrisma().ticket.update({
-      where: { id: ticket002Id },
-      data: { currentStatus: 'NEW', updatedAt: new Date() },
-    });
-    await getPrisma().ticket.update({
-      where: { id: ticket004Id },
-      data: { currentStatus: 'RESOLVED', updatedAt: new Date() },
-    });
-    await getPrisma().ticket.update({
-      where: { id: ticket006Id },
-      data: { currentStatus: 'OPEN', updatedAt: new Date() },
-    });
+    if (ticket002Id) {
+      await getPrisma().ticket.update({
+        where: { id: ticket002Id },
+        data: { currentStatus: 'NEW', updatedAt: new Date() },
+      });
+    }
+    if (ticket004Id) {
+      await getPrisma().ticket.update({
+        where: { id: ticket004Id },
+        data: { currentStatus: 'RESOLVED', updatedAt: new Date() },
+      });
+    }
+    if (ticket006Id) {
+      await getPrisma().ticket.update({
+        where: { id: ticket006Id },
+        data: { currentStatus: 'OPEN', updatedAt: new Date() },
+      });
+    }
     await restorePasswordChangeFlag();
   });
 

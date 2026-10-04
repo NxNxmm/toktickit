@@ -14,6 +14,7 @@ import {
   InternalNote,
   PublicComment,
 } from '../api';
+import { ActionsTaken } from './ActionsTaken';
 
 // ─── Helpers & Badges ─────────────────────────────────────────────────────────
 
@@ -508,6 +509,9 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
           </div>
         </div>
       </SectionCard>
+
+      {/* ── Actions Taken Work Log (Lab 4 Issue #3) ── */}
+      <ActionsTaken ticketId={ticket.id} isStaff={true} />
 
       {/* ── Dual Tabbed Communication (AC-6.4) ── */}
       <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
