@@ -99,7 +99,15 @@ export const updateTicketWorkflow = async (req: Request, res: Response) => {
                     },
                 });
             }
-            // Process advisory indication only (no version / transition needed)
+            // Process advisory indication (BR-10): log advisory comment & update resolvedIndicated
+            await getPrisma().public_comment.create({
+                data: {
+                    ticketId,
+                    authorId: req.user.id,
+                    content: '[Requester Feedback: Problem Appears Resolved]',
+                },
+            });
+
             const updated = await getPrisma().ticket.update({
                 where: { id: ticketId },
                 data: {

@@ -430,11 +430,16 @@ const ResolveModal: React.FC<{
   error?: string;
 }> = ({ onConfirm, onCancel, isLoading, error }) => {
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000, padding: '16px',
-    }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      data-testid="resolve-modal"
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 1000, padding: '16px',
+      }}
+    >
       <div style={{
         backgroundColor: '#fff', borderRadius: '12px', padding: '24px', maxWidth: '480px', width: '100%',
         boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
