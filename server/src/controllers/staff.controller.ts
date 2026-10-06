@@ -108,6 +108,7 @@ function formatStaffTicketDetail(t: StaffTicket) {
         currentStatus: t.currentStatus,
         resolvedIndicated: t.resolvedIndicated,
         resolvedIndicatedAt: t.resolvedIndicatedAt,
+        version: t.version,
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
         category: t.category,

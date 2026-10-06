@@ -461,6 +461,7 @@ export interface StaffTicketDetail {
   currentStatus: TicketStatus;
   resolvedIndicated: boolean;
   resolvedIndicatedAt: string | null;
+  version: number;
   createdAt: string;
   updatedAt: string;
   category: { id: number; name: string };
@@ -665,4 +666,43 @@ export async function updateActionTaken(
   });
 }
 
+// ─── Lab 4 Issue #4: Ticket Workflow & Concurrency ───────────────────────────
 
+export interface WorkflowUpdateInput {
+  status?: TicketStatus;
+  itPriority?: Priority;
+  resolutionNote?: string;
+  isRequesterAdvisory?: boolean;
+  version: number;
+}
+
+export interface WorkflowUpdateResult {
+  id: number;
+  status: TicketStatus;
+  version: number;
+  updatedAt: string;
+  message: string;
+  resolvedIndicated?: boolean;
+  resolvedIndicatedAt?: string | null;
+}
+
+export async function updateTicketWorkflow(
+  ticketId: number,
+  input: WorkflowUpdateInput
+): Promise<WorkflowUpdateResult> {
+  return apiFetch<WorkflowUpdateResult>(`/api/tickets/${ticketId}/workflow`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function submitRequesterAdvisory(
+  ticketId: number,
+): Promise<WorkflowUpdateResult> {
+  return apiFetch<WorkflowUpdateResult>(`/api/tickets/${ticketId}/workflow`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isRequesterAdvisory: true }),
+  });
+}
