@@ -52,11 +52,14 @@ function fileExt(mimeType: string): string {
 // ─── Status / Priority Badges ────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, React.CSSProperties> = {
-  NEW:         { backgroundColor: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE' },
-  IN_PROGRESS: { backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' },
-  RESOLVED:    { backgroundColor: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' },
-  CLOSED:      { backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' },
-  CANCELLED:   { backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
+  NEW:                   { backgroundColor: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE' },
+  OPEN:                  { backgroundColor: '#CFFAFE', color: '#155E75', border: '1px solid #A5F3FC' },
+  IN_PROGRESS:           { backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' },
+  WAITING_FOR_REQUESTER: { backgroundColor: '#EDE9FE', color: '#5B21B6', border: '1px solid #DDD6FE' },
+  RESOLVED:              { backgroundColor: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' },
+  CLOSED:                { backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' },
+  REOPENED:              { backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
+  CANCELLED:             { backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
 };
 
 const PRIORITY_STYLES: Record<string, React.CSSProperties> = {

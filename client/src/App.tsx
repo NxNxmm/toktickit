@@ -10,8 +10,17 @@ import { TicketDetail } from './components/TicketDetail';
 import { StaffQueue } from './components/StaffQueue';
 import { StaffTicketDetail } from './components/StaffTicketDetail';
 import { UserManagement } from './components/UserManagement';
+import { RequesterDashboard } from './components/RequesterDashboard';
+import { StaffDashboard } from './components/StaffDashboard';
 
-type AppView = 'my-tickets' | 'create-ticket' | 'ticket-detail' | 'staff-queue' | 'staff-ticket-detail' | 'admin-users';
+type AppView =
+  | 'dashboard'
+  | 'my-tickets'
+  | 'create-ticket'
+  | 'ticket-detail'
+  | 'staff-queue'
+  | 'staff-ticket-detail'
+  | 'admin-users';
 
 /** Returns the appropriate default landing view for a given user role. */
 function defaultViewForRole(role: string | undefined): AppView {
@@ -22,8 +31,9 @@ function defaultViewForRole(role: string | undefined): AppView {
 
 const MainApp: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<AppView>('my-tickets');
+  const [currentView, setCurrentView] = useState<AppView>('dashboard');
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [queueFilter, setQueueFilter] = useState<string | undefined>(undefined);
 
   // Reset selected ticket and view when user changes (e.g. login/logout/switch)
   React.useEffect(() => {
@@ -61,15 +71,19 @@ const MainApp: React.FC = () => {
 
   const handleViewTicket = (id: number) => {
     setSelectedTicketId(id);
-    // IT Staff / Admin open the operational detail view (Issue 6);
-    // Requesters open the classic requester detail view.
     setCurrentView(isStaff ? 'staff-ticket-detail' : 'ticket-detail');
   };
 
   const handleBackToTickets = () => {
     setSelectedTicketId(null);
-    // Return to the role-appropriate queue view
     setCurrentView(defaultViewForRole(user.role));
+  };
+
+  /** Navigate from Dashboard cards — supports filter param for staff-queue & my-tickets */
+  const handleDashboardNavigate = (view: string, filter?: string) => {
+    setSelectedTicketId(null);
+    setQueueFilter(filter);
+    setCurrentView(view as AppView);
   };
 
   return (
@@ -79,23 +93,45 @@ const MainApp: React.FC = () => {
         currentView={currentView}
         onNavigate={(view) => {
           setSelectedTicketId(null);
+          setQueueFilter(undefined);
           setCurrentView(view as AppView);
         }}
       />
 
       {/* Main Content Area */}
       <main className="container py-4" style={{ maxWidth: '1200px' }}>
+        {/* Dashboard — role-aware (AC-05-01, AC-05-02, FR-14, FR-15) */}
+        {currentView === 'dashboard' && user.role === 'REQUESTER' && (
+          <RequesterDashboard
+            onNavigate={handleDashboardNavigate}
+            onViewTicket={handleViewTicket}
+          />
+        )}
+        {currentView === 'dashboard' && isStaff && (
+          <StaffDashboard
+            onNavigate={handleDashboardNavigate}
+            onViewTicket={handleViewTicket}
+          />
+        )}
+
         {/* REQUESTER: My Tickets list */}
         {currentView === 'my-tickets' && user.role === 'REQUESTER' && (
           <MyTicketsList
+            key={queueFilter ?? 'all'}
             onCreateTicket={() => setCurrentView('create-ticket')}
             onViewTicket={handleViewTicket}
+            initialFilter={queueFilter}
           />
         )}
 
         {/* Create Ticket (REQUESTER) */}
         {currentView === 'create-ticket' && user.role === 'REQUESTER' && (
           <CreateTicketForm onSuccess={() => setCurrentView('my-tickets')} />
+        )}
+
+        {/* Create Ticket (Staff/Admin can also submit tickets) */}
+        {currentView === 'create-ticket' && isStaff && (
+          <CreateTicketForm onSuccess={() => setCurrentView('staff-queue')} />
         )}
 
         {/* Ticket Detail */}
@@ -108,7 +144,11 @@ const MainApp: React.FC = () => {
 
         {/* IT Staff / Admin: Staff Queue (AC-5.1, AC-5.4) */}
         {currentView === 'staff-queue' && isStaff && (
-          <StaffQueue onViewTicket={handleViewTicket} />
+          <StaffQueue
+            key={queueFilter ?? 'all'}
+            onViewTicket={handleViewTicket}
+            initialFilter={queueFilter}
+          />
         )}
 
         {/* IT Staff / Admin: Staff Ticket Operational Detail (AC-6.x) */}

@@ -93,6 +93,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                 {user.role === 'REQUESTER' && (
                   <>
                     <button
+                      data-testid="nav-dashboard"
+                      className={`btn btn-sm ${currentView === 'dashboard'
+                          ? 'btn-light text-success fw-bold'
+                          : 'btn-outline-light'
+                        }`}
+                      style={navButtonStyle}
+                      onClick={() => {
+                        onNavigate('dashboard');
+                        setIsNavCollapsed(true);
+                      }}
+                    >
+                      📊 Dashboard
+                    </button>
+                    <button
+                      data-testid="nav-my-tickets"
                       className={`btn btn-sm ${currentView === 'my-tickets' || currentView === 'ticket-detail'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
@@ -106,6 +121,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                       My Tickets
                     </button>
                     <button
+                      data-testid="nav-create-ticket"
                       className={`btn btn-sm ${currentView === 'create-ticket'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
@@ -124,6 +140,54 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                 {user.role === 'IT_STAFF' && (
                   <>
                     <button
+                      data-testid="nav-dashboard"
+                      className={`btn btn-sm ${currentView === 'dashboard'
+                          ? 'btn-light text-success fw-bold'
+                          : 'btn-outline-light'
+                        }`}
+                      style={navButtonStyle}
+                      onClick={() => {
+                        onNavigate('dashboard');
+                        setIsNavCollapsed(true);
+                      }}
+                    >
+                      📊 Dashboard
+                    </button>
+                    <button
+                      data-testid="nav-ticket-queue"
+                      className={`btn btn-sm ${currentView === 'staff-queue' || currentView === 'staff-ticket-detail'
+                          ? 'btn-light text-success fw-bold'
+                          : 'btn-outline-light'
+                        }`}
+                      style={navButtonStyle}
+                      onClick={() => {
+                        onNavigate('staff-queue');
+                        setIsNavCollapsed(true);
+                      }}
+                    >
+                      Ticket Queue
+                    </button>
+                  </>
+                )}
+
+                {user.role === 'ADMIN' && (
+                  <>
+                    <button
+                      data-testid="nav-dashboard"
+                      className={`btn btn-sm ${currentView === 'dashboard'
+                          ? 'btn-light text-success fw-bold'
+                          : 'btn-outline-light'
+                        }`}
+                      style={navButtonStyle}
+                      onClick={() => {
+                        onNavigate('dashboard');
+                        setIsNavCollapsed(true);
+                      }}
+                    >
+                      📊 Dashboard
+                    </button>
+                    <button
+                      data-testid="nav-ticket-queue"
                       className={`btn btn-sm ${currentView === 'staff-queue' || currentView === 'staff-ticket-detail'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
@@ -137,35 +201,20 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                       Ticket Queue
                     </button>
                     <button
-                      className={`btn btn-sm ${currentView === 'create-ticket'
+                      data-testid="nav-user-management"
+                      className={`btn btn-sm ${currentView === 'admin-users'
                           ? 'btn-light text-success fw-bold'
                           : 'btn-outline-light'
                         }`}
                       style={navButtonStyle}
                       onClick={() => {
-                        onNavigate('create-ticket');
+                        onNavigate('admin-users');
                         setIsNavCollapsed(true);
                       }}
                     >
-                      + Create Ticket
+                      User Management
                     </button>
                   </>
-                )}
-
-                {user.role === 'ADMIN' && (
-                  <button
-                    className={`btn btn-sm ${currentView === 'admin-users'
-                        ? 'btn-light text-success fw-bold'
-                        : 'btn-outline-light'
-                      }`}
-                    style={navButtonStyle}
-                    onClick={() => {
-                      onNavigate('admin-users');
-                      setIsNavCollapsed(true);
-                    }}
-                  >
-                    User Management
-                  </button>
                 )}
               </div>
 

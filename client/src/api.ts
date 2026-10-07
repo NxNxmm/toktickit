@@ -706,3 +706,64 @@ export async function submitRequesterAdvisory(
     body: JSON.stringify({ isRequesterAdvisory: true }),
   });
 }
+
+// ─── Lab 4 Issue #5: Dashboard APIs ──────────────────────────────────────────
+
+export interface DashboardRecentTicket {
+  id: number;
+  ticketNumber: string;
+  title: string;
+  status: TicketStatus;
+  requestedPriority?: Priority;
+  itPriority?: Priority;
+  assignedStaff?: { id: number; name: string } | null;
+  requester?: { id: number; name: string } | null;
+  updatedAt: string;
+}
+
+export interface RequesterDashboardMetrics {
+  totalOpen: number;
+  waitingForRequester: number;
+  recentlyUpdated: number;
+  recentlyResolved: number;
+}
+
+export interface RequesterDashboardData {
+  metrics: RequesterDashboardMetrics;
+  recentTickets: DashboardRecentTicket[];
+}
+
+export interface StaffDashboardMetrics {
+  newTickets: number;
+  openTickets: number;
+  inProgressTickets: number;
+  waitingForRequesterTickets: number;
+  myAssignedTickets: number;
+}
+
+export interface StaffDashboardData {
+  metrics: StaffDashboardMetrics;
+  recentTickets: DashboardRecentTicket[];
+}
+
+export interface AdminDashboardData {
+  operational: StaffDashboardMetrics;
+  userStats: {
+    activeRequesters: number;
+    activeStaff: number;
+    activeAdmins: number;
+    totalUsers: number;
+  };
+}
+
+export async function getRequesterDashboard(): Promise<RequesterDashboardData> {
+  return apiFetch<RequesterDashboardData>('/api/dashboard/requester');
+}
+
+export async function getStaffDashboard(): Promise<StaffDashboardData> {
+  return apiFetch<StaffDashboardData>('/api/dashboard/staff');
+}
+
+export async function getAdminDashboard(): Promise<AdminDashboardData> {
+  return apiFetch<AdminDashboardData>('/api/dashboard/admin');
+}
