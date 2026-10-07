@@ -223,10 +223,8 @@ describe('StaffDashboard (UI-04-09)', () => {
 
     renderStaffDashboard(onNavigate);
 
-    await waitFor(() => expect(screen.getByTestId('quick-action-create-ticket')).toBeDefined());
-
-    fireEvent.click(screen.getByTestId('quick-action-create-ticket'));
-    expect(onNavigate).toHaveBeenCalledWith('create-ticket');
+    await waitFor(() => expect(screen.getByTestId('quick-action-search-tickets')).toBeDefined());
+    expect(screen.queryByTestId('quick-action-create-ticket')).toBeNull();
 
     fireEvent.click(screen.getByTestId('quick-action-search-tickets'));
     expect(onNavigate).toHaveBeenCalledWith('staff-queue');

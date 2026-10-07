@@ -21,14 +21,14 @@ const STATUS_LABEL: Record<TicketStatus, string> = {
 };
 
 const STATUS_STYLES: Record<string, React.CSSProperties> = {
-  NEW: { backgroundColor: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE' },
-  OPEN: { backgroundColor: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0' },
+  NEW: { backgroundColor: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE' },
+  OPEN: { backgroundColor: '#CFFAFE', color: '#155E75', border: '1px solid #A5F3FC' },
   IN_PROGRESS: { backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' },
-  WAITING_FOR_REQUESTER: { backgroundColor: '#FFF7ED', color: '#9A3412', border: '1px solid #FFEDD5' },
-  RESOLVED: { backgroundColor: '#F0FDF4', color: '#166534', border: '1px solid #BBF7D0' },
+  WAITING_FOR_REQUESTER: { backgroundColor: '#EDE9FE', color: '#5B21B6', border: '1px solid #DDD6FE' },
+  RESOLVED: { backgroundColor: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' },
   CLOSED: { backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' },
-  REOPENED: { backgroundColor: '#FEF2F2', color: '#991B1B', border: '1px solid #FECACA' },
-  CANCELLED: { backgroundColor: '#F3F4F6', color: '#6B7280', border: '1px solid #D1D5DB' },
+  REOPENED: { backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
+  CANCELLED: { backgroundColor: '#F9FAFB', color: '#6B7280', border: '1px solid #E5E7EB' },
 };
 
 const BADGE_BASE: React.CSSProperties = {

@@ -17,6 +17,8 @@ import * as api from '../api';
 interface RequesterDashboardProps {
   /** Navigate to a filtered tickets view */
   onNavigate: (view: string, filter?: string) => void;
+  /** Navigate into a ticket's detail page */
+  onViewTicket?: (ticketId: number) => void;
 }
 
 // ─── Skeleton Card ────────────────────────────────────────────────────────────
@@ -43,32 +45,33 @@ function SkeletonCard() {
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
-  const MAP: Record<string, { bg: string; color: string; icon: string }> = {
-    NEW: { bg: '#EFF6FF', color: '#1D4ED8', icon: '🔵' },
-    OPEN: { bg: '#ECFDF5', color: '#065F46', icon: '🟢' },
-    IN_PROGRESS: { bg: '#FEF3C7', color: '#92400E', icon: '🟡' },
-    WAITING_FOR_REQUESTER: { bg: '#FFF7ED', color: '#9A3412', icon: '🟠' },
-    RESOLVED: { bg: '#F0FDF4', color: '#166534', icon: '✅' },
-    CLOSED: { bg: '#F3F4F6', color: '#374151', icon: '⚪' },
-    REOPENED: { bg: '#FEF2F2', color: '#991B1B', icon: '🔴' },
-    CANCELLED: { bg: '#F3F4F6', color: '#6B7280', icon: '✖️' },
+  const MAP: Record<string, { bg: string; color: string; border: string }> = {
+    NEW: { bg: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE' },
+    OPEN: { bg: '#CFFAFE', color: '#155E75', border: '1px solid #A5F3FC' },
+    IN_PROGRESS: { bg: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' },
+    WAITING_FOR_REQUESTER: { bg: '#EDE9FE', color: '#5B21B6', border: '1px solid #DDD6FE' },
+    RESOLVED: { bg: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' },
+    CLOSED: { bg: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' },
+    REOPENED: { bg: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
+    CANCELLED: { bg: '#F9FAFB', color: '#6B7280', border: '1px solid #E5E7EB' },
   };
-  const style = MAP[status] ?? { bg: '#F3F4F6', color: '#374151', icon: '•' };
+  const style = MAP[status] ?? { bg: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' };
   return (
     <span
       style={{
         backgroundColor: style.bg,
         color: style.color,
-        border: `1px solid ${style.color}30`,
+        border: style.border,
         fontWeight: 600,
         fontSize: '0.72rem',
         padding: '0.2rem 0.55rem',
         borderRadius: '9999px',
         letterSpacing: '0.02em',
         whiteSpace: 'nowrap',
+        display: 'inline-block',
       }}
     >
-      {style.icon} {status.replace(/_/g, ' ')}
+      {status.replace(/_/g, ' ')}
     </span>
   );
 }
@@ -179,7 +182,7 @@ function EmptyRecentTickets({ onCreateTicket }: { onCreateTicket: () => void }) 
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onNavigate }) => {
+export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onNavigate, onViewTicket }) => {
   const { user } = useAuth();
 
   const [data, setData] = useState<api.RequesterDashboardData | null>(null);
@@ -214,7 +217,7 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onNaviga
   return (
     <div data-testid="requester-dashboard" style={{ maxWidth: '1200px', margin: '0 auto' }}>
       {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '28px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '28px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: '#1A2820' }}>
             Welcome, {user?.name?.split(' ')[0]}! 👋
@@ -223,26 +226,106 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onNaviga
             Here&apos;s the latest on your requests.
           </p>
         </div>
-        <button
-          data-testid="dashboard-refresh-btn"
-          onClick={load}
-          disabled={loading}
-          style={{
-            padding: '8px 18px',
-            backgroundColor: loading ? '#D1D5DB' : '#006B3C',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            fontWeight: 600,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          {loading ? '⟳ Loading…' : '🔄 Refresh'}
-        </button>
+
+        {/* Right Header Area: Quick Actions Box + Refresh Button */}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          {/* Rounded-rectangle box for Quick Actions */}
+          <div
+            data-testid="dashboard-quick-actions"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E5E7EB',
+              borderRadius: '12px',
+              padding: '6px 14px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#1A2820',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Quick Actions:
+            </span>
+            <button
+              data-testid="quick-action-create-ticket"
+              aria-label="Create new ticket"
+              onClick={() => onNavigate('create-ticket')}
+              style={{
+                padding: '6px 14px',
+                backgroundColor: '#006B3C',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'background-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#005A33'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#006B3C'; }}
+            >
+              ➕ Create Ticket
+            </button>
+            <button
+              data-testid="quick-action-view-my-tickets"
+              aria-label="View submitted ticket list"
+              onClick={() => onNavigate('my-tickets')}
+              style={{
+                padding: '6px 14px',
+                backgroundColor: '#EAF6EF',
+                color: '#006B3C',
+                border: '1px solid #A7F3D0',
+                borderRadius: '8px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'background-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#D1FAE5'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#EAF6EF'; }}
+            >
+              📂 View My Tickets
+            </button>
+          </div>
+
+          <button
+            data-testid="dashboard-refresh-btn"
+            onClick={load}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: loading ? '#D1D5DB' : '#fff',
+              color: '#374151',
+              border: '1px solid #D1D5DB',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '0.875rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'background-color 0.15s ease',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+            }}
+            onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F9FAFB'; }}
+            onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#fff'; }}
+          >
+            {loading ? '⟳ Loading…' : '🔄 Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* ── Error Banner ── */}
@@ -272,8 +355,24 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onNaviga
         </div>
       )}
 
+      {/* Responsive layout style for 4 metric cards stretching full width */}
+      <style>{`
+        .requester-metric-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 16px;
+          margin-bottom: 28px;
+          width: 100%;
+        }
+        @media (max-width: 992px) {
+          .requester-metric-cards-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+          }
+        }
+      `}</style>
+
       {/* ── Metric Cards ── */}
-      <div style={cardGridStyle}>
+      <div className="requester-metric-cards-grid">
         {loading ? (
           <>
             <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
@@ -320,148 +419,91 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onNaviga
         )}
       </div>
 
-      {/* ── Lower Grid: Recent Tickets + Quick Actions ── */}
+      {/* ── Recent Tickets ── */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
-          gap: '20px',
-          alignItems: 'start',
+          backgroundColor: '#fff',
+          border: '1px solid #E5E7EB',
+          borderRadius: '12px',
+          padding: '24px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         }}
       >
-        {/* Recent Tickets */}
-        <div
-          style={{
-            backgroundColor: '#fff',
-            border: '1px solid #E5E7EB',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          }}
+        <h2
+          data-testid="recent-tickets-heading"
+          style={{ margin: '0 0 16px', fontSize: '1rem', fontWeight: 700, color: '#1A2820' }}
         >
-          <h2
-            data-testid="recent-tickets-heading"
-            style={{ margin: '0 0 16px', fontSize: '1rem', fontWeight: 700, color: '#1A2820' }}
-          >
-            My Recent Tickets
-          </h2>
+          My Recent Tickets
+        </h2>
 
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  style={{ height: '48px', borderRadius: '8px', backgroundColor: '#E5E7EB', animation: 'pulse 1.5s ease-in-out infinite' }}
-                />
-              ))}
-            </div>
-          ) : !data?.recentTickets?.length ? (
-            <EmptyRecentTickets onCreateTicket={() => onNavigate('create-ticket')} />
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table data-testid="recent-tickets-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-                    <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Ticket #</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Title</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Status</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.recentTickets.map((t) => (
-                    <tr
-                      key={t.id}
-                      data-testid={`recent-ticket-row-${t.id}`}
-                      style={{
-                        borderBottom: '1px solid #F3F4F6',
-                        transition: 'background-color 0.12s ease',
-                      }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#F9FAFB'; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = ''; }}
-                    >
-                      <td style={{ padding: '12px', fontWeight: 600, color: '#006B3C', whiteSpace: 'nowrap' }}>
-                        {t.ticketNumber}
-                      </td>
-                      <td style={{ padding: '12px', color: '#1A2820', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {t.title}
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <StatusBadge status={t.status} />
-                      </td>
-                      <td style={{ padding: '12px', color: '#6B7280', whiteSpace: 'nowrap' }}>
-                        {new Date(t.updatedAt).toLocaleDateString('th-TH', {
-                          year: 'numeric', month: 'short', day: 'numeric',
-                        })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Actions */}
-        <div
-          style={{
-            backgroundColor: '#fff',
-            border: '1px solid #E5E7EB',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          }}
-        >
-          <h2 style={{ margin: '0 0 16px', fontSize: '1rem', fontWeight: 700, color: '#1A2820' }}>
-            Quick Actions
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button
-              data-testid="quick-action-create-ticket"
-              aria-label="Create new ticket"
-              onClick={() => onNavigate('create-ticket')}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                backgroundColor: '#006B3C',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                textAlign: 'left',
-                transition: 'background-color 0.15s ease',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#005A33'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#006B3C'; }}
-            >
-              ➕ Create Ticket
-            </button>
-            <button
-              data-testid="quick-action-view-my-tickets"
-              aria-label="View submitted ticket list"
-              onClick={() => onNavigate('my-tickets')}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                backgroundColor: '#EAF6EF',
-                color: '#006B3C',
-                border: '1px solid #A7F3D0',
-                borderRadius: '8px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                textAlign: 'left',
-                transition: 'background-color 0.15s ease',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#D1FAE5'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#EAF6EF'; }}
-            >
-              📂 View My Tickets
-            </button>
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{ height: '48px', borderRadius: '8px', backgroundColor: '#E5E7EB', animation: 'pulse 1.5s ease-in-out infinite' }}
+              />
+            ))}
           </div>
-        </div>
+        ) : !data?.recentTickets?.length ? (
+          <EmptyRecentTickets onCreateTicket={() => onNavigate('create-ticket')} />
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table data-testid="recent-tickets-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Ticket #</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Title</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Status</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#4B5563' }}>Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recentTickets.map((t) => (
+                  <tr
+                    key={t.id}
+                    data-testid={`recent-ticket-row-${t.id}`}
+                    onClick={() => onViewTicket?.(t.id)}
+                    style={{
+                      borderBottom: '1px solid #F3F4F6',
+                      transition: 'background-color 0.12s ease',
+                      cursor: onViewTicket ? 'pointer' : 'default',
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#EAF6EF'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = ''; }}
+                  >
+                    <td style={{ padding: '12px', fontWeight: 600, color: '#006B3C', whiteSpace: 'nowrap' }}>
+                      <button
+                        type="button"
+                        style={{
+                          background: 'none', border: 'none', padding: 0,
+                          fontWeight: 600, color: '#006B3C',
+                          fontFamily: '"SFMono-Regular", Consolas, monospace',
+                          fontSize: '13px', cursor: 'pointer',
+                          textDecoration: 'underline', textUnderlineOffset: '2px',
+                        }}
+                        onClick={(e) => { e.stopPropagation(); onViewTicket?.(t.id); }}
+                      >
+                        {t.ticketNumber}
+                      </button>
+                    </td>
+                    <td style={{ padding: '12px', color: '#1A2820' }}>
+                      {t.title}
+                    </td>
+                    <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
+                      <StatusBadge status={t.status} />
+                    </td>
+                    <td style={{ padding: '12px', color: '#6B7280', whiteSpace: 'nowrap' }}>
+                      {new Date(t.updatedAt).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Pulse animation */}

@@ -102,17 +102,25 @@ const MainApp: React.FC = () => {
       <main className="container py-4" style={{ maxWidth: '1200px' }}>
         {/* Dashboard — role-aware (AC-05-01, AC-05-02, FR-14, FR-15) */}
         {currentView === 'dashboard' && user.role === 'REQUESTER' && (
-          <RequesterDashboard onNavigate={handleDashboardNavigate} />
+          <RequesterDashboard
+            onNavigate={handleDashboardNavigate}
+            onViewTicket={handleViewTicket}
+          />
         )}
         {currentView === 'dashboard' && isStaff && (
-          <StaffDashboard onNavigate={handleDashboardNavigate} />
+          <StaffDashboard
+            onNavigate={handleDashboardNavigate}
+            onViewTicket={handleViewTicket}
+          />
         )}
 
         {/* REQUESTER: My Tickets list */}
         {currentView === 'my-tickets' && user.role === 'REQUESTER' && (
           <MyTicketsList
+            key={queueFilter ?? 'all'}
             onCreateTicket={() => setCurrentView('create-ticket')}
             onViewTicket={handleViewTicket}
+            initialFilter={queueFilter}
           />
         )}
 
@@ -136,7 +144,11 @@ const MainApp: React.FC = () => {
 
         {/* IT Staff / Admin: Staff Queue (AC-5.1, AC-5.4) */}
         {currentView === 'staff-queue' && isStaff && (
-          <StaffQueue onViewTicket={handleViewTicket} />
+          <StaffQueue
+            key={queueFilter ?? 'all'}
+            onViewTicket={handleViewTicket}
+            initialFilter={queueFilter}
+          />
         )}
 
         {/* IT Staff / Admin: Staff Ticket Operational Detail (AC-6.x) */}

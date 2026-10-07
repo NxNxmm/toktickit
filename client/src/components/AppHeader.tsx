@@ -167,20 +167,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
                     >
                       Ticket Queue
                     </button>
-                    <button
-                      data-testid="nav-create-ticket"
-                      className={`btn btn-sm ${currentView === 'create-ticket'
-                          ? 'btn-light text-success fw-bold'
-                          : 'btn-outline-light'
-                        }`}
-                      style={navButtonStyle}
-                      onClick={() => {
-                        onNavigate('create-ticket');
-                        setIsNavCollapsed(true);
-                      }}
-                    >
-                      + Create Ticket
-                    </button>
                   </>
                 )}
 

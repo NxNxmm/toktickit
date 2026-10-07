@@ -4,6 +4,7 @@ import * as api from '../api';
 
 interface StaffQueueProps {
   onViewTicket?: (ticketId: number) => void;
+  initialFilter?: string;
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -82,17 +83,35 @@ function StatusBadge({ status }: { status: string }) {
 
 type SortField = 'ticketNo' | 'createdAt' | 'updatedAt' | 'requestedPriority' | 'itPriority' | 'currentStatus';
 
-export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
+export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket, initialFilter }) => {
   const { user } = useAuth();
+
+  const isOwnerMe = initialFilter === 'me';
+  const initialOwnerVal = isOwnerMe && user?.id ? String(user.id) : '';
+  const initialStatusVal = isOwnerMe ? 'open' : (initialFilter ?? '');
 
   // Filter & search state
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(initialStatusVal);
   const [filterReqPriority, setFilterReqPriority] = useState('');
   const [filterItPriority, setFilterItPriority] = useState('');
-  const [filterOwner, setFilterOwner] = useState('');
+  const [filterOwner, setFilterOwner] = useState(initialOwnerVal);
+
+  useEffect(() => {
+    if (initialFilter === 'me') {
+      if (user?.id) {
+        setFilterOwner(String(user.id));
+        setFilterStatus('open');
+        setPage(1);
+      }
+    } else if (initialFilter) {
+      setFilterStatus(initialFilter);
+      setFilterOwner('');
+      setPage(1);
+    }
+  }, [initialFilter, user?.id]);
 
   // Sort state
   const [sortBy, setSortBy] = useState<SortField>('createdAt');
@@ -110,6 +129,7 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
 
   // Reference data
   const [categories, setCategories] = useState<api.Category[]>([]);
+  const [assignees, setAssignees] = useState<api.StaffAssignee[]>([]);
 
   // Debounce search
   useEffect(() => {
@@ -120,16 +140,25 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  // Load categories
+  // Load categories & assignees
   useEffect(() => {
     fetch('/api/categories')
       .then((r) => (r.ok ? r.json() : []))
       .then(setCategories)
       .catch(() => setCategories([]));
+
+    api.getStaffAssignees()
+      .then(setAssignees)
+      .catch(() => setAssignees([]));
   }, []);
 
   // Fetch queue
   const fetchQueue = useCallback(async () => {
+    // If navigating to 'my queue' specifically, wait until filterOwner is resolved
+    if (initialFilter === 'me' && !filterOwner) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -289,6 +318,8 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
           <div className="col-6 col-md-4 col-lg-2">
             <select id="filter-status" aria-label="Filter by status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">All Statuses</option>
+              <option value="open">All Open</option>
+              <option value="recent">Recently Updated</option>
               {['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'REOPENED', 'CANCELLED'].map((s) => (
                 <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
               ))}
@@ -310,7 +341,15 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
             <select id="filter-owner" aria-label="Filter by owner" value={filterOwner} onChange={(e) => { setFilterOwner(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">All Owners</option>
               <option value="unassigned">Unassigned</option>
-              {user && <option value={user.id}>{user.name} (me)</option>}
+              {assignees.length > 0 ? (
+                assignees.map((a) => (
+                  <option key={a.id} value={String(a.id)}>
+                    {a.name}{user && a.id === user.id ? ' (me)' : ''}
+                  </option>
+                ))
+              ) : (
+                user && <option value={String(user.id)}>{user.name} (me)</option>
+              )}
             </select>
           </div>
           {hasActiveFilters && (

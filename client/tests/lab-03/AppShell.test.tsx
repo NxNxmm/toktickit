@@ -77,7 +77,7 @@ describe('UI-03: App Shell Renders User Name and Role Badge (FR-04, AC-3.5)', ()
       expect(screen.getByText('AT')).toBeInTheDocument();
       expect(screen.getByText('IT Staff')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /ticket queue/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /\+ create ticket/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /\+ create ticket/i })).not.toBeInTheDocument();
     });
   });
 
@@ -144,7 +144,6 @@ describe('UI-03: App Shell Renders User Name and Role Badge (FR-04, AC-3.5)', ()
 
     const navButtons = [
       screen.getByRole('button', { name: /ticket queue/i }),
-      screen.getByRole('button', { name: /\+ create ticket/i }),
       screen.getByRole('button', { name: /logout/i }),
     ];
     navButtons.forEach((button) => {
