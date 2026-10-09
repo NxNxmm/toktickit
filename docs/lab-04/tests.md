@@ -62,6 +62,17 @@ This document establishes the comprehensive Test Driven Development (TDD) and Te
 
 ## 3. Test Execution Guidelines
 
+> **Seed-state contract (re-runnability).** The server suite runs an automatic
+> `globalSetup` (`server/tests/global-setup.ts`) that re-applies the idempotent
+> seed (`server/prisma/seed.ts`) before the API tests start. This restores the
+> documented development credentials (`Password123!`) for the seeded accounts,
+> which is what the API suites assume. The E2E suite deliberately re-provisions
+> the seeded IT Staff accounts through the admin reset flow (leaving their live
+> password drifted to an E2E-only value), so without this setup a plain
+> `npm test` run executed *after* `npx playwright test` would fail logins. The
+> global setup makes both commands re-runnable in any order and any number of
+> times without a manual re-seed.
+
 1. **Backend Integration Tests**:
    ```bash
    cd server

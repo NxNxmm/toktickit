@@ -1,7 +1,8 @@
 import { PrismaClient, UserRole, RequestedPriority, TicketStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { pathToFileURL } from "node:url";
 
-const prisma = new PrismaClient();
+export const prisma = new PrismaClient();
 
 // All seeded accounts use "Password123!" as their development password.
 const DEV_PASSWORD = "Password123!";
@@ -10,7 +11,13 @@ async function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain, 10);
 }
 
-async function main() {
+/**
+ * Idempotently provisions the development seed data. Exported so the test
+ * harness (`server/tests/global-setup.ts`) can canonize the database before a
+ * server test run, and entry-point guarded so `npm run prisma:seed` — and the
+ * Prisma `prisma.seed` hook — keep working exactly as before.
+ */
+export async function runSeed() {
   console.log("Starting Lab 4 seed...");
 
   // ─────────────────────────────────────────────────
@@ -335,11 +342,21 @@ async function main() {
   console.log("   Development password for all accounts: Password123!");
 }
 
-main()
-  .catch((e) => {
-    console.error("Error during seeding:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Run the seed automatically only when executed directly (e.g. `npm run
+// prisma:seed` or Prisma's `prisma.seed` hook). Importing seed.ts — as the
+// test harness does — must not fire a background side effect.
+const isDirectEntry =
+  process.argv[1] &&
+  import.meta.url.replace(/\\/g, "/").toLowerCase() ===
+    pathToFileURL(process.argv[1]).href.replace(/\\/g, "/").toLowerCase();
+
+if (isDirectEntry) {
+  runSeed()
+    .catch((e) => {
+      console.error("Error during seeding:", e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

@@ -1,0 +1,18 @@
+{
+  "name": "toktickit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TokTickIT - IT Service Desk Application (root workspace for client, server and E2E tests)",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "npm --prefix client run build && npm --prefix server run build",
+    "seed": "npm --prefix server run prisma:seed",
+    "test": "npm --prefix server test && npm --prefix client test",
+    "test:e2e": "playwright test",
+    "screenshots": "node scripts/generate-screenshots.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

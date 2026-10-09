@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useModalA11y } from '../hooks/useModalA11y';
 import {
   ActionTaken,
   CreateActionTakenInput,
@@ -176,6 +177,9 @@ export const ActionsTaken: React.FC<ActionsTakenProps> = ({
     setFormErrors({});
     setServerError(null);
   };
+
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useModalA11y({ open: isModalOpen, onClose: handleCloseModal, dialogRef });
 
   // Handle Form Change
   const handleChange = (
@@ -705,10 +709,12 @@ export const ActionsTaken: React.FC<ActionsTakenProps> = ({
       {/* ── Create / Edit Modal (AC-6.3) ── */}
       {isModalOpen && (
         <div
+          ref={dialogRef}
           data-testid="action-taken-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
+          tabIndex={-1}
           style={{
             position: 'fixed',
             top: 0,

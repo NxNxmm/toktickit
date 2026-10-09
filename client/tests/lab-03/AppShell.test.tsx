@@ -32,16 +32,24 @@ describe('UI-03: App Shell Renders User Name and Role Badge (FR-04, AC-3.5)', ()
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
-    // Mock getTickets to prevent empty ticket load error
-    vi.spyOn(api, 'apiFetch').mockImplementation((endpoint: string) => {
-      if (endpoint.includes('/api/tickets')) {
-        return Promise.resolve({
-          items: [],
-          pagination: { page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
-        }) as any;
-      }
-      return Promise.resolve([]) as any;
+    // Deterministic network boundary so no shell view hits a real API.
+    globalThis.fetch = vi.fn().mockImplementation((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve(url.includes('/api/categories') ? [{ id: 1, name: 'Hardware' }] : []),
+      } as Response)
+    );
+    vi.spyOn(api, 'getTickets').mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
     });
+    vi.spyOn(api, 'getStaffTickets').mockResolvedValue({
+      tickets: [],
+      pagination: { page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
+    });
+    vi.spyOn(api, 'getStaffAssignees').mockResolvedValue([]);
+    vi.spyOn(api, 'getAdminUsers').mockResolvedValue([]);
   });
 
   it('renders authenticated Requester name, initials, role badge and requester links', async () => {

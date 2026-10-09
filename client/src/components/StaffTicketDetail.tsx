@@ -17,6 +17,7 @@ import {
 } from '../api';
 import { ActionsTaken } from './ActionsTaken';
 import { TicketWorkflowControls } from './TicketWorkflowControls';
+import { StatusIcon } from './statusIcons';
 
 // ─── Helpers & Badges ─────────────────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ const BADGE_BASE: React.CSSProperties = {
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
   <span style={{ ...BADGE_BASE, ...(STATUS_STYLES[status] ?? STATUS_STYLES.NEW) }}>
-    {status.replace(/_/g, ' ')}
+    <StatusIcon status={status} />{status.replace(/_/g, ' ')}
   </span>
 );
 

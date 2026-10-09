@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { Login } from '../../src/components/Login';
 import * as api from '../../src/api';
@@ -13,16 +13,22 @@ describe('UI-01: Login Form Validation & Busy States (FR-01, AC-3.1)', () => {
     vi.spyOn(api, 'getMeApi').mockRejectedValue(new Error('Unauthenticated'));
   });
 
-  const renderLogin = () => {
-    return render(
+  const renderLogin = async () => {
+    const utils = render(
       <AuthProvider>
         <Login />
       </AuthProvider>
     );
+    // Flush the AuthProvider session-restore effect inside act() so its state
+    // update does not leak past the test as an act(...) warning.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    return utils;
   };
 
   it('renders login form elements and accessibility labels per ui-spec §3.1', async () => {
-    renderLogin();
+    await renderLogin();
 
     expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
@@ -31,7 +37,7 @@ describe('UI-01: Login Form Validation & Busy States (FR-01, AC-3.1)', () => {
   });
 
   it('displays inline validation errors when submitting empty fields', async () => {
-    renderLogin();
+    await renderLogin();
 
     const submitBtn = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitBtn);
@@ -43,7 +49,7 @@ describe('UI-01: Login Form Validation & Busy States (FR-01, AC-3.1)', () => {
   });
 
   it('displays inline validation error for malformed email', async () => {
-    renderLogin();
+    await renderLogin();
 
     const emailInput = screen.getByLabelText(/email address/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email-format' } });
@@ -57,7 +63,7 @@ describe('UI-01: Login Form Validation & Busy States (FR-01, AC-3.1)', () => {
   });
 
   it('toggles password visibility when eye button is clicked', async () => {
-    renderLogin();
+    await renderLogin();
 
     const passwordInput = screen.getByLabelText(/password \*/i) as HTMLInputElement;
     expect(passwordInput.type).toBe('password');
@@ -77,7 +83,7 @@ describe('UI-01: Login Form Validation & Busy States (FR-01, AC-3.1)', () => {
       errorData: { message: 'Invalid email or password' },
     });
 
-    renderLogin();
+    await renderLogin();
 
     fireEvent.change(screen.getByLabelText(/email address/i), {
       target: { value: 'alex.turner@toktickit.kmutt.ac.th' },
@@ -101,7 +107,7 @@ describe('UI-01: Login Form Validation & Busy States (FR-01, AC-3.1)', () => {
     });
     vi.spyOn(api, 'loginApi').mockReturnValue(loginPromise as any);
 
-    renderLogin();
+    await renderLogin();
 
     fireEvent.change(screen.getByLabelText(/email address/i), {
       target: { value: 'jennifer.anderson@kmutt.ac.th' },
@@ -127,6 +133,10 @@ describe('UI-01: Login Form Validation & Busy States (FR-01, AC-3.1)', () => {
         requiresPasswordChange: false,
       },
       token: 'mock-token',
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   TicketStatus,
   TICKET_STATUS_TRANSITIONS,
@@ -6,6 +6,7 @@ import {
   submitRequesterAdvisory,
   WorkflowUpdateResult,
 } from '../api';
+import { useModalA11y } from '../hooks/useModalA11y';
 
 // ─── Shared badge helpers ─────────────────────────────────────────────────────
 
@@ -346,6 +347,15 @@ const RequesterAdvisoryButton: React.FC<{
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useModalA11y({
+    open: showDialog,
+    onClose: () => {
+      if (!submitting) setShowDialog(false);
+    },
+    dialogRef,
+  });
+
   const isOwner = currentUserId === requesterId;
   const isEligible = ADVISORY_ELIGIBLE_STATUSES.includes(currentStatus);
 
@@ -413,10 +423,12 @@ const RequesterAdvisoryButton: React.FC<{
       {/* ── Confirmation Dialog ──────────────────────────────────────────────── */}
       {showDialog && (
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="advisory-dialog-title"
           data-testid="advisory-dialog"
+          tabIndex={-1}
           style={{
             position: 'fixed',
             inset: 0,

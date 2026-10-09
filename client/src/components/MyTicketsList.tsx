@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRequester } from '../context/RequesterContext';
 import * as api from '../api';
+import { StatusIcon } from './statusIcons';
 
 interface MyTicketsListProps {
   onCreateTicket: () => void;
@@ -539,7 +540,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
                               display: 'inline-block',
                             }}
                           >
-                            {statusBadge.label}
+                            <StatusIcon status={t.currentStatus} />{statusBadge.label}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-secondary" style={{ fontSize: '13px' }}>
@@ -602,7 +603,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
                       fontWeight: 600,
                     }}
                   >
-                    {statusBadge.label}
+                    <StatusIcon status={t.currentStatus} />{statusBadge.label}
                   </span>
                 </div>
 

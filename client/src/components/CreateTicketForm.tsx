@@ -32,12 +32,18 @@ export const CreateTicketForm: React.FC<{ onSuccess: () => void }> = ({ onSucces
         Promise.all([
             fetch('/api/categories').then((res) => res.json()),
             fetch('/api/related-systems').then((res) => res.json()),
-        ]).then(([catData, sysData]) => {
-            setCategories(catData);
-            setRelatedSystems(sysData);
-            if (catData.length > 0) setCategoryId(catData[0].id);
-            if (sysData.length > 0) setRelatedSystemId(sysData[0].id);
-        });
+        ])
+            .then(([catData, sysData]) => {
+                setCategories(catData);
+                setRelatedSystems(sysData);
+                if (catData.length > 0) setCategoryId(catData[0].id);
+                if (sysData.length > 0) setRelatedSystemId(sysData[0].id);
+            })
+            .catch(() => {
+                // Fall back to empty options rather than leaving an unhandled rejection.
+                setCategories([]);
+                setRelatedSystems([]);
+            });
     }, []);
 
     // File Validation

@@ -13,6 +13,8 @@ import {
   PublicComment,
 } from '../api';
 import { ActionsTaken } from './ActionsTaken';
+import { useModalA11y } from '../hooks/useModalA11y';
+import { StatusIcon } from './statusIcons';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -81,7 +83,7 @@ const BADGE_BASE: React.CSSProperties = {
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
   <span style={{ ...BADGE_BASE, ...(STATUS_STYLES[status] ?? STATUS_STYLES.NEW) }}>
-    {status.replace('_', ' ')}
+    <StatusIcon status={status} />{status.replace(/_/g, ' ')}
   </span>
 );
 
@@ -154,6 +156,15 @@ const RemoveModal: React.FC<RemoveModalProps> = ({ attachment, onConfirm, onCanc
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useModalA11y({
+    open: true,
+    onClose: () => {
+      if (!isLoading) onCancel();
+    },
+    dialogRef,
+  });
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -177,9 +188,11 @@ const RemoveModal: React.FC<RemoveModalProps> = ({ attachment, onConfirm, onCanc
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="remove-modal-title"
+      tabIndex={-1}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         backgroundColor: 'rgba(0,0,0,0.45)',
@@ -296,6 +309,15 @@ const UploadModal: React.FC<UploadModalProps> = ({ onUpload, onCancel, isLoading
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
   const dropRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useModalA11y({
+    open: true,
+    onClose: () => {
+      if (!isLoading) onCancel();
+    },
+    dialogRef,
+  });
 
   const validateAndSet = (f: File) => {
     if (!ALLOWED_MIME_TYPES.includes(f.type)) {
@@ -312,9 +334,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ onUpload, onCancel, isLoading
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="upload-modal-title"
+      tabIndex={-1}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         backgroundColor: 'rgba(0,0,0,0.45)',
@@ -334,6 +358,15 @@ const UploadModal: React.FC<UploadModalProps> = ({ onUpload, onCancel, isLoading
 
         <div
           ref={dropRef}
+          role="button"
+          tabIndex={0}
+          aria-label="Select a file to upload"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              document.getElementById('att-file-input')?.click();
+            }
+          }}
           onDragOver={(e) => { e.preventDefault(); }}
           onDrop={(e) => {
             e.preventDefault();
@@ -432,11 +465,21 @@ const ResolveModal: React.FC<{
   isLoading: boolean;
   error?: string;
 }> = ({ onConfirm, onCancel, isLoading, error }) => {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useModalA11y({
+    open: true,
+    onClose: () => {
+      if (!isLoading) onCancel();
+    },
+    dialogRef,
+  });
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       data-testid="resolve-modal"
+      tabIndex={-1}
       style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
