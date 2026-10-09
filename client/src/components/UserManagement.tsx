@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../api';
+import { useModalA11y } from '../hooks/useModalA11y';
 
 type RoleFilter = '' | api.Role;
 type ModalMode = 'create' | 'edit' | null;
@@ -320,6 +321,11 @@ export const UserManagement: React.FC = () => {
     setResetError('');
   };
 
+  const formDialogRef = useRef<HTMLDivElement | null>(null);
+  const resetDialogRef = useRef<HTMLDivElement | null>(null);
+  useModalA11y({ open: modalMode !== null && resetTarget === null, onClose: closeModal, dialogRef: formDialogRef });
+  useModalA11y({ open: resetTarget !== null, onClose: closeResetModal, dialogRef: resetDialogRef });
+
   const handleResetSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!resetTarget) return;
@@ -475,7 +481,7 @@ export const UserManagement: React.FC = () => {
       {modalMode && !resetTarget && (
         <div className="modal d-block" role="presentation" style={{ backgroundColor: 'rgba(26,40,32,0.45)' }} onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
           <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="user-form-title" data-testid="user-form-modal" style={{ border: 'none', borderRadius: '12px' }}>
+            <div className="modal-content" ref={formDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="user-form-title" data-testid="user-form-modal" style={{ border: 'none', borderRadius: '12px' }}>
               <div className="modal-header" style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
                 <h2 id="user-form-title" className="modal-title h5 mb-0" style={{ color: 'var(--color-text-primary)', fontWeight: 700 }}>{modalMode === 'create' ? 'Create User' : 'Edit User'}</h2>
                 <button type="button" className="btn-close" aria-label="Close" onClick={closeModal} disabled={saving} style={{ minWidth: '44px', minHeight: '44px' }} />
@@ -539,7 +545,7 @@ export const UserManagement: React.FC = () => {
       {resetTarget && (
         <div className="modal d-block" role="presentation" style={{ backgroundColor: 'rgba(26,40,32,0.45)' }} onMouseDown={(event) => { if (event.target === event.currentTarget) closeResetModal(); }}>
           <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="reset-password-title" data-testid="reset-password-modal" style={{ border: 'none', borderRadius: '12px' }}>
+            <div className="modal-content" ref={resetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="reset-password-title" data-testid="reset-password-modal" style={{ border: 'none', borderRadius: '12px' }}>
               <div className="modal-header" style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
                 <h2 id="reset-password-title" className="modal-title h5 mb-0" style={{ color: 'var(--color-text-primary)', fontWeight: 700 }}>Reset Initial Password</h2>
                 <button type="button" className="btn-close" aria-label="Close" onClick={closeResetModal} disabled={resetSaving} style={{ minWidth: '44px', minHeight: '44px' }} />

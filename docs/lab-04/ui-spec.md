@@ -201,10 +201,10 @@ The Actions Taken work log is embedded within the Ticket Detail screen (`/staff/
 
 ## 8. Accessibility & Visual Polish Checklist (WCAG 2.1 AA)
 
-- [ ] **Contrast Ratio**: All body copy and headings maintain $\ge 4.5:1$ contrast against backgrounds.
-- [ ] **Visible Focus Rings**: Every button, input, link, and interactive card displays an unambiguous 2px focus ring (`--color-focus-ring`) during keyboard navigation.
-- [ ] **Keyboard Navigability**: Modals trap focus during open state and close on `Escape`; forms submit on `Enter`.
-- [ ] **Non-Color Cues**: Statuses and roles include explicit icons or textual badges alongside color shading.
-- [ ] **Semantic Headings**: Strict hierarchy (`<h1>` followed by `<h2>`, `<h3>`).
-- [ ] **Zero Horizontal Overflow**: `overflow-x: hidden` enforced on page wrapper at 375px mobile breakpoint.
-- [ ] **Clean Developer Console**: Zero React hydration warnings, zero missing `key` prop warnings, zero unhandled promise rejections.
+- [x] **Contrast Ratio**: All body copy and headings maintain $\ge 4.5:1$ contrast against backgrounds.
+- [x] **Visible Focus Rings**: Every button, input, link, and interactive card displays an unambiguous 2px focus ring (`--color-focus-ring`) during keyboard navigation.
+- [x] **Keyboard Navigability**: Modals trap focus during open state and close on `Escape`; forms submit on `Enter`.
+- [x] **Non-Color Cues**: Statuses and roles include explicit icons or textual badges alongside color shading.
+- [x] **Semantic Headings**: Strict hierarchy (`<h1>` followed by `<h2>`, `<h3>`).
+- [x] **Zero Horizontal Overflow**: `overflow-x: hidden` enforced on page wrapper at 375px mobile breakpoint.
+- [x] **Clean Developer Console**: Zero React hydration warnings, zero missing `key` prop warnings, zero unhandled promise rejections.

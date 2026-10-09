@@ -162,7 +162,6 @@ export const Login: React.FC = () => {
                 type="button"
                 className="btn btn-outline-secondary border-start-0"
                 onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 style={{
                   borderTopRightRadius: '8px',

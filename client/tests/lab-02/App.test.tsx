@@ -18,6 +18,11 @@ const mockRequesters = [
   },
 ];
 
+const emptyTicketsPage: api.GetTicketsResponse = {
+  items: [],
+  pagination: { page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
+};
+
 // Note: Legacy Lab 2 test suite for App & Navigation Flow.
 // In Lab 3, authentication was introduced (AC-3.1 to AC-3.5) and tested in client/tests/lab-03/AppShell.test.tsx.
 // This test suite validates navigation shell and viewport adaptation across legacy and current auth flows.
@@ -28,7 +33,7 @@ describe("App & Navigation Flow (Lab 2 / Lab 3 regression)", () => {
   });
 
   it("redirects to RequesterSelector when no requester is selected (AC 5) or Login screen in Lab 3", async () => {
-    vi.spyOn(api, "apiFetch").mockResolvedValueOnce(mockRequesters);
+    vi.spyOn(api, "getMeApi").mockRejectedValue(new Error("Unauthenticated"));
 
     render(<App />);
 
@@ -59,15 +64,7 @@ describe("App & Navigation Flow (Lab 2 / Lab 3 regression)", () => {
       role: "REQUESTER",
       requiresPasswordChange: false,
     });
-    vi.spyOn(api, "apiFetch").mockImplementation((endpoint: string) => {
-      if (endpoint.includes("/api/tickets")) {
-        return Promise.resolve({
-          items: [],
-          pagination: { page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
-        }) as any;
-      }
-      return Promise.resolve([]) as any;
-    });
+    vi.spyOn(api, "getTickets").mockResolvedValue(emptyTicketsPage);
 
     render(<App />);
 
@@ -101,15 +98,7 @@ describe("App & Navigation Flow (Lab 2 / Lab 3 regression)", () => {
       requiresPasswordChange: false,
     });
     vi.spyOn(api, "logoutApi").mockResolvedValue({ message: "Logged out successfully" });
-    vi.spyOn(api, "apiFetch").mockImplementation((endpoint: string) => {
-      if (endpoint.includes("/api/tickets")) {
-        return Promise.resolve({
-          items: [],
-          pagination: { page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
-        }) as any;
-      }
-      return Promise.resolve([]) as any;
-    });
+    vi.spyOn(api, "getTickets").mockResolvedValue(emptyTicketsPage);
 
     render(<App />);
 
@@ -149,15 +138,7 @@ describe("App & Navigation Flow (Lab 2 / Lab 3 regression)", () => {
       role: "REQUESTER",
       requiresPasswordChange: false,
     });
-    vi.spyOn(api, "apiFetch").mockImplementation((endpoint: string) => {
-      if (endpoint.includes("/api/tickets")) {
-        return Promise.resolve({
-          items: [],
-          pagination: { page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
-        }) as any;
-      }
-      return Promise.resolve([]) as any;
-    });
+    vi.spyOn(api, "getTickets").mockResolvedValue(emptyTicketsPage);
 
     render(<App />);
 

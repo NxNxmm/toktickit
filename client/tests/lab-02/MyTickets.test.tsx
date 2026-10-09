@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MyTicketsList } from '../../src/components/MyTicketsList';
 import * as api from '../../src/api';
 import { RequesterProvider } from '../../src/context/RequesterContext';
@@ -10,6 +10,14 @@ const mockRequester = {
   email: 'jennifer.anderson@kmutt.ac.th',
   department: 'Computer Engineering',
   isActive: true,
+};
+
+// Flush debounced/async state updates inside act() so they never leak past the
+// test and trigger React's "not wrapped in act(...)" warning.
+const flushAsyncState = async () => {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  });
 };
 
 const mockTicketsResponse: api.GetTicketsResponse = {
@@ -92,6 +100,8 @@ describe('MyTicketsList Component (Issue 5 - AC 1 to AC 6, UI-06)', () => {
     expect(
       screen.getByText((_, el) => el?.textContent?.trim() === 'Showing 1 to 2 of 2 tickets')
     ).toBeInTheDocument();
+
+    await flushAsyncState();
   });
 
   it('displays zero-ticket account empty state with call-to-action (AC 6, UI-06)', async () => {
@@ -125,6 +135,8 @@ describe('MyTicketsList Component (Issue 5 - AC 1 to AC 6, UI-06)', () => {
 
     fireEvent.click(ctaBtn);
     expect(handleCreateTicket).toHaveBeenCalledTimes(1);
+
+    await flushAsyncState();
   });
 
   it('displays zero search match "No results found" when filters are active (AC 6, UI-06)', async () => {
@@ -160,6 +172,8 @@ describe('MyTicketsList Component (Issue 5 - AC 1 to AC 6, UI-06)', () => {
     fireEvent.click(clearBtn);
 
     expect(searchInput).toHaveValue('');
+
+    await flushAsyncState();
   });
 
   it('handles Clear Filters button interaction in toolbar (AC 3)', async () => {
@@ -182,5 +196,7 @@ describe('MyTicketsList Component (Issue 5 - AC 1 to AC 6, UI-06)', () => {
     fireEvent.click(clearBtn);
     expect(prioritySelect).toHaveValue('');
     expect(clearBtn).toBeDisabled();
+
+    await flushAsyncState();
   });
 });

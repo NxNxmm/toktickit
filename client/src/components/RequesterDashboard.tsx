@@ -13,6 +13,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../api';
+import { StatusIcon } from './statusIcons';
 
 interface RequesterDashboardProps {
   /** Navigate to a filtered tickets view */
@@ -71,7 +72,7 @@ function StatusBadge({ status }: { status: string }) {
         display: 'inline-block',
       }}
     >
-      {status.replace(/_/g, ' ')}
+      <StatusIcon status={status} />{status.replace(/_/g, ' ')}
     </span>
   );
 }

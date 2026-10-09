@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../api';
+import { StatusIcon } from './statusIcons';
 
 interface StaffQueueProps {
   onViewTicket?: (ticketId: number) => void;
@@ -76,7 +77,7 @@ function StatusBadge({ status }: { status: string }) {
       letterSpacing: '0.02em',
       whiteSpace: 'nowrap',
     }}>
-      {label}
+      <StatusIcon status={status} />{label}
     </span>
   );
 }
@@ -243,6 +244,38 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket, initialFil
     userSelect: 'none',
   };
 
+  const sortButtonStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    margin: 0,
+    cursor: 'pointer',
+    font: 'inherit',
+    color: 'inherit',
+    letterSpacing: 'inherit',
+    textTransform: 'inherit',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+  };
+
+  const renderSortableTh = (field: SortField, label: string, extraStyle?: React.CSSProperties) => (
+    <th
+      style={extraStyle ? { ...thStyle, ...extraStyle } : thStyle}
+      aria-sort={sortBy === field ? 'ascending' : 'none'}
+    >
+      <button
+        type="button"
+        style={sortButtonStyle}
+        onClick={() => handleSort(field)}
+        aria-label={`Sort by ${label}`}
+      >
+        {label}
+        <SortIcon field={field} />
+      </button>
+    </th>
+  );
+
   const tdStyle: React.CSSProperties = {
     padding: '0.85rem 1rem',
     fontSize: '0.85rem',
@@ -391,15 +424,15 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket, initialFil
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
               <thead>
                 <tr>
-                  <th style={thStyle} onClick={() => handleSort('ticketNo')}>Ticket No <SortIcon field="ticketNo" /></th>
+                  {renderSortableTh('ticketNo', 'Ticket No')}
                   <th style={{ ...thStyle, minWidth: '200px' }}>Summary</th>
                   <th style={thStyle}>Category</th>
                   <th style={thStyle}>Requester</th>
                   <th style={thStyle}>Owner</th>
-                  <th style={thStyle} onClick={() => handleSort('requestedPriority')}>Req. Pri <SortIcon field="requestedPriority" /></th>
-                  <th style={thStyle} onClick={() => handleSort('itPriority')}>IT Pri <SortIcon field="itPriority" /></th>
-                  <th style={thStyle} onClick={() => handleSort('currentStatus')}>Status <SortIcon field="currentStatus" /></th>
-                  <th style={thStyle} onClick={() => handleSort('createdAt')}>Created <SortIcon field="createdAt" /></th>
+                  {renderSortableTh('requestedPriority', 'Req. Pri')}
+                  {renderSortableTh('itPriority', 'IT Pri')}
+                  {renderSortableTh('currentStatus', 'Status')}
+                  {renderSortableTh('createdAt', 'Created')}
                 </tr>
               </thead>
               <tbody>
@@ -424,7 +457,14 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket, initialFil
                 ) : tickets.map((ticket, idx) => (
                   <tr
                     key={ticket.id}
+                    tabIndex={onViewTicket ? 0 : undefined}
                     onClick={() => onViewTicket?.(ticket.id)}
+                    onKeyDown={(e) => {
+                      if (onViewTicket && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        onViewTicket(ticket.id);
+                      }
+                    }}
                     style={{
                       cursor: onViewTicket ? 'pointer' : 'default',
                       backgroundColor: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-subtle)',
@@ -491,7 +531,15 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket, initialFil
             {tickets.map((ticket) => (
               <div
                 key={ticket.id}
+                role={onViewTicket ? 'button' : undefined}
+                tabIndex={onViewTicket ? 0 : undefined}
                 onClick={() => onViewTicket?.(ticket.id)}
+                onKeyDown={(e) => {
+                  if (onViewTicket && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onViewTicket(ticket.id);
+                  }
+                }}
                 style={{
                   backgroundColor: 'var(--color-surface)',
                   border: '1px solid var(--color-border-subtle)',

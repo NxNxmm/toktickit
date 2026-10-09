@@ -58,13 +58,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentView, onNavigate })
       >
         <div className="container">
           {/* Brand */}
-          <span
-            className="navbar-brand text-white fw-bold fs-4 me-3 cursor-pointer"
+          <button
+            type="button"
+            className="navbar-brand text-white fw-bold fs-4 me-3"
             onClick={() => onNavigate(user.role === 'ADMIN' ? 'admin-users' : user.role === 'IT_STAFF' ? 'staff-queue' : 'my-tickets')}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
           >
             TokTickIT
-          </span>
+          </button>
 
           {/* Hamburger toggle button for smaller screens */}
           <button
