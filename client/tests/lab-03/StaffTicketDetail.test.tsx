@@ -33,6 +33,7 @@ const baseTicket: api.StaffTicketDetail = {
   currentStatus: 'OPEN',
   resolvedIndicated: false,
   resolvedIndicatedAt: null,
+  version: 1,
   createdAt: '2026-09-04T10:00:00.000Z',
   updatedAt: '2026-09-04T10:30:00.000Z',
   category: { id: 4, name: 'Network' },

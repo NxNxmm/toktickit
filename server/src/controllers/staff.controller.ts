@@ -108,6 +108,7 @@ function formatStaffTicketDetail(t: StaffTicket) {
         currentStatus: t.currentStatus,
         resolvedIndicated: t.resolvedIndicated,
         resolvedIndicatedAt: t.resolvedIndicatedAt,
+        version: t.version,
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
         category: t.category,
@@ -219,15 +220,22 @@ export const getStaffTicketQueue = async (req: Request, res: Response) => {
 
         // Status filter
         if (status !== undefined && status !== '') {
-            const validStatuses: TicketStatus[] = ['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'REOPENED', 'CANCELLED'];
-            if (typeof status !== 'string' || !validStatuses.includes(status as TicketStatus)) {
-                return res.status(400).json({
-                    statusCode: 400,
-                    error: 'Bad Request',
-                    message: `Invalid status. Allowed: ${validStatuses.join(', ')}`,
-                });
+            if (status === 'open') {
+                where.currentStatus = { in: ['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED'] };
+            } else if (status === 'recent') {
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                where.updatedAt = { gte: sevenDaysAgo };
+            } else {
+                const validStatuses: TicketStatus[] = ['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'REOPENED', 'CANCELLED'];
+                if (typeof status !== 'string' || !validStatuses.includes(status as TicketStatus)) {
+                    return res.status(400).json({
+                        statusCode: 400,
+                        error: 'Bad Request',
+                        message: `Invalid status. Allowed: ${validStatuses.join(', ')}`,
+                    });
+                }
+                where.currentStatus = status as TicketStatus;
             }
-            where.currentStatus = status as TicketStatus;
         }
 
         // Requested priority filter

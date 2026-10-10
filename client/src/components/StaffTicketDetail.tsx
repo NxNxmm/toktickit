@@ -13,7 +13,11 @@ import {
   StaffAssignee,
   InternalNote,
   PublicComment,
+  WorkflowUpdateResult,
 } from '../api';
+import { ActionsTaken } from './ActionsTaken';
+import { TicketWorkflowControls } from './TicketWorkflowControls';
+import { StatusIcon } from './statusIcons';
 
 // ─── Helpers & Badges ─────────────────────────────────────────────────────────
 
@@ -59,7 +63,7 @@ const BADGE_BASE: React.CSSProperties = {
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
   <span style={{ ...BADGE_BASE, ...(STATUS_STYLES[status] ?? STATUS_STYLES.NEW) }}>
-    {status.replace(/_/g, ' ')}
+    <StatusIcon status={status} />{status.replace(/_/g, ' ')}
   </span>
 );
 
@@ -226,7 +230,22 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     runOp(() => updateTicketItPriority(ticketId, value));
   };
 
-  // ── Status transitions (AC-6.2 / BR-12) ──
+  // ── Status transitions — now handled by TicketWorkflowControls (Lab 4 Issue #4) ──
+  const handleWorkflowUpdated = useCallback((result: WorkflowUpdateResult) => {
+    // After a successful workflow update refresh the full ticket so version, status etc. are current
+    setTicket((prev) =>
+      prev
+        ? {
+            ...prev,
+            currentStatus: result.status,
+            version: result.version,
+            updatedAt: result.updatedAt,
+          }
+        : prev
+    );
+  }, []);
+
+  // ── Backward-compatible status transitions for Lab 3 tests (AC-6.2 / BR-12) ──
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     if (!value) return;
@@ -465,16 +484,13 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
             </select>
           </div>
 
-          {/* Status transition */}
+      {/* ── Ticket Status Controls ── */}
           <div>
             <div style={{ fontSize: '12px', fontWeight: 500, color: '#4B5563', marginBottom: '4px' }}>
-              Current Status
-            </div>
-            <div style={{ marginBottom: '4px' }}>
-              <StatusBadge status={ticket.currentStatus} />
+              Status Transition
             </div>
             {permittedTransitions.length > 0 ? (
-              <>
+              <div style={{ marginBottom: '12px' }}>
                 <select
                   data-testid="ticket-status-select"
                   value=""
@@ -499,15 +515,23 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                 <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>
                   Only permitted by the state matrix (BR-12).
                 </div>
-              </>
-            ) : (
-              <div style={{ fontSize: '12px', color: '#6B7280', fontStyle: 'italic' }}>
-                Ticket is in a terminal state ({ticket.currentStatus.replace(/_/g, ' ')}) — no further transitions.
               </div>
-            )}
+            ) : null}
+
+            {/* ── Workflow & Concurrency Controls (Lab 4 Issue #4) ── */}
+            <TicketWorkflowControls
+              ticketId={ticket.id}
+              currentStatus={ticket.currentStatus}
+              version={ticket.version ?? 1}
+              role={user?.role === 'ADMIN' ? 'ADMIN' : 'IT_STAFF'}
+              onWorkflowUpdated={handleWorkflowUpdated}
+            />
           </div>
         </div>
       </SectionCard>
+
+      {/* ── Actions Taken Work Log (Lab 4 Issue #3) ── */}
+      <ActionsTaken ticketId={ticket.id} isStaff={true} />
 
       {/* ── Dual Tabbed Communication (AC-6.4) ── */}
       <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>

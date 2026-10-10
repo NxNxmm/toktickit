@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../api';
+import { StatusIcon } from './statusIcons';
 
 interface StaffQueueProps {
   onViewTicket?: (ticketId: number) => void;
+  initialFilter?: string;
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -75,24 +77,42 @@ function StatusBadge({ status }: { status: string }) {
       letterSpacing: '0.02em',
       whiteSpace: 'nowrap',
     }}>
-      {label}
+      <StatusIcon status={status} />{label}
     </span>
   );
 }
 
 type SortField = 'ticketNo' | 'createdAt' | 'updatedAt' | 'requestedPriority' | 'itPriority' | 'currentStatus';
 
-export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
+export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket, initialFilter }) => {
   const { user } = useAuth();
+
+  const isOwnerMe = initialFilter === 'me';
+  const initialOwnerVal = isOwnerMe && user?.id ? String(user.id) : '';
+  const initialStatusVal = isOwnerMe ? 'open' : (initialFilter ?? '');
 
   // Filter & search state
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(initialStatusVal);
   const [filterReqPriority, setFilterReqPriority] = useState('');
   const [filterItPriority, setFilterItPriority] = useState('');
-  const [filterOwner, setFilterOwner] = useState('');
+  const [filterOwner, setFilterOwner] = useState(initialOwnerVal);
+
+  useEffect(() => {
+    if (initialFilter === 'me') {
+      if (user?.id) {
+        setFilterOwner(String(user.id));
+        setFilterStatus('open');
+        setPage(1);
+      }
+    } else if (initialFilter) {
+      setFilterStatus(initialFilter);
+      setFilterOwner('');
+      setPage(1);
+    }
+  }, [initialFilter, user?.id]);
 
   // Sort state
   const [sortBy, setSortBy] = useState<SortField>('createdAt');
@@ -110,6 +130,7 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
 
   // Reference data
   const [categories, setCategories] = useState<api.Category[]>([]);
+  const [assignees, setAssignees] = useState<api.StaffAssignee[]>([]);
 
   // Debounce search
   useEffect(() => {
@@ -120,16 +141,25 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  // Load categories
+  // Load categories & assignees
   useEffect(() => {
     fetch('/api/categories')
       .then((r) => (r.ok ? r.json() : []))
       .then(setCategories)
       .catch(() => setCategories([]));
+
+    api.getStaffAssignees()
+      .then(setAssignees)
+      .catch(() => setAssignees([]));
   }, []);
 
   // Fetch queue
   const fetchQueue = useCallback(async () => {
+    // If navigating to 'my queue' specifically, wait until filterOwner is resolved
+    if (initialFilter === 'me' && !filterOwner) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -214,6 +244,38 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
     userSelect: 'none',
   };
 
+  const sortButtonStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    margin: 0,
+    cursor: 'pointer',
+    font: 'inherit',
+    color: 'inherit',
+    letterSpacing: 'inherit',
+    textTransform: 'inherit',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+  };
+
+  const renderSortableTh = (field: SortField, label: string, extraStyle?: React.CSSProperties) => (
+    <th
+      style={extraStyle ? { ...thStyle, ...extraStyle } : thStyle}
+      aria-sort={sortBy === field ? 'ascending' : 'none'}
+    >
+      <button
+        type="button"
+        style={sortButtonStyle}
+        onClick={() => handleSort(field)}
+        aria-label={`Sort by ${label}`}
+      >
+        {label}
+        <SortIcon field={field} />
+      </button>
+    </th>
+  );
+
   const tdStyle: React.CSSProperties = {
     padding: '0.85rem 1rem',
     fontSize: '0.85rem',
@@ -289,6 +351,8 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
           <div className="col-6 col-md-4 col-lg-2">
             <select id="filter-status" aria-label="Filter by status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">All Statuses</option>
+              <option value="open">All Open</option>
+              <option value="recent">Recently Updated</option>
               {['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'REOPENED', 'CANCELLED'].map((s) => (
                 <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
               ))}
@@ -310,7 +374,15 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
             <select id="filter-owner" aria-label="Filter by owner" value={filterOwner} onChange={(e) => { setFilterOwner(e.target.value); setPage(1); }} style={inputStyle}>
               <option value="">All Owners</option>
               <option value="unassigned">Unassigned</option>
-              {user && <option value={user.id}>{user.name} (me)</option>}
+              {assignees.length > 0 ? (
+                assignees.map((a) => (
+                  <option key={a.id} value={String(a.id)}>
+                    {a.name}{user && a.id === user.id ? ' (me)' : ''}
+                  </option>
+                ))
+              ) : (
+                user && <option value={String(user.id)}>{user.name} (me)</option>
+              )}
             </select>
           </div>
           {hasActiveFilters && (
@@ -352,15 +424,15 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
               <thead>
                 <tr>
-                  <th style={thStyle} onClick={() => handleSort('ticketNo')}>Ticket No <SortIcon field="ticketNo" /></th>
+                  {renderSortableTh('ticketNo', 'Ticket No')}
                   <th style={{ ...thStyle, minWidth: '200px' }}>Summary</th>
                   <th style={thStyle}>Category</th>
                   <th style={thStyle}>Requester</th>
                   <th style={thStyle}>Owner</th>
-                  <th style={thStyle} onClick={() => handleSort('requestedPriority')}>Req. Pri <SortIcon field="requestedPriority" /></th>
-                  <th style={thStyle} onClick={() => handleSort('itPriority')}>IT Pri <SortIcon field="itPriority" /></th>
-                  <th style={thStyle} onClick={() => handleSort('currentStatus')}>Status <SortIcon field="currentStatus" /></th>
-                  <th style={thStyle} onClick={() => handleSort('createdAt')}>Created <SortIcon field="createdAt" /></th>
+                  {renderSortableTh('requestedPriority', 'Req. Pri')}
+                  {renderSortableTh('itPriority', 'IT Pri')}
+                  {renderSortableTh('currentStatus', 'Status')}
+                  {renderSortableTh('createdAt', 'Created')}
                 </tr>
               </thead>
               <tbody>
@@ -385,7 +457,14 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
                 ) : tickets.map((ticket, idx) => (
                   <tr
                     key={ticket.id}
+                    tabIndex={onViewTicket ? 0 : undefined}
                     onClick={() => onViewTicket?.(ticket.id)}
+                    onKeyDown={(e) => {
+                      if (onViewTicket && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        onViewTicket(ticket.id);
+                      }
+                    }}
                     style={{
                       cursor: onViewTicket ? 'pointer' : 'default',
                       backgroundColor: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-subtle)',
@@ -452,7 +531,15 @@ export const StaffQueue: React.FC<StaffQueueProps> = ({ onViewTicket }) => {
             {tickets.map((ticket) => (
               <div
                 key={ticket.id}
+                role={onViewTicket ? 'button' : undefined}
+                tabIndex={onViewTicket ? 0 : undefined}
                 onClick={() => onViewTicket?.(ticket.id)}
+                onKeyDown={(e) => {
+                  if (onViewTicket && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onViewTicket(ticket.id);
+                  }
+                }}
                 style={{
                   backgroundColor: 'var(--color-surface)',
                   border: '1px solid var(--color-border-subtle)',

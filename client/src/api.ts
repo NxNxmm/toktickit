@@ -73,7 +73,8 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    const err: any = new Error(errorData.message || `API error: ${res.statusText}`);
+    const message = errorData.error?.message || errorData.message || (typeof errorData === 'string' ? errorData : `API error: ${res.statusText}`);
+    const err: any = new Error(message);
     err.statusCode = res.status;
     err.errorData = errorData;
     throw err;
@@ -460,6 +461,7 @@ export interface StaffTicketDetail {
   currentStatus: TicketStatus;
   resolvedIndicated: boolean;
   resolvedIndicatedAt: string | null;
+  version: number;
   createdAt: string;
   updatedAt: string;
   category: { id: number; name: string };
@@ -588,3 +590,180 @@ export async function resetAdminUserPassword(id: number, newInitialPassword: str
 
 export const resetUserPassword = resetAdminUserPassword;
 
+// ─── Lab 4 Issue #3: Actions Taken ───────────────────────────────────────────
+
+export interface ActionTakenPerformer {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+}
+
+export interface ActionTaken {
+  id: number;
+  ticketId: number;
+  actionDateTime: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  performedBy: ActionTakenPerformer | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListActionsTakenResponse {
+  ticketId: number;
+  actionsTaken: ActionTaken[];
+}
+
+export interface CreateActionTakenInput {
+  actionDateTime?: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionTakenInput {
+  actionDateTime?: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export async function getActionsTaken(
+  ticketId: number,
+  requesterId?: number | null
+): Promise<ListActionsTakenResponse> {
+  return apiFetch<ListActionsTakenResponse>(`/api/tickets/${ticketId}/actions-taken`, {}, requesterId);
+}
+
+export async function createActionTaken(
+  ticketId: number,
+  input: CreateActionTakenInput
+): Promise<ActionTaken> {
+  return apiFetch<ActionTaken>(`/api/tickets/${ticketId}/actions-taken`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateActionTaken(
+  ticketId: number,
+  actionId: number,
+  input: UpdateActionTakenInput
+): Promise<ActionTaken> {
+  return apiFetch<ActionTaken>(`/api/tickets/${ticketId}/actions-taken/${actionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+// ─── Lab 4 Issue #4: Ticket Workflow & Concurrency ───────────────────────────
+
+export interface WorkflowUpdateInput {
+  status?: TicketStatus;
+  itPriority?: Priority;
+  resolutionNote?: string;
+  isRequesterAdvisory?: boolean;
+  version: number;
+}
+
+export interface WorkflowUpdateResult {
+  id: number;
+  status: TicketStatus;
+  version: number;
+  updatedAt: string;
+  message: string;
+  resolvedIndicated?: boolean;
+  resolvedIndicatedAt?: string | null;
+}
+
+export async function updateTicketWorkflow(
+  ticketId: number,
+  input: WorkflowUpdateInput
+): Promise<WorkflowUpdateResult> {
+  return apiFetch<WorkflowUpdateResult>(`/api/tickets/${ticketId}/workflow`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function submitRequesterAdvisory(
+  ticketId: number,
+): Promise<WorkflowUpdateResult> {
+  return apiFetch<WorkflowUpdateResult>(`/api/tickets/${ticketId}/workflow`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isRequesterAdvisory: true }),
+  });
+}
+
+// ─── Lab 4 Issue #5: Dashboard APIs ──────────────────────────────────────────
+
+export interface DashboardRecentTicket {
+  id: number;
+  ticketNumber: string;
+  title: string;
+  status: TicketStatus;
+  requestedPriority?: Priority;
+  itPriority?: Priority;
+  assignedStaff?: { id: number; name: string } | null;
+  requester?: { id: number; name: string } | null;
+  updatedAt: string;
+}
+
+export interface RequesterDashboardMetrics {
+  totalOpen: number;
+  waitingForRequester: number;
+  recentlyUpdated: number;
+  recentlyResolved: number;
+}
+
+export interface RequesterDashboardData {
+  metrics: RequesterDashboardMetrics;
+  recentTickets: DashboardRecentTicket[];
+}
+
+export interface StaffDashboardMetrics {
+  newTickets: number;
+  openTickets: number;
+  inProgressTickets: number;
+  waitingForRequesterTickets: number;
+  myAssignedTickets: number;
+}
+
+export interface StaffDashboardData {
+  metrics: StaffDashboardMetrics;
+  recentTickets: DashboardRecentTicket[];
+}
+
+export interface AdminDashboardData {
+  operational: StaffDashboardMetrics;
+  userStats: {
+    activeRequesters: number;
+    activeStaff: number;
+    activeAdmins: number;
+    totalUsers: number;
+  };
+}
+
+export async function getRequesterDashboard(): Promise<RequesterDashboardData> {
+  return apiFetch<RequesterDashboardData>('/api/dashboard/requester');
+}
+
+export async function getStaffDashboard(): Promise<StaffDashboardData> {
+  return apiFetch<StaffDashboardData>('/api/dashboard/staff');
+}
+
+export async function getAdminDashboard(): Promise<AdminDashboardData> {
+  return apiFetch<AdminDashboardData>('/api/dashboard/admin');
+}

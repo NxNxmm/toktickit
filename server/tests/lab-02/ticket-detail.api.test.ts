@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/app.js';
 import { getPrisma } from '../../src/prisma.js';
@@ -30,20 +30,25 @@ describe('GET /api/tickets/:id (Issue 6 - API-08, API-09)', () => {
         const login2 = await request(app).post('/api/auth/login').send({ email: r2!.email, password: 'Password123!' });
         requester2Token = login2.body.token;
 
-        // Clean previous test data (order matters: notes > comments > attachments > tickets)
+        // Clean previous test data (order matters: actions > notes > comments > attachments > tickets)
+        const nonSeedFilter = {
+            submittedById: { in: [requester1Id, requester2Id] },
+            ticketNumber: { not: { startsWith: 'TKT-SEED-' } },
+        };
+        await getPrisma().action_taken.deleteMany({
+            where: { ticket: nonSeedFilter },
+        });
         await getPrisma().internal_note.deleteMany({
-            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+            where: { ticket: nonSeedFilter },
         });
         await getPrisma().public_comment.deleteMany({
-            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+            where: { ticket: nonSeedFilter },
         });
         await getPrisma().attachment.deleteMany({
-            where: {
-                ticket: { submittedById: { in: [requester1Id, requester2Id] } },
-            },
+            where: { ticket: nonSeedFilter },
         });
         await getPrisma().ticket.deleteMany({
-            where: { submittedById: { in: [requester1Id, requester2Id] } },
+            where: nonSeedFilter,
         });
 
         // Create a ticket for requester1 with one active and one soft-removed attachment
@@ -199,5 +204,13 @@ describe('GET /api/tickets/:id (Issue 6 - API-08, API-09)', () => {
             .set('Authorization', `Bearer ${requester2Token}`);
         expect(res2.status).toBe(403);
         expect(res2.body.error).toBe('Forbidden');
+    });
+
+    afterAll(async () => {
+        if (ticket1Id || ticket2Id) {
+            await getPrisma().action_taken.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });
+            await getPrisma().attachment.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });
+            await getPrisma().ticket.deleteMany({ where: { id: { in: [ticket1Id, ticket2Id] } } });
+        }
     });
 });

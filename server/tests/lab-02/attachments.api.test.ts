@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import path from 'path';
 import fs from 'fs';
@@ -61,20 +61,25 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
         requester1Id = r1!.id;
         requester2Id = r2!.id;
 
-        // Clean previous test data (order matters: notes > comments > attachments > tickets)
+        // Clean previous test data (order matters: actions > notes > comments > attachments > tickets)
+        const nonSeedFilter = {
+            submittedById: { in: [requester1Id, requester2Id] },
+            ticketNumber: { not: { startsWith: 'TKT-SEED-' } },
+        };
+        await getPrisma().action_taken.deleteMany({
+            where: { ticket: nonSeedFilter },
+        });
         await getPrisma().internal_note.deleteMany({
-            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+            where: { ticket: nonSeedFilter },
         });
         await getPrisma().public_comment.deleteMany({
-            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+            where: { ticket: nonSeedFilter },
         });
         await getPrisma().attachment.deleteMany({
-            where: {
-                ticket: { submittedById: { in: [requester1Id, requester2Id] } },
-            },
+            where: { ticket: nonSeedFilter },
         });
         await getPrisma().ticket.deleteMany({
-            where: { submittedById: { in: [requester1Id, requester2Id] } },
+            where: nonSeedFilter,
         });
 
         // Ticket for requester1
@@ -361,6 +366,14 @@ describe('Attachment Lifecycle API (Issue 6 - API-10 through API-15)', () => {
             .set('X-Requester-Id', String(requester1Id))
             .send({ reason: 'Unauthenticated remove' });
         expect(resRm.status).toBe(401);
+    });
+
+    afterAll(async () => {
+        if (ticket1Id || ticket2Id) {
+            await getPrisma().action_taken.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });
+            await getPrisma().attachment.deleteMany({ where: { ticketId: { in: [ticket1Id, ticket2Id] } } });
+            await getPrisma().ticket.deleteMany({ where: { id: { in: [ticket1Id, ticket2Id] } } });
+        }
     });
 
 });

@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/app.js';
 import { getPrisma } from '../../src/prisma.js';
 import { generateTicketNumber } from '../../src/utils/ticketNumber.js';
+import { ensureSeedData } from '../seed-helper.js';
 
 describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
     let requester1Id: number;
@@ -32,7 +33,10 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         const login2 = await request(app).post('/api/auth/login').send({ email: r2!.email, password: 'Password123!' });
         requester2Token = login2.body.token;
 
-        // Clean up tickets for requester 1 and 2 before testing (order: notes > comments > attachments > tickets)
+        // Clean up tickets for requester 1 and 2 before testing (order: actions > notes > comments > attachments > tickets)
+        await getPrisma().action_taken.deleteMany({
+            where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
+        });
         await getPrisma().internal_note.deleteMany({
             where: { ticket: { submittedById: { in: [requester1Id, requester2Id] } } },
         });
@@ -282,5 +286,21 @@ describe('GET /api/tickets (Issue 5 - AC 1, AC 2, AC 3, AC 4)', () => {
         for (let i = 1; i < dates.length; i++) {
             expect(dates[i]).toBeGreaterThanOrEqual(dates[i - 1]);
         }
+    });
+
+    afterAll(async () => {
+        // Clean up tickets created by this test suite
+        const nonSeedFilter = {
+            submittedById: { in: [requester1Id, requester2Id] },
+            ticketNumber: { not: { startsWith: 'TKT-SEED-' } },
+        };
+        await getPrisma().action_taken.deleteMany({ where: { ticket: nonSeedFilter } });
+        await getPrisma().internal_note.deleteMany({ where: { ticket: nonSeedFilter } });
+        await getPrisma().public_comment.deleteMany({ where: { ticket: nonSeedFilter } });
+        await getPrisma().attachment.deleteMany({ where: { ticket: nonSeedFilter } });
+        await getPrisma().ticket.deleteMany({ where: nonSeedFilter });
+
+        // Restore seed data
+        await ensureSeedData();
     });
 });

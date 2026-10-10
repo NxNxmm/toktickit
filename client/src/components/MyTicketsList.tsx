@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRequester } from '../context/RequesterContext';
 import * as api from '../api';
+import { StatusIcon } from './statusIcons';
 
 interface MyTicketsListProps {
   onCreateTicket: () => void;
   onViewTicket?: (ticketId: number) => void;
+  initialFilter?: string;
 }
 
-export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, onViewTicket }) => {
+export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, onViewTicket, initialFilter }) => {
   const { user } = useAuth();
   const { selectedRequester } = useRequester();
   // Lab 3: use authenticated user; Lab 2 fallback: use selectedRequester from context/localStorage
@@ -22,9 +24,16 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>(initialFilter ?? '');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    if (initialFilter) {
+      setSelectedStatus(initialFilter);
+      setPage(1);
+    }
+  }, [initialFilter]);
 
   // Pagination states
   const [page, setPage] = useState<number>(1);
@@ -150,12 +159,18 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
     switch (status) {
       case 'NEW':
         return { bg: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE', label: 'NEW' };
+      case 'OPEN':
+        return { bg: '#CFFAFE', color: '#155E75', border: '1px solid #A5F3FC', label: 'OPEN' };
       case 'IN_PROGRESS':
         return { bg: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A', label: 'IN PROGRESS' };
+      case 'WAITING_FOR_REQUESTER':
+        return { bg: '#EDE9FE', color: '#5B21B6', border: '1px solid #DDD6FE', label: 'WAITING FOR REQUESTER' };
       case 'RESOLVED':
         return { bg: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0', label: 'RESOLVED' };
       case 'CLOSED':
         return { bg: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB', label: 'CLOSED' };
+      case 'REOPENED':
+        return { bg: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA', label: 'REOPENED' };
       case 'CANCELLED':
         return { bg: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA', label: 'CANCELLED' };
       default:
@@ -288,10 +303,15 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
               }}
             >
               <option value="">All Statuses</option>
+              <option value="open">All Open</option>
+              <option value="recent">Recently Updated</option>
               <option value="NEW">New</option>
+              <option value="OPEN">Open</option>
               <option value="IN_PROGRESS">In Progress</option>
+              <option value="WAITING_FOR_REQUESTER">Waiting for Requester</option>
               <option value="RESOLVED">Resolved</option>
               <option value="CLOSED">Closed</option>
+              <option value="REOPENED">Reopened</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
@@ -520,7 +540,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
                               display: 'inline-block',
                             }}
                           >
-                            {statusBadge.label}
+                            <StatusIcon status={t.currentStatus} />{statusBadge.label}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-secondary" style={{ fontSize: '13px' }}>
@@ -583,7 +603,7 @@ export const MyTicketsList: React.FC<MyTicketsListProps> = ({ onCreateTicket, on
                       fontWeight: 600,
                     }}
                   >
-                    {statusBadge.label}
+                    <StatusIcon status={t.currentStatus} />{statusBadge.label}
                   </span>
                 </div>
 

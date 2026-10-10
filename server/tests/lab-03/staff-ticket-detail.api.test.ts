@@ -133,6 +133,7 @@ describe('Staff Ticket Detail Operations (Issue 6 — AC-6.1, AC-6.2, AC-6.3)', 
     });
 
     afterAll(async () => {
+        await getPrisma().action_taken.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
         await getPrisma().internal_note.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
         await getPrisma().public_comment.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
         await getPrisma().attachment.deleteMany({ where: { ticketId: { in: createdTicketIds } } });

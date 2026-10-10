@@ -12,6 +12,9 @@ import {
   Attachment,
   PublicComment,
 } from '../api';
+import { ActionsTaken } from './ActionsTaken';
+import { useModalA11y } from '../hooks/useModalA11y';
+import { StatusIcon } from './statusIcons';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -51,11 +54,14 @@ function fileExt(mimeType: string): string {
 // ─── Status / Priority Badges ────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, React.CSSProperties> = {
-  NEW:         { backgroundColor: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE' },
-  IN_PROGRESS: { backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' },
-  RESOLVED:    { backgroundColor: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' },
-  CLOSED:      { backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' },
-  CANCELLED:   { backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
+  NEW:                   { backgroundColor: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE' },
+  OPEN:                  { backgroundColor: '#CFFAFE', color: '#155E75', border: '1px solid #A5F3FC' },
+  IN_PROGRESS:           { backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' },
+  WAITING_FOR_REQUESTER: { backgroundColor: '#EDE9FE', color: '#5B21B6', border: '1px solid #DDD6FE' },
+  RESOLVED:              { backgroundColor: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' },
+  CLOSED:                { backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' },
+  REOPENED:              { backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
+  CANCELLED:             { backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA' },
 };
 
 const PRIORITY_STYLES: Record<string, React.CSSProperties> = {
@@ -77,7 +83,7 @@ const BADGE_BASE: React.CSSProperties = {
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
   <span style={{ ...BADGE_BASE, ...(STATUS_STYLES[status] ?? STATUS_STYLES.NEW) }}>
-    {status.replace('_', ' ')}
+    <StatusIcon status={status} />{status.replace(/_/g, ' ')}
   </span>
 );
 
@@ -150,6 +156,15 @@ const RemoveModal: React.FC<RemoveModalProps> = ({ attachment, onConfirm, onCanc
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useModalA11y({
+    open: true,
+    onClose: () => {
+      if (!isLoading) onCancel();
+    },
+    dialogRef,
+  });
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -173,9 +188,11 @@ const RemoveModal: React.FC<RemoveModalProps> = ({ attachment, onConfirm, onCanc
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="remove-modal-title"
+      tabIndex={-1}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         backgroundColor: 'rgba(0,0,0,0.45)',
@@ -292,6 +309,15 @@ const UploadModal: React.FC<UploadModalProps> = ({ onUpload, onCancel, isLoading
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
   const dropRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useModalA11y({
+    open: true,
+    onClose: () => {
+      if (!isLoading) onCancel();
+    },
+    dialogRef,
+  });
 
   const validateAndSet = (f: File) => {
     if (!ALLOWED_MIME_TYPES.includes(f.type)) {
@@ -308,9 +334,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ onUpload, onCancel, isLoading
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="upload-modal-title"
+      tabIndex={-1}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         backgroundColor: 'rgba(0,0,0,0.45)',
@@ -330,6 +358,15 @@ const UploadModal: React.FC<UploadModalProps> = ({ onUpload, onCancel, isLoading
 
         <div
           ref={dropRef}
+          role="button"
+          tabIndex={0}
+          aria-label="Select a file to upload"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              document.getElementById('att-file-input')?.click();
+            }
+          }}
           onDragOver={(e) => { e.preventDefault(); }}
           onDrop={(e) => {
             e.preventDefault();
@@ -428,12 +465,27 @@ const ResolveModal: React.FC<{
   isLoading: boolean;
   error?: string;
 }> = ({ onConfirm, onCancel, isLoading, error }) => {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useModalA11y({
+    open: true,
+    onClose: () => {
+      if (!isLoading) onCancel();
+    },
+    dialogRef,
+  });
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000, padding: '16px',
-    }}>
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      data-testid="resolve-modal"
+      tabIndex={-1}
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 1000, padding: '16px',
+      }}
+    >
       <div style={{
         backgroundColor: '#fff', borderRadius: '12px', padding: '24px', maxWidth: '480px', width: '100%',
         boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
@@ -905,6 +957,9 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
           </div>
         )}
       </div>
+
+      {/* ── Actions Taken Work Log (Lab 4 Issue #3 - Read-Only for Requester) ── */}
+      <ActionsTaken ticketId={ticket.id} isStaff={false} requesterId={requesterId} />
 
       {/* ── Public Comments Card ── */}
       <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', marginTop: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
